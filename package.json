@@ -1,0 +1,42 @@
+{
+  "name": "gate-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "node --max-old-space-size=4096 node_modules/next/dist/bin/next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "check:secrets": "node scripts/check-secrets.js",
+    "data:audit": "node scripts/data/audit-dataset.js",
+    "data:import:dry-run": "node scripts/data/dry-run-import.js"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "firebase": "^11.0.0",
+    "firebase-admin": "^13.0.0",
+    "katex": "^0.16.11",
+    "lucide-react": "^0.460.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.2",
+    "@testing-library/react": "^16.0.1",
+    "@types/katex": "^0.16.7",
+    "@types/node": "^22.9.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^25.0.1",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

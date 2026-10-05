@@ -1,0 +1,41 @@
+# dependencies
+/node_modules
+/.pnpm
+/.yarn
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# env & secrets
+.env*
+serviceAccountKey.json
+*.pem
+
+# dataset & heavy scraped files
+scraped_dataset/
+downloads/
+raw_dataset/
+
+# PRD and raw preview files
+GATE-Project-PRD*
+GATE-Project-PRD-Package.zip
+GATE-Project-PRD.html
+ui-preview.html
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // DENY ALL DIRECT CLIENT ACCESS TO RAW PAPERS COLLECTION
+    match /papers/{paperId} {
+      allow read, write: if false;
+    }
+
+    // DENY ALL DIRECT CLIENT ACCESS TO ANSWER KEYS
+    match /answerKeys/{qvid} {
+      allow read, write: if false;
+    }
+
+    // Question Versions (Learner facing - Read Only for Authenticated Users)
+    match /questionVersions/{qvid} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // Test Versions (Public Catalog Metadata - Read Only)
+    match /testVersions/{testId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Learner Profiles & Attempts (User Owned)
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /attempts/{attemptId} {
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,24 @@
+@import "katex/dist/katex.min.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --ink: #14213d;
+  --muted: #526079;
+  --green: #0f766e;
+  --soft: #e7f4f0;
+  --line: #dce3ec;
+  --red: #b42318;
+  --purple: #6d28d9;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+  margin: 0;
+}
