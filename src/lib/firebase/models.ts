@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { UserRole } from '../rbac';
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gatematrix-40566';
@@ -187,6 +189,27 @@ export interface PaperModel {
   updated_at?: string;
 }
 
+function findLocalPaperFile(paperId: string): string | null {
+  try {
+    const datasetDir = path.join(process.cwd(), 'scraped_dataset');
+    if (!fs.existsSync(datasetDir)) return null;
+
+    const branches = fs.readdirSync(datasetDir);
+    for (const branchDir of branches) {
+      const branchPath = path.join(datasetDir, branchDir);
+      if (fs.statSync(branchPath).isDirectory()) {
+        const files = fs.readdirSync(branchPath);
+        for (const file of files) {
+          if (file === `${paperId}.json` || file.startsWith(paperId)) {
+            return path.join(branchPath, file);
+          }
+        }
+      }
+    }
+  } catch (err) {}
+  return null;
+}
+
 export async function getPapers(branch?: string, limitCount: number = 50) {
   if (memoryPapers.size > 0) {
     const list = Array.from(memoryPapers.values()).map((p) => ({
@@ -233,20 +256,84 @@ export async function getPapers(branch?: string, limitCount: number = 50) {
         };
       });
 
-      if (branch && branch !== 'All') {
-        return papers.filter((p: any) => p.branch.toUpperCase().includes(branch.toUpperCase()));
+      if (papers.length > 0) {
+        if (branch && branch !== 'All') {
+          return papers.filter((p: any) => p.branch.toUpperCase().includes(branch.toUpperCase()));
+        }
+        return papers;
       }
-      return papers;
     }
   } catch (err) {
     console.error('Error fetching papers via REST:', err);
   }
+
+  // Local dataset fallback for paper listing
+  try {
+    const datasetDir = path.join(process.cwd(), 'scraped_dataset');
+    if (fs.existsSync(datasetDir)) {
+      const list: any[] = [];
+      const branches = fs.readdirSync(datasetDir);
+      for (const bDir of branches) {
+        const bPath = path.join(datasetDir, bDir);
+        if (fs.statSync(bPath).isDirectory()) {
+          const files = fs.readdirSync(bPath);
+          for (const f of files.slice(0, 10)) {
+            if (f.endsWith('.json')) {
+              try {
+                const content = JSON.parse(fs.readFileSync(path.join(bPath, f), 'utf-8'));
+                const pId = content.paper_id || f.replace('.json', '');
+                const questionsList = (content.questions || content.cards || []).map((q: any, idx: number) => ({
+                  question_id: q.question_id || `${pId}_q${idx + 1}`,
+                  question_number: idx + 1,
+                  type: q.type || q.qtype || 'MCQ',
+                  section: q.section || 'General',
+                  marks: q.marks || 1,
+                  negative_marks: q.negative_marks || 0,
+                  question_html: q.question_html || q.html || q.text || '',
+                  options: q.options || [],
+                  correct_answer: q.correct_answer || q.answer,
+                  solution_html: q.solution_html || q.solution || '',
+                }));
+
+                const pObj: PaperModel = {
+                  paper_id: pId,
+                  title: content.title || content.paper_title || pId,
+                  branch: content.branch || bDir.replace('_', ' '),
+                  provider: content.provider || 'GATEPrep',
+                  series: content.series || 'Official GATE Series',
+                  total_questions: questionsList.length,
+                  questions: questionsList,
+                };
+                memoryPapers.set(pId, pObj);
+                list.push({
+                  paper_id: pObj.paper_id,
+                  title: pObj.title,
+                  branch: pObj.branch,
+                  provider: pObj.provider,
+                  series: pObj.series,
+                  total_questions: pObj.total_questions,
+                });
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      if (branch && branch !== 'All') {
+        return list.filter((p) => p.branch.toUpperCase().includes(branch.toUpperCase()));
+      }
+      return list;
+    }
+  } catch (e) {}
+
   return [];
 }
 
 export async function getPaperById(paperId: string): Promise<PaperModel | null> {
   if (memoryPapers.has(paperId)) {
-    return memoryPapers.get(paperId)!;
+    const cached = memoryPapers.get(paperId)!;
+    if (cached.questions && cached.questions.length > 0) {
+      return cached;
+    }
   }
 
   try {
@@ -255,12 +342,48 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
     if (res.ok) {
       const data = await res.json();
       const paper = parseFirestoreFields(data.fields) as PaperModel;
-      memoryPapers.set(paperId, paper);
-      return paper;
+      if (paper && paper.questions && paper.questions.length > 0) {
+        memoryPapers.set(paperId, paper);
+        return paper;
+      }
     }
   } catch (err) {
     console.error(`Error fetching paper ${paperId}:`, err);
   }
+
+  // Local dataset resolution for complete question data
+  try {
+    const localPath = findLocalPaperFile(paperId);
+    if (localPath) {
+      const content = JSON.parse(fs.readFileSync(localPath, 'utf-8'));
+      const pId = content.paper_id || paperId;
+      const questionsList = (content.questions || content.cards || []).map((q: any, idx: number) => ({
+        question_id: q.question_id || `${pId}_q${idx + 1}`,
+        question_number: idx + 1,
+        type: q.type || q.qtype || 'MCQ',
+        section: q.section || 'General',
+        marks: q.marks || 1,
+        negative_marks: q.negative_marks || 0,
+        question_html: q.question_html || q.html || q.text || '',
+        options: q.options || [],
+        correct_answer: q.correct_answer || q.answer,
+        solution_html: q.solution_html || q.solution || '',
+      }));
+
+      const paperObj: PaperModel = {
+        paper_id: pId,
+        title: content.title || content.paper_title || pId,
+        branch: content.branch || 'GATE',
+        provider: content.provider || 'GATEPrep',
+        series: content.series || 'Official GATE Series',
+        total_questions: questionsList.length,
+        questions: questionsList,
+      };
+      memoryPapers.set(paperId, paperObj);
+      return paperObj;
+    }
+  } catch (err) {}
+
   return null;
 }
 
