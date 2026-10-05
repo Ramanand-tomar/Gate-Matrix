@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       order,
-      key_id: keyId || 'rzp_test_TjuE9etFswwAfn',
+      key_id: keyId || '',
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -105,9 +105,12 @@ export async function PATCH(request: Request) {
 
     if (secret && razorpay_payment_id && razorpay_signature) {
       isValidPayment = verifyRazorpaySignature(order_id, razorpay_payment_id, razorpay_signature, secret);
+    } else if (process.env.NODE_ENV !== 'production' && razorpay_payment_id && status === 'GRANTED') {
+      // Non-production test sandbox mode: Only allow in development/testing with logged notice
+      console.warn(`[DEV ONLY] Granting entitlement for test order ${order_id} without Razorpay secret.`);
+      isValidPayment = true;
     } else {
-      // Test environment validation: Require valid payment token format
-      isValidPayment = Boolean(razorpay_payment_id && status === 'GRANTED');
+      isValidPayment = false;
     }
 
     if (!isValidPayment) {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import Footer from '@/components/Footer';
 
 interface PaperDoc {
   id: string;
@@ -96,7 +97,7 @@ export default function CatalogPage() {
       }
 
       const pendingOrder = createData.order;
-      const razorpayKeyId = createData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TjuE9etFswwAfn';
+      const razorpayKeyId = createData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
 
       // Step 2: Ensure Razorpay SDK is loaded dynamically
       const isScriptLoaded = await loadRazorpayScript();
@@ -386,9 +387,7 @@ export default function CatalogPage() {
         </div>
       )}
 
-      <footer className="border-t border-[#dce3ec] bg-white py-8 px-6 text-center text-xs text-[#526079]">
-        GATEPrep Studio © 2026 · Official GATE Test Series Catalogue
-      </footer>
+      <Footer />
     </div>
   );
 }

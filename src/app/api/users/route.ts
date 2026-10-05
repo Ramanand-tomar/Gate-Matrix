@@ -53,9 +53,9 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const adminSecret = request.headers.get('x-admin-secret');
-    const expectedSecret = process.env.ADMIN_SECRET_KEY || 'GATE_MATRIX_ADMIN_SECRET_2026';
+    const expectedSecret = process.env.ADMIN_SECRET_KEY;
 
-    if (adminSecret !== expectedSecret) {
+    if (!expectedSecret || adminSecret !== expectedSecret) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Admin authorization required for role mutation' },
         { status: 403 }

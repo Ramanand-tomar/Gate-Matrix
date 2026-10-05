@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Footer from '@/components/Footer';
 
 export default function Home() {
   const branches = [
@@ -194,23 +195,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[#dce3ec] bg-white py-10 px-6 text-xs text-[#526079] mt-auto">
-        <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-6">
-          <div>
-            <div className="font-extrabold text-base text-[#14213d] mb-1">GATEPrep Studio</div>
-            <p className="text-xs text-[#526079]">Comprehensive GATE Exam Test Series & Performance Analytics</p>
-          </div>
-          <div className="flex gap-6 font-semibold">
-            <Link href="/" className="hover:text-[#0f766e]">Home</Link>
-            <Link href="/catalog" className="hover:text-[#0f766e]">Test Catalogue</Link>
-            <Link href="/dashboard" className="hover:text-[#0f766e]">Workspace</Link>
-            <Link href="/exam" className="hover:text-[#0f766e]">Test Engine</Link>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto border-t border-[#dce3ec] mt-6 pt-6 text-center text-[11px]">
-          © 2026 GATEPrep Studio · All Rights Reserved. Prepared for GATE 2025/2026 Aspirants.
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
