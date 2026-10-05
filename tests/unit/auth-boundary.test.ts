@@ -9,8 +9,8 @@ describe('Phase 04 — Auth & Security Access Boundary Tests', () => {
 
     const rulesContent = fs.readFileSync(rulesPath, 'utf-8');
 
-    // Verify rules explicitly deny client access to /papers/{paperId} and /answerKeys/{qvid}
-    expect(rulesContent).toContain('match /papers/{paperId} {\n      allow read, write: if false;\n    }');
+    // Verify rules explicitly deny client write access to /papers/{paperId} and all access to /answerKeys/{qvid}
+    expect(rulesContent).toContain('match /papers/{paperId} {\n      allow read: if true;\n      allow write: if false;\n    }');
     expect(rulesContent).toContain('match /answerKeys/{qvid} {\n      allow read, write: if false;\n    }');
   });
 

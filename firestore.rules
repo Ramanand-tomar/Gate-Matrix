@@ -11,19 +11,20 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // DENY ALL DIRECT CLIENT ACCESS TO RAW PAPERS COLLECTION
+    // Papers Collection (Public Metadata & Exam Paper Retrieval)
     match /papers/{paperId} {
-      allow read, write: if false;
+      allow read: if true;
+      allow write: if false;
     }
 
-    // DENY ALL DIRECT CLIENT ACCESS TO ANSWER KEYS
+    // DENY ALL DIRECT CLIENT ACCESS TO ANSWER KEYS (Server Scored Only)
     match /answerKeys/{qvid} {
       allow read, write: if false;
     }
 
-    // Question Versions (Learner facing - Read Only for Authenticated Users)
+    // Question Versions (Learner facing - Read Only)
     match /questionVersions/{qvid} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if false;
     }
 
