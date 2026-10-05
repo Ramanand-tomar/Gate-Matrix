@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/context/ToastContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
@@ -19,13 +21,26 @@ export const metadata: Metadata = {
     "GATE CBT Online Exam Engine",
   ],
   authors: [{ name: "GATEPrep Studio Team" }],
+  metadataBase: new URL("https://gate-matrix.vercel.app"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "GATEPrep Studio — Official GATE Test Series & Topic Analytics",
     description: "Prepare for GATE with real CBT exam engine, topic-level weak area analysis, and past paper test series across all 6 major engineering streams.",
-    url: "https://gateprep.studio",
+    url: "https://gate-matrix.vercel.app",
     siteName: "GATEPrep Studio",
     locale: "en_IN",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GATEPrep Studio — Official GATE Test Series",
+    description: "Practice 1,061+ official GATE test papers and topic analytics.",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -37,10 +52,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased min-h-screen flex flex-col bg-[#f8fafc] text-[#14213d]">
-        <AuthProvider>
-          <Navbar />
-          <div className="flex-1">{children}</div>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ToastProvider>
+              <Navbar />
+              <div className="flex-1">{children}</div>
+            </ToastProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
