@@ -52,6 +52,19 @@ export default function CatalogPage() {
     };
   }, [selectedBranch]);
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') return resolve(false);
+      if ((window as any).Razorpay) return resolve(true);
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleBuyPass = async (itemTitle: string, price: number, passBranch: string) => {
     setCheckoutModal({ open: true, title: itemTitle, price, branch: passBranch });
     setPurchaseSuccess(null);
@@ -78,12 +91,76 @@ export default function CatalogPage() {
       const createData = await createRes.json();
       if (!createData.success || !createData.order) {
         alert('Order creation error: ' + (createData.error || 'Failed to create order'));
+        setPurchasing(false);
         return;
       }
 
       const pendingOrder = createData.order;
+      const razorpayKeyId = createData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TjuE9etFswwAfn';
 
-      // Step 2: Submit payment verification details to server
+      // Step 2: Ensure Razorpay SDK is loaded dynamically
+      const isScriptLoaded = await loadRazorpayScript();
+
+      if (isScriptLoaded && typeof window !== 'undefined' && (window as any).Razorpay) {
+        // Launch Authentic Razorpay Modal Popup
+        const options: any = {
+          key: razorpayKeyId,
+          amount: pendingOrder.amount * 100, // Amount in paise
+          currency: pendingOrder.currency || 'INR',
+          name: 'GATEPrep Studio',
+          description: checkoutModal.title,
+          order_id: pendingOrder.razorpay_order_id.startsWith('order_') ? pendingOrder.razorpay_order_id : undefined,
+          handler: async function (response: any) {
+            try {
+              const verifyRes = await fetch('/api/orders', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  order_id: pendingOrder.order_id,
+                  razorpay_payment_id: response.razorpay_payment_id || `pay_${Math.random().toString(36).substring(7)}`,
+                  razorpay_signature: response.razorpay_signature || '',
+                  status: 'GRANTED',
+                }),
+              });
+
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                setPurchaseSuccess({ ...pendingOrder, status: 'GRANTED' });
+              } else {
+                alert('Payment verification issue: ' + (verifyData.error || 'Verification failed'));
+              }
+            } catch (err) {
+              alert('Payment verification request failed.');
+            } finally {
+              setPurchasing(false);
+            }
+          },
+          prefill: {
+            name: user?.displayName || 'GATE Aspirant',
+            email: user?.email || 'aspirant@gateprep.studio',
+            contact: '9999999999',
+          },
+          theme: {
+            color: '#0f766e',
+          },
+          modal: {
+            ondismiss: function () {
+              setPurchasing(false);
+            },
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          alert('Payment Failed: ' + (response.error?.description || 'Transaction cancelled'));
+          setPurchasing(false);
+        });
+
+        rzp.open();
+        return;
+      }
+
+      // Step 3: Fallback if SDK loading is blocked (e.g. adblocker)
       const verifyRes = await fetch('/api/orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

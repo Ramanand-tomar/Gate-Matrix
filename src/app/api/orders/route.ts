@@ -34,6 +34,39 @@ export async function POST(request: Request) {
     // Server-enforced pricing (Do NOT trust client-sent amount)
     const serverPrice = getOfficialPriceINR(product_id);
     const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    let razorpayOrderId = `order_${Date.now()}_${Math.random().toString(36).substring(5)}`;
+
+    // Generate official Razorpay Order ID if API credentials are standard
+    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (keyId && keySecret && keyId.startsWith('rzp_')) {
+      try {
+        const authHeader = 'Basic ' + Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+        const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
+          method: 'POST',
+          headers: {
+            'Authorization': authHeader,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: serverPrice * 100, // Amount in paise
+            currency: 'INR',
+            receipt: orderId.substring(0, 40),
+            notes: { uid, product_id },
+          }),
+        });
+
+        if (rzpRes.ok) {
+          const rzpData = await rzpRes.json();
+          if (rzpData.id) {
+            razorpayOrderId = rzpData.id;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not generate Razorpay order ID via REST API:', err);
+      }
+    }
 
     const orderPayload = {
       order_id: orderId,
@@ -42,12 +75,16 @@ export async function POST(request: Request) {
       product_title: product_title || 'GATE Test Series Product',
       amount: serverPrice,
       currency: 'INR',
-      razorpay_order_id: `rzp_order_${Date.now()}`,
+      razorpay_order_id: razorpayOrderId,
       status: 'PENDING' as const,
     };
 
     const order = await createOrder(orderPayload);
-    return NextResponse.json({ success: true, order });
+    return NextResponse.json({
+      success: true,
+      order,
+      key_id: keyId || 'rzp_test_TjuE9etFswwAfn',
+    });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
