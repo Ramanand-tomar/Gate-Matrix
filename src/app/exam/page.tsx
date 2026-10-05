@@ -86,16 +86,44 @@ function ExamEngineContent() {
             setPaperTitle(data.paper.title);
             const mappedQs: QuestionItem[] = data.paper.questions.map((q: any, idx: number) => {
               let optionsArr: string[] | undefined = undefined;
-              if (q.options && typeof q.options === 'object') {
-                optionsArr = Object.values(q.options).map((opt: any) =>
-                  typeof opt === 'string' ? opt : opt.html || String(opt)
-                );
+              if (q.options) {
+                if (Array.isArray(q.options)) {
+                  optionsArr = q.options.map((opt: any) =>
+                    typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt)
+                  );
+                } else if (typeof q.options === 'object') {
+                  optionsArr = Object.values(q.options).map((opt: any) =>
+                    typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt)
+                  );
+                }
               }
+
+              let pos = 1;
+              let neg = 0;
+              if (typeof q.marks === 'number') {
+                pos = q.marks;
+              } else if (typeof q.marks === 'string') {
+                pos = parseFloat(q.marks) || 1;
+              } else if (typeof q.marks === 'object' && q.marks !== null) {
+                pos = parseFloat(q.marks.positive || q.marks.num || '1') || 1;
+                if ('negative' in q.marks) {
+                  neg = parseFloat(q.marks.negative) || 0;
+                }
+              }
+
+              if (q.negative_marks !== undefined && q.negative_marks !== null) {
+                if (typeof q.negative_marks === 'number') {
+                  neg = q.negative_marks;
+                } else if (typeof q.negative_marks === 'string') {
+                  neg = parseFloat(q.negative_marks) || 0;
+                }
+              }
+
               return {
                 qnum: idx + 1,
                 qtype: (q.type as any) || 'MCQ',
-                marksPos: q.marks || 1,
-                marksNeg: q.negative_marks ? `-${q.negative_marks}` : '0.00',
+                marksPos: pos,
+                marksNeg: neg > 0 ? `-${neg}` : '0.00',
                 bodyHtml: q.question_html || 'Question formulation',
                 options: optionsArr,
                 correctAnswer: q.correct_answer,

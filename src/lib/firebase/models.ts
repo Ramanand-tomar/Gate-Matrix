@@ -357,18 +357,40 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
     if (localPath) {
       const content = JSON.parse(fs.readFileSync(localPath, 'utf-8'));
       const pId = content.paper_id || paperId;
-      const questionsList = (content.questions || content.cards || []).map((q: any, idx: number) => ({
-        question_id: q.question_id || `${pId}_q${idx + 1}`,
-        question_number: idx + 1,
-        type: q.type || q.qtype || 'MCQ',
-        section: q.section || 'General',
-        marks: q.marks || 1,
-        negative_marks: q.negative_marks || 0,
-        question_html: q.question_html || q.html || q.text || '',
-        options: q.options || [],
-        correct_answer: q.correct_answer || q.answer,
-        solution_html: q.solution_html || q.solution || '',
-      }));
+      const questionsList = (content.questions || content.cards || []).map((q: any, idx: number) => {
+        let posMarks = 1;
+        let negMarks = 0;
+        if (typeof q.marks === 'number') {
+          posMarks = q.marks;
+        } else if (typeof q.marks === 'string') {
+          posMarks = parseFloat(q.marks) || 1;
+        } else if (typeof q.marks === 'object' && q.marks !== null) {
+          posMarks = parseFloat(q.marks.positive || q.marks.num || '1') || 1;
+          if ('negative' in q.marks) {
+            negMarks = parseFloat(q.marks.negative) || 0;
+          }
+        }
+        if (q.negative_marks !== undefined && q.negative_marks !== null) {
+          if (typeof q.negative_marks === 'number') {
+            negMarks = q.negative_marks;
+          } else if (typeof q.negative_marks === 'string') {
+            negMarks = parseFloat(q.negative_marks) || 0;
+          }
+        }
+
+        return {
+          question_id: q.question_id || `${pId}_q${idx + 1}`,
+          question_number: idx + 1,
+          type: (q.type || q.qtype || 'MCQ').toUpperCase(),
+          section: q.section || 'General',
+          marks: posMarks,
+          negative_marks: negMarks,
+          question_html: q.question_html || q.html || q.text || '',
+          options: q.options || [],
+          correct_answer: q.correct_answer || q.answer,
+          solution_html: q.solution_html || q.solution || '',
+        };
+      });
 
       const paperObj: PaperModel = {
         paper_id: pId,
