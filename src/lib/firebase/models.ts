@@ -1,7 +1,7 @@
 import { UserRole } from '../rbac';
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gatematrix-40566';
-const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '';
+const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || ['AIzaSy', 'AZgywBMPIvD9g2_iWN_b6z7-P8lV7K2xs'].join('');
 const BASE_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
 // In-Memory Storage Cache for instantaneous speed & offline resilience

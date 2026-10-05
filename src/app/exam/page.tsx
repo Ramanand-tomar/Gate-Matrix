@@ -22,7 +22,7 @@ function ExamEngineContent() {
   const paperId = searchParams.get('paperId');
   const { user } = useAuth();
 
-  const sampleQuestions: QuestionItem[] = [
+  const fallbackQuestions: QuestionItem[] = [
     {
       qnum: 1,
       qtype: 'MCQ',
@@ -54,8 +54,8 @@ function ExamEngineContent() {
     },
   ];
 
-  const [questions, setQuestions] = useState<QuestionItem[]>(sampleQuestions);
-  const [paperTitle, setPaperTitle] = useState('GATE Practice Diagnostic Series');
+  const [questions, setQuestions] = useState<QuestionItem[]>(fallbackQuestions);
+  const [paperTitle, setPaperTitle] = useState('GATE Official CBT Practice Paper');
   const [loadingDb, setLoadingDb] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
 
@@ -64,37 +64,47 @@ function ExamEngineContent() {
   const [natAnswers, setNatAnswers] = useState<Record<number, string>>({});
   const [flagged, setFlagged] = useState<Record<number, boolean>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(1800); // 30 minute standard countdown
+  const [secondsLeft, setSecondsLeft] = useState(1800);
 
   useEffect(() => {
     async function loadPaperFromFirestore() {
-      if (!paperId) return;
       setLoadingDb(true);
       try {
-        const res = await fetch(`/api/papers/${paperId}`);
-        const data = await res.json();
-        if (data.success && data.paper && data.paper.questions.length > 0) {
-          setPaperTitle(data.paper.title);
-          const mappedQs: QuestionItem[] = data.paper.questions.map((q: any, idx: number) => {
-            let optionsArr: string[] | undefined = undefined;
-            if (q.options && typeof q.options === 'object') {
-              optionsArr = Object.values(q.options).map((opt: any) =>
-                typeof opt === 'string' ? opt : opt.html || String(opt)
-              );
-            }
-            return {
-              qnum: idx + 1,
-              qtype: (q.type as any) || 'MCQ',
-              marksPos: q.marks || 1,
-              marksNeg: q.negative_marks ? `-${q.negative_marks}` : '0.00',
-              bodyHtml: q.question_html || 'Question formulation',
-              options: optionsArr,
-              correctAnswer: q.correct_answer,
-              solutionHtml: q.solution_html,
-            };
-          });
-          setQuestions(mappedQs);
-          setSecondsLeft(mappedQs.length * 120);
+        let targetId = paperId;
+        if (!targetId) {
+          const listRes = await fetch('/api/papers');
+          const listData = await listRes.json();
+          if (listData.success && listData.papers && listData.papers.length > 0) {
+            targetId = listData.papers[0].paper_id;
+          }
+        }
+
+        if (targetId) {
+          const res = await fetch(`/api/papers/${targetId}`);
+          const data = await res.json();
+          if (data.success && data.paper && data.paper.questions && data.paper.questions.length > 0) {
+            setPaperTitle(data.paper.title);
+            const mappedQs: QuestionItem[] = data.paper.questions.map((q: any, idx: number) => {
+              let optionsArr: string[] | undefined = undefined;
+              if (q.options && typeof q.options === 'object') {
+                optionsArr = Object.values(q.options).map((opt: any) =>
+                  typeof opt === 'string' ? opt : opt.html || String(opt)
+                );
+              }
+              return {
+                qnum: idx + 1,
+                qtype: (q.type as any) || 'MCQ',
+                marksPos: q.marks || 1,
+                marksNeg: q.negative_marks ? `-${q.negative_marks}` : '0.00',
+                bodyHtml: q.question_html || 'Question formulation',
+                options: optionsArr,
+                correctAnswer: q.correct_answer,
+                solutionHtml: q.solution_html,
+              };
+            });
+            setQuestions(mappedQs);
+            setSecondsLeft(mappedQs.length * 120);
+          }
         }
       } catch (err) {
         console.error('Failed loading paper questions:', err);
