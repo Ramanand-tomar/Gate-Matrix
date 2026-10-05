@@ -20,8 +20,31 @@ export interface CheckoutOrder {
   branchCode: string;
   amountPaise: number;
   currency: 'INR';
-  status: 'PENDING' | 'CAPTURED' | 'FAILED' | 'REFUNDED';
+  status: 'PENDING' | 'CAPTURED' | 'GRANTED' | 'FAILED' | 'REFUNDED';
   createdAt: string;
+}
+
+export const OFFICIAL_PRODUCT_CATALOG: Record<
+  string,
+  { title: string; priceINR: number; type: 'BRANCH_PASS' | 'SUBJECT_BUNDLE'; branch: string }
+> = {
+  cs_pass: { title: 'CS Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'CS' },
+  da_pass: { title: 'DA Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'DA' },
+  ee_pass: { title: 'EE Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'EE' },
+  ec_pass: { title: 'EC Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'EC' },
+  me_pass: { title: 'ME Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'ME' },
+  ce_pass: { title: 'CE Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'CE' },
+  gate_series_bundle: { title: 'GATE Test Series', priceINR: 799, type: 'SUBJECT_BUNDLE', branch: 'CS' },
+};
+
+export function getOfficialPriceINR(productId: string): number {
+  if (OFFICIAL_PRODUCT_CATALOG[productId]) {
+    return OFFICIAL_PRODUCT_CATALOG[productId].priceINR;
+  }
+  if (productId.endsWith('_pass')) {
+    return 1499;
+  }
+  return 799;
 }
 
 /**

@@ -61,30 +61,44 @@ export default function CatalogPage() {
     if (!checkoutModal) return;
     setPurchasing(true);
     try {
-      const orderId = `ord_${Date.now()}`;
       const uid = user ? user.uid : 'aspirant_learner_101';
+      const productId = `${checkoutModal.branch.toLowerCase()}_pass`;
 
-      const res = await fetch('/api/orders', {
+      // Step 1: Create server-priced order with PENDING status
+      const createRes = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_id: orderId,
           uid,
-          product_id: `${checkoutModal.branch.toLowerCase()}_pass`,
+          product_id: productId,
           product_title: checkoutModal.title,
-          amount: checkoutModal.price,
-          currency: 'INR',
-          razorpay_order_id: `rzp_order_${Date.now()}`,
+        }),
+      });
+
+      const createData = await createRes.json();
+      if (!createData.success || !createData.order) {
+        alert('Order creation error: ' + (createData.error || 'Failed to create order'));
+        return;
+      }
+
+      const pendingOrder = createData.order;
+
+      // Step 2: Submit payment verification details to server
+      const verifyRes = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: pendingOrder.order_id,
           razorpay_payment_id: `pay_${Math.random().toString(36).substring(7)}`,
           status: 'GRANTED',
         }),
       });
 
-      const data = await res.json();
-      if (data.success) {
-        setPurchaseSuccess(data.order);
+      const verifyData = await verifyRes.json();
+      if (verifyData.success) {
+        setPurchaseSuccess({ ...pendingOrder, status: 'GRANTED' });
       } else {
-        alert('Order processing issue: ' + data.error);
+        alert('Payment verification issue: ' + verifyData.error);
       }
     } catch (err) {
       console.error('Checkout error:', err);

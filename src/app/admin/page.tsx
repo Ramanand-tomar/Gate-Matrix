@@ -14,7 +14,7 @@ interface DraftRelease {
 }
 
 export default function AdminPage() {
-  const { userProfile, setUserRole } = useAuth();
+  const { userProfile } = useAuth();
   const currentRole: UserRole = userProfile?.role || 'LEARNER';
   const isAuthorized = hasRolePermission(currentRole, 'EDITOR');
 
@@ -77,16 +77,11 @@ export default function AdminPage() {
             <h2 className="text-2xl font-extrabold text-amber-900 mb-2">
               Console Access Restricted
             </h2>
-            <p className="text-sm text-amber-800 mb-6 leading-relaxed">
+            <p className="text-sm text-amber-800 mb-4 leading-relaxed">
               Administrative permissions required. Your current account role is <strong className="uppercase font-bold">{currentRole}</strong>.
             </p>
-            <div className="flex justify-center gap-3">
-              <button
-                onClick={() => setUserRole('ADMIN')}
-                className="bg-[#14213d] hover:bg-[#1d2d50] text-white font-bold text-xs px-6 py-3 rounded-xl shadow-md transition-all active:scale-95"
-              >
-                Switch to Admin Mode
-              </button>
+            <div className="bg-amber-100/70 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 font-medium">
+              🔒 Role assignment is strictly managed by system administrators. Contact your project administrator to request EDITOR or ADMIN access.
             </div>
           </div>
         ) : (

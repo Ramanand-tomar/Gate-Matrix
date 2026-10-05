@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getUserProfile, saveUserProfile, updateUserRole } from '@/lib/firebase/models';
+import { UserRole } from '@/lib/rbac';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/users (Create / Update user details)
+// POST /api/users (Create / Update learner profile details - field allowlist enforced)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -32,18 +33,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Missing user uid' }, { status: 400 });
     }
 
-    const updatedUser = await saveUserProfile(body);
+    // Field Allowlist Enforcement (GM-20): Strip privileged fields
+    const safePayload = {
+      uid: body.uid,
+      email: body.email || null,
+      displayName: body.displayName || null,
+      photoURL: body.photoURL || null,
+      // Do not allow setting role or activePasses directly via public POST
+    };
+
+    const updatedUser = await saveUserProfile(safePayload);
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
-// PATCH /api/users (Update user role)
+// PATCH /api/users (Update user role - Server/Admin authenticated only)
 export async function PATCH(request: Request) {
   try {
+    const adminSecret = request.headers.get('x-admin-secret');
+    const expectedSecret = process.env.ADMIN_SECRET_KEY || 'GATE_MATRIX_ADMIN_SECRET_2026';
+
+    if (adminSecret !== expectedSecret) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Admin authorization required for role mutation' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
-    const { uid, role } = body;
+    const { uid, role } = body as { uid: string; role: UserRole };
 
     if (!uid || !role) {
       return NextResponse.json({ success: false, error: 'uid and role are required' }, { status: 400 });

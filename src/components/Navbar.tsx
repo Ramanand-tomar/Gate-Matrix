@@ -76,6 +76,7 @@ export default function Navbar() {
         ) : user ? (
           <div className="flex items-center gap-3 bg-gray-50 border border-[#dce3ec] p-1.5 rounded-2xl pr-3">
             {user.photoURL ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img src={user.photoURL} alt={user.displayName || 'User'} className="w-8 h-8 rounded-full border border-gray-300" />
             ) : (
               <div className="w-8 h-8 rounded-full bg-[#14213d] text-white flex items-center justify-center font-bold text-xs">

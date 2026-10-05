@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase/client';
-import { UserProfile, UserRole } from '@/lib/rbac';
+import { UserProfile } from '@/lib/rbac';
 
 interface AuthContextType {
   user: User | null;
@@ -12,7 +12,6 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  setUserRole: (newRole: UserRole) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -21,7 +20,6 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signInWithGoogle: async () => {},
   logout: async () => {},
-  setUserRole: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -36,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           const userRef = doc(db, 'users', currentUser.uid);
           const snap = await getDoc(userRef);
-          
+
           if (snap.exists()) {
             const data = snap.data() as UserProfile;
             setUserProfile(data);
@@ -92,22 +90,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const setUserRole = async (newRole: UserRole) => {
-    if (userProfile) {
-      const updated = { ...userProfile, role: newRole };
-      setUserProfile(updated);
-      if (user) {
-        try {
-          await updateDoc(doc(db, 'users', user.uid), { role: newRole });
-        } catch (e) {
-          console.warn('Local role updated (Firestore doc write skipped or restricted):', e);
-        }
-      }
-    }
-  };
-
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, signInWithGoogle, logout, setUserRole }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, signInWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -258,18 +258,6 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
       memoryPapers.set(paperId, paper);
       return paper;
     }
-
-    const papersList = await getPapers(undefined, 100);
-    if (papersList.length > 0) {
-      const targetId = papersList[0].paper_id;
-      const fallbackRes = await fetch(`${BASE_URL}/papers/${targetId}${keyParam}`);
-      if (fallbackRes.ok) {
-        const fallbackData = await fallbackRes.json();
-        const paper = parseFirestoreFields(fallbackData.fields) as PaperModel;
-        memoryPapers.set(targetId, paper);
-        return paper;
-      }
-    }
   } catch (err) {
     console.error(`Error fetching paper ${paperId}:`, err);
   }
