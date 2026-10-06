@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { UserRole } from '../rbac';
+import { fixImageUrls } from '../sanitizer';
 
 const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'gatematrix-40566';
 const API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || ['AIzaSy', 'AZgywBMPIvD9g2_iWN_b6z7-P8lV7K2xs'].join('');
@@ -390,7 +391,7 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
             paper.questions = paper.questions.map((q: any, idx: number) => {
               const localQ = localQs[idx];
               if (localQ) {
-                if (localQ.question_html && (!q.question_html || q.question_html.includes('[IMAGE]'))) {
+                if (localQ.question_html) {
                   q.question_html = localQ.question_html;
                 }
                 if (localQ.solution_html) {
@@ -403,12 +404,16 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
               } else {
                 q.correct_answer = resolveQuestionCorrectAnswer(q);
               }
+              if (q.question_html) q.question_html = fixImageUrls(q.question_html);
+              if (q.solution_html) q.solution_html = fixImageUrls(q.solution_html);
               return q;
             });
           } catch (e) {}
         } else {
           paper.questions = paper.questions.map((q: any) => {
             q.correct_answer = resolveQuestionCorrectAnswer(q);
+            if (q.question_html) q.question_html = fixImageUrls(q.question_html);
+            if (q.solution_html) q.solution_html = fixImageUrls(q.solution_html);
             return q;
           });
         }
@@ -447,6 +452,9 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
           }
         }
 
+        let qHtml = fixImageUrls(q.question_html || q.html || q.text || '');
+        let solHtml = fixImageUrls(q.solution_html || q.solution || '');
+
         return {
           question_id: q.question_id || `${pId}_q${idx + 1}`,
           question_number: idx + 1,
@@ -454,10 +462,10 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
           section: q.section || 'General',
           marks: posMarks,
           negative_marks: negMarks,
-          question_html: q.question_html || q.html || q.text || '',
+          question_html: qHtml,
           options: q.options || [],
           correct_answer: resolveQuestionCorrectAnswer(q),
-          solution_html: q.solution_html || q.solution || '',
+          solution_html: solHtml,
         };
       });
 
