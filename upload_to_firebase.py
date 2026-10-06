@@ -49,27 +49,36 @@ def get_firestore_client(project_id="gatematrix-40566", key_path="serviceAccount
     print("\n❌ Error: Neither serviceAccountKey.json nor active Firebase CLI session found.", flush=True)
     sys.exit(1)
 
-def sanitize_questions(questions):
-    """Clean heavy base64 strings if necessary to keep document size under 900KB limit."""
+def sanitize_questions(questions, aggressive=False):
+    """Clean heavy base64 strings to ensure document size stays under Firestore 1MB limit."""
     cleaned_q = []
     for q in questions:
         q_copy = dict(q)
-        # Trim large base64 image strings if needed
-        q_copy['question_html'] = re.sub(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]+', '[IMAGE]', q_copy.get('question_html', ''))
-        q_copy['solution_html'] = re.sub(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]+', '[IMAGE]', q_copy.get('solution_html', ''))
-        
+        # Strip all data:image URLs cleanly
+        q_copy['question_html'] = re.sub(r'data:image/[^"\'\s>]+', '[IMAGE]', q_copy.get('question_html', ''))
+        q_copy['solution_html'] = re.sub(r'data:image/[^"\'\s>]+', '[IMAGE]', q_copy.get('solution_html', ''))
+
+        # Clean image arrays if present
+        if 'question_images' in q_copy:
+            q_copy['question_images'] = [re.sub(r'data:image/[^"\'\s>]+', '[IMAGE]', img) for img in q_copy.get('question_images', [])]
+        if 'solution_images' in q_copy:
+            q_copy['solution_images'] = [re.sub(r'data:image/[^"\'\s>]+', '[IMAGE]', img) for img in q_copy.get('solution_images', [])]
+
+        if aggressive and len(q_copy.get('solution_html', '')) > 1000:
+            q_copy['solution_html'] = q_copy['solution_html'][:1000] + '...'
+
         # Clean images in options
-        if 'options' in q_copy:
+        if 'options' in q_copy and isinstance(q_copy['options'], dict):
             opts = {}
             for key, val in q_copy['options'].items():
                 if isinstance(val, dict):
                     opt_copy = dict(val)
-                    opt_copy['html'] = re.sub(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]+', '[IMAGE]', opt_copy.get('html', ''))
+                    opt_copy['html'] = re.sub(r'data:image/[^"\'\s>]+', '[IMAGE]', opt_copy.get('html', ''))
                     opts[key] = opt_copy
                 else:
                     opts[key] = val
             q_copy['options'] = opts
-            
+
         cleaned_q.append(q_copy)
     return cleaned_q
 
@@ -95,7 +104,7 @@ def upload_paper_doc(project_id, filepath, skip_existing=True):
     branch_name = paper_data.get('branch', 'GENERAL')
     questions = paper_data.get('questions', [])
     
-    cleaned_questions = sanitize_questions(questions)
+    cleaned_questions = sanitize_questions(questions, aggressive=False)
     
     paper_doc = {
         'paper_id': paper_id,
@@ -108,6 +117,11 @@ def upload_paper_doc(project_id, filepath, skip_existing=True):
         'total_questions': len(cleaned_questions),
         'questions': cleaned_questions
     }
+
+    # Check payload size (Firestore hard limit is 1,048,576 bytes)
+    doc_json = json.dumps(paper_doc, ensure_ascii=False)
+    if len(doc_json.encode('utf-8')) > 950000:
+        paper_doc['questions'] = sanitize_questions(questions, aggressive=True)
 
     for attempt in range(5):
         try:
