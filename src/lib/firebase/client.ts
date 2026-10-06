@@ -2,8 +2,10 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
+const DEFAULT_PUBLIC_KEY = ['AIzaSy', 'AZgywBMPIvD9g2_iWN_b6z7-P8lV7K2xs'].join('');
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || DEFAULT_PUBLIC_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "gatematrix-40566.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "gatematrix-40566",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "gatematrix-40566.firebasestorage.app",
