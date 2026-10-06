@@ -3,15 +3,30 @@ import { getPapers, createPaper, PaperModel } from '@/lib/firebase/models';
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/papers?branch=CS
+// GET /api/papers?branch=CS&page=1&pageSize=12
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const branch = searchParams.get('branch') || undefined;
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const pageParam = searchParams.get('page');
+    const pageSizeParam = searchParams.get('pageSize');
+    const limitParam = searchParams.get('limit');
 
-    const papers = await getPapers(branch, limit);
-    return NextResponse.json({ success: true, count: papers.length, papers, source: 'firestore_db' });
+    const limit = limitParam ? parseInt(limitParam, 10) : 2000;
+    const page = pageParam ? parseInt(pageParam, 10) : undefined;
+    const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : undefined;
+
+    const result = await getPapers(branch, limit, page, pageSize);
+    return NextResponse.json({
+      success: true,
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
+      totalPages: result.totalPages,
+      count: result.papers.length,
+      papers: result.papers,
+      source: 'firestore_db',
+    });
   } catch (error: any) {
     console.error('Error fetching papers:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

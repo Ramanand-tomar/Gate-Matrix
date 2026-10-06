@@ -26,7 +26,7 @@ export interface CheckoutOrder {
 
 export const OFFICIAL_PRODUCT_CATALOG: Record<
   string,
-  { title: string; priceINR: number; type: 'BRANCH_PASS' | 'SUBJECT_BUNDLE'; branch: string }
+  { title: string; priceINR: number; type: 'BRANCH_PASS'; branch: string }
 > = {
   cs_pass: { title: 'CS Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'CS' },
   da_pass: { title: 'DA Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'DA' },
@@ -34,17 +34,13 @@ export const OFFICIAL_PRODUCT_CATALOG: Record<
   ec_pass: { title: 'EC Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'EC' },
   me_pass: { title: 'ME Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'ME' },
   ce_pass: { title: 'CE Branch Pass', priceINR: 1499, type: 'BRANCH_PASS', branch: 'CE' },
-  gate_series_bundle: { title: 'GATE Test Series', priceINR: 799, type: 'SUBJECT_BUNDLE', branch: 'CS' },
 };
 
 export function getOfficialPriceINR(productId: string): number {
   if (OFFICIAL_PRODUCT_CATALOG[productId]) {
     return OFFICIAL_PRODUCT_CATALOG[productId].priceINR;
   }
-  if (productId.endsWith('_pass')) {
-    return 1499;
-  }
-  return 799;
+  return 1499;
 }
 
 /**
@@ -79,16 +75,52 @@ export function checkUserEntitlement(
     const validUntil = new Date(grant.validUntil);
     if (validUntil < now) continue;
 
-    // 1. Branch Pass grants access to all series in the branch
     if (grant.productType === 'BRANCH_PASS' && grant.branchCode === testBranchCode) {
       return { hasAccess: true, grantReason: `Active ${grant.branchCode} Branch Pass` };
     }
 
-    // 2. Subject Bundle grants access to listed product
     if (grant.productType === 'SUBJECT_BUNDLE' && grant.productId === testProductId) {
       return { hasAccess: true, grantReason: `Purchased Bundle: ${grant.productId}` };
     }
   }
 
   return { hasAccess: false };
+}
+
+/**
+ * Helper: Checks if a given paper is a free starter/sample paper.
+ */
+export function isPaperFree(paper: { title?: string; paper_id?: string; is_free?: boolean }, index: number = 0): boolean {
+  if (paper.is_free) return true;
+  const titleLower = (paper.title || '').toLowerCase();
+  const idLower = (paper.paper_id || '').toLowerCase();
+
+  if (
+    titleLower.includes('free') ||
+    titleLower.includes('sample') ||
+    titleLower.includes('starter') ||
+    idLower.includes('free') ||
+    idLower.includes('sample')
+  ) {
+    return true;
+  }
+  return index % 3 === 0;
+}
+
+/**
+ * Helper: Evaluates whether candidate has an active one-time Branch Pass for a given branch.
+ */
+export function hasUserBranchAccess(orders: any[], branchCode: string): boolean {
+  if (!orders || !Array.isArray(orders)) return false;
+  const targetPassId = `${branchCode.toLowerCase()}_pass`;
+
+  return orders.some((ord) => {
+    const isGranted = ord.status === 'GRANTED' || ord.status === 'CAPTURED';
+    if (!isGranted) return false;
+
+    const matchesProd =
+      ord.product_id === targetPassId ||
+      (ord.product_title && ord.product_title.toUpperCase().includes(branchCode.toUpperCase()));
+    return matchesProd;
+  });
 }

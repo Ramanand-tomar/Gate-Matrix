@@ -47,6 +47,14 @@ export function sanitizeHtml(htmlString: string, options: SanitizeOptions = {}):
   sanitized = sanitized.replace(/\s+on[a-z]+=["'][^"']*["']/gi, '');
   sanitized = sanitized.replace(/\s+on[a-z]+=\S+/gi, '');
 
+  // 4b. Clean broken [IMAGE] placeholders inside img tags if any remain
+  sanitized = sanitized.replace(/<img\s+[^>]*src=["']\[IMAGE\]["'][^>]*\/?>/gi, '');
+  sanitized = sanitized.replace(/\[IMAGE\]/gi, '');
+
+  // 4c. Strip embedded <input> and <label> tags from scraped question/option payloads to prevent double radio/checkbox inputs
+  sanitized = sanitized.replace(/<input\b[^>]*\/?>/gi, '');
+  sanitized = sanitized.replace(/<\/?label\b[^>]*>/gi, '');
+
   // 5. Render LaTeX math delimiters ($...$, $$...$$, \(...\), \[...\]) if enabled
   if (options.renderMath !== false) {
     sanitized = renderLatexFormulas(sanitized);

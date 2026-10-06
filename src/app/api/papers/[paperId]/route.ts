@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPaperById, updatePaper, deletePaper } from '@/lib/firebase/models';
+import { getPaperById, updatePaper, deletePaper, resolveQuestionCorrectAnswer } from '@/lib/firebase/models';
 
 // GET /api/papers/[paperId]
 export async function GET(
@@ -18,12 +18,14 @@ export async function GET(
     const questions = (paper.questions || []).map((q: any, idx: number) => ({
       question_id: q.question_id || `q_${idx + 1}`,
       question_number: q.question_number || (idx + 1),
-      type: q.type || 'MCQ',
+      type: q.type || q.qtype || 'MCQ',
       section: q.section || 'General',
       marks: q.marks || 1,
       negative_marks: q.negative_marks || 0,
       question_html: q.question_html || 'Question content',
       options: q.options || {},
+      correct_answer: resolveQuestionCorrectAnswer(q),
+      solution_html: q.solution_html || q.solution || '',
     }));
 
     return NextResponse.json({

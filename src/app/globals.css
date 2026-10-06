@@ -5,15 +5,28 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f5f7fa;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --ink: #14213d;
-  --muted: #526079;
+  --ink: #0f172a;
+  --muted: #64748b;
   --green: #0f766e;
-  --soft: #e7f4f0;
-  --line: #dce3ec;
+  --soft: #e6f4f1;
+  --line: #e2e8f0;
   --red: #b42318;
   --purple: #6d28d9;
+}
+
+.dark {
+  --bg: #090d16;
+  --surface: #111a2e;
+  --ink: #f8fafc;
+  --muted: #94a3b8;
+  --green: #14b8a6;
+  --soft: #102a3a;
+  --line: #1e293b;
+  --red: #f87171;
+  --purple: #a855f7;
+  color-scheme: dark;
 }
 
 body {
@@ -21,4 +34,171 @@ body {
   color: var(--ink);
   font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
   margin: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Base Math & Inline Image Styling */
+.math-renderer img {
+  display: inline-block !important;
+  vertical-align: middle !important;
+  max-width: 100% !important;
+  height: auto !important;
+  max-height: 240px;
+  margin: 2px 4px;
+}
+
+.math-renderer p {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.math-renderer {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.katex {
+  font-size: 1.05em !important;
+}
+
+/* =========================================================
+   GLOBAL DARK MODE UI OVERRIDES FOR MAXIMUM TEXT VISIBILITY
+   ========================================================= */
+
+/* Dark Mode Global Backgrounds & Text Colors */
+html.dark, html.dark body {
+  background-color: #090d16 !important;
+  color: #f8fafc !important;
+}
+
+/* Navbar & Sticky Headers */
+html.dark header {
+  background-color: rgba(17, 26, 46, 0.95) !important;
+  border-color: #1e293b !important;
+}
+
+/* Cards & Surface Containers */
+html.dark .bg-white {
+  background-color: #111a2e !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+html.dark .bg-slate-50 {
+  background-color: #0d1527 !important;
+  border-color: #1e293b !important;
+  color: #cbd5e1 !important;
+}
+
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/80 {
+  background-color: #0d1527 !important;
+}
+
+html.dark .bg-\[\#f8fafc\],
+html.dark .bg-[#f8fafc],
+html.dark [class*="bg-[#f8fafc]"] {
+  background-color: #090d16 !important;
+}
+
+/* High-Contrast Text Rules */
+html.dark .text-\[\#14213d\] {
+  color: #f8fafc !important;
+}
+
+html.dark .text-\[\#526079\] {
+  color: #94a3b8 !important;
+}
+
+html.dark .text-slate-600,
+html.dark .text-slate-700,
+html.dark .text-[#1e293b] {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+/* Borders */
+html.dark .border-\[\#dce3ec\],
+html.dark .border-slate-100,
+html.dark .border-slate-200 {
+  border-color: #1e293b !important;
+}
+
+/* Forms & Inputs */
+html.dark input[type="text"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark input[type="number"],
+html.dark select,
+html.dark textarea {
+  background-color: #0d1527 !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+html.dark input::placeholder {
+  color: #64748b !important;
+}
+
+/* Buttons & Interactive Elements */
+html.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #1e293b !important;
+}
+
+html.dark .hover\:bg-slate-50:hover {
+  background-color: #16243d !important;
+}
+
+html.dark .bg-[#e7f4f0] {
+  background-color: #102a3a !important;
+  color: #2dd4bf !important;
+}
+
+html.dark .text-\[\#0f766e\] {
+  color: #2dd4bf !important;
+}
+
+/* KaTeX & Math Formulas in Dark Mode */
+html.dark .math-renderer,
+html.dark .katex {
+  color: #f8fafc !important;
+}
+
+html.dark .math-renderer img {
+  filter: brightness(0.95) contrast(1.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 1px 3px;
+}
+
+/* Accent Badges in Dark Mode */
+html.dark .bg-[#14213d] {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+/* Celebration Confetti Keyframes */
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.animate-confettiFall {
+  animation: confettiFall linear infinite;
 }

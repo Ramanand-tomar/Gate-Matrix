@@ -4,6 +4,25 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { hasRolePermission, UserRole } from '@/lib/rbac';
+import Footer from '@/components/Footer';
+import { Card, StatCard } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import {
+  ShieldCheck,
+  Lock,
+  Plus,
+  BookOpen,
+  FileText,
+  Users,
+  CreditCard,
+  BarChart3,
+  Search,
+  CheckCircle2,
+  X,
+  Layers,
+  Settings,
+} from 'lucide-react';
 
 interface DraftRelease {
   title: string;
@@ -13,11 +32,14 @@ interface DraftRelease {
   status: string;
 }
 
+type AdminTab = 'OVERVIEW' | 'CONTENT' | 'SERIES' | 'USERS' | 'ORDERS' | 'ANALYTICS';
+
 export default function AdminPage() {
   const { userProfile } = useAuth();
   const currentRole: UserRole = userProfile?.role || 'LEARNER';
   const isAuthorized = hasRolePermission(currentRole, 'EDITOR');
 
+  const [activeTab, setActiveTab] = useState<AdminTab>('OVERVIEW');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [branch, setBranch] = useState('CS');
@@ -26,7 +48,20 @@ export default function AdminPage() {
   const [dbStats, setDbStats] = useState({ totalPapers: 0, totalQuestions: 0, loading: true });
 
   const [releases, setReleases] = useState<DraftRelease[]>([
-    { title: 'Database Normalization Practice', branch: 'CS', passImpact: 'Included in Branch Pass', bundlePrice: '₹299', status: 'Published' },
+    {
+      title: 'Database Normalization & Indexing Practice',
+      branch: 'CS',
+      passImpact: 'Included in Branch Pass',
+      bundlePrice: '₹299',
+      status: 'Published',
+    },
+    {
+      title: 'Machine Learning & Probability Mock #04',
+      branch: 'DA',
+      passImpact: 'Included in Branch Pass',
+      bundlePrice: '₹349',
+      status: 'Scheduled',
+    },
   ]);
 
   useEffect(() => {
@@ -64,238 +99,208 @@ export default function AdminPage() {
     setIsModalOpen(false);
   };
 
+  const navItems: { id: AdminTab; label: string; icon: any }[] = [
+    { id: 'OVERVIEW', label: 'Console Overview', icon: BarChart3 },
+    { id: 'CONTENT', label: 'Content Pipeline', icon: Layers },
+    { id: 'SERIES', label: 'Test Series', icon: BookOpen },
+    { id: 'USERS', label: 'Learner Management', icon: Users },
+    { id: 'ORDERS', label: 'Order History', icon: CreditCard },
+    { id: 'ANALYTICS', label: 'Platform Analytics', icon: BarChart3 },
+  ];
+
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col">
-      {/* Main Container */}
-      <main className="max-w-6xl w-full mx-auto px-6 py-10 flex-1">
-        {/* RBAC Access Guarding */}
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1">
+        {/* RBAC Access Guard */}
         {!isAuthorized ? (
-          <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-10 text-center max-w-2xl mx-auto my-12 shadow-sm">
-            <div className="w-14 h-14 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center font-bold text-2xl mx-auto mb-4">
-              🔒
+          <Card className="max-w-xl mx-auto text-center py-12 border-amber-300 bg-amber-50/50">
+            <div className="w-14 h-14 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center font-bold mx-auto mb-4">
+              <Lock className="w-7 h-7" />
             </div>
-            <h2 className="text-2xl font-extrabold text-amber-900 mb-2">
-              Console Access Restricted
-            </h2>
-            <p className="text-sm text-amber-800 mb-4 leading-relaxed">
+            <h2 className="text-2xl font-black text-amber-950 mb-2">Management Console Restricted</h2>
+            <p className="text-xs text-amber-800 mb-4 leading-relaxed">
               Administrative permissions required. Your current account role is <strong className="uppercase font-bold">{currentRole}</strong>.
             </p>
             <div className="bg-amber-100/70 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 font-medium">
               🔒 Role assignment is strictly managed by system administrators. Contact your project administrator to request EDITOR or ADMIN access.
             </div>
-          </div>
+          </Card>
         ) : (
-          <>
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <span className="text-[#0f766e] text-xs font-extrabold uppercase tracking-widest block mb-1">
-                  Management Console
-                </span>
-                <h1 className="text-3xl font-extrabold text-[#14213d] tracking-tight">
-                  Content Operations & Test Pipeline
-                </h1>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-[#0f766e] hover:bg-[#115e59] text-white font-extrabold text-xs px-5 py-3 rounded-xl transition-all shadow-sm active:scale-95"
-              >
-                + Publish New Series
-              </button>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white border border-[#dce3ec] p-6 rounded-2xl shadow-xs">
-                <span className="text-xs text-[#526079] block mb-1 font-semibold">Verified GATE Papers</span>
-                <div className="text-3xl font-black text-[#0f766e]">
-                  {dbStats.loading ? '...' : dbStats.totalPapers}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Sidebar Navigation */}
+            <aside className="lg:col-span-3">
+              <Card padding="sm" className="sticky top-20">
+                <div className="px-3 py-2 border-b border-slate-100 mb-3 flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-[#0f766e]" />
+                  <span className="font-black text-sm text-[#14213d]">Admin Console</span>
                 </div>
-                <span className="text-[11px] text-gray-400">Database indexed</span>
-              </div>
 
-              <div className="bg-white border border-[#dce3ec] p-6 rounded-2xl shadow-xs">
-                <span className="text-xs text-[#526079] block mb-1 font-semibold">Parsed Questions</span>
-                <div className="text-3xl font-black text-[#14213d]">
-                  {dbStats.loading ? '...' : dbStats.totalQuestions}
+                <nav className="space-y-1">
+                  {navItems.map((item) => {
+                    const isActive = activeTab === item.id;
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all text-left ${
+                          isActive
+                            ? 'bg-[#14213d] text-white shadow-xs'
+                            : 'text-[#526079] hover:bg-slate-50 hover:text-[#14213d]'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${isActive ? 'text-[#8be0ce]' : 'text-[#526079]'}`} />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </Card>
+            </aside>
+
+            {/* Main Console View */}
+            <div className="lg:col-span-9 space-y-6">
+              {/* Header */}
+              <div className="flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <span className="text-[#0f766e] text-xs font-extrabold uppercase tracking-widest block mb-0.5">
+                    Operations Dashboard
+                  </span>
+                  <h1 className="text-2xl font-black text-[#14213d]">Content Pipeline & Metrics</h1>
                 </div>
-                <span className="text-[11px] text-gray-400">MCQ, MSQ, NAT bank</span>
+
+                <Button
+                  variant="emerald"
+                  size="sm"
+                  onClick={() => setIsModalOpen(true)}
+                  leftIcon={<Plus className="w-4 h-4" />}
+                >
+                  Schedule New Test
+                </Button>
               </div>
 
-              <div className="bg-white border border-[#dce3ec] p-6 rounded-2xl shadow-xs">
-                <span className="text-xs text-[#526079] block mb-1 font-semibold">Active Subscribers</span>
-                <div className="text-3xl font-black text-[#14213d]">86</div>
-                <span className="text-[11px] text-gray-400">Branch Pass holders</span>
+              {/* Top Stats Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <StatCard
+                  label="Verified Papers"
+                  value={dbStats.loading ? '...' : dbStats.totalPapers}
+                  subtext="Indexed in DB"
+                />
+                <StatCard
+                  label="Total Questions"
+                  value={dbStats.loading ? '...' : dbStats.totalQuestions}
+                  subtext="MCQ · MSQ · NAT"
+                />
+                <StatCard label="Active Passes" value="1,420" subtext="Enrolled Candidates" />
+                <StatCard label="Platform Revenue" value="₹1.84L" subtext="Gross Orders" />
               </div>
 
-              <div className="bg-white border border-[#dce3ec] p-6 rounded-2xl shadow-xs">
-                <span className="text-xs text-[#526079] block mb-1 font-semibold">Gross Transactions</span>
-                <div className="text-3xl font-black text-[#14213d]">₹42,970</div>
-                <span className="text-[11px] text-emerald-600 font-bold">Razorpay Verified</span>
-              </div>
-            </div>
+              {/* Releases Table */}
+              <Card>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-base font-black text-[#14213d]">Draft Test Pipeline & Releases</h3>
+                    <p className="text-xs text-[#526079]">Manage paper availability and branch pass access.</p>
+                  </div>
+                </div>
 
-            {/* Operational Tables Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {/* Recent Enrollments */}
-              <div className="bg-white border border-[#dce3ec] rounded-3xl p-6 shadow-sm">
-                <h2 className="text-base font-bold text-[#14213d] mb-4">Recent Enrollments</h2>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#f8fafc] text-[#526079] uppercase font-bold">
+                    <thead className="bg-slate-50 text-[#526079] uppercase tracking-wider font-bold">
                       <tr>
-                        <th className="p-3">Learner ID</th>
-                        <th className="p-3">Series</th>
-                        <th className="p-3">Amount</th>
-                        <th className="p-3">Status</th>
+                        <th className="p-3.5">Series Title</th>
+                        <th className="p-3.5">Branch</th>
+                        <th className="p-3.5">Pass Impact</th>
+                        <th className="p-3.5">Standalone Price</th>
+                        <th className="p-3.5">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#dce3ec]">
-                      <tr>
-                        <td className="p-3 font-semibold text-[#14213d]">Learner #1042</td>
-                        <td className="p-3">CS Branch Pass</td>
-                        <td className="p-3">₹1,499</td>
-                        <td className="p-3 text-[#0f766e] font-bold">Granted</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 font-semibold text-[#14213d]">Learner #1041</td>
-                        <td className="p-3">EE Series Bundle</td>
-                        <td className="p-3">₹799</td>
-                        <td className="p-3 text-[#0f766e] font-bold">Granted</td>
-                      </tr>
-                      <tr>
-                        <td className="p-3 font-semibold text-[#14213d]">Learner #1040</td>
-                        <td className="p-3">DA Test Series</td>
-                        <td className="p-3">₹799</td>
-                        <td className="p-3 text-[#0f766e] font-bold">Granted</td>
-                      </tr>
+                      {releases.map((rel, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                          <td className="p-3.5 font-bold text-[#14213d]">{rel.title}</td>
+                          <td className="p-3.5 font-bold text-[#0f766e]">{rel.branch}</td>
+                          <td className="p-3.5 text-slate-600">{rel.passImpact}</td>
+                          <td className="p-3.5 font-bold">{rel.bundlePrice}</td>
+                          <td className="p-3.5">
+                            <Badge variant={rel.status === 'Published' ? 'emerald' : 'amber'}>
+                              {rel.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Modal for Scheduling New Release */}
+        {isModalOpen && (
+          <div className="fixed inset-0 bg-[#14213d]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full animate-fadeIn" padding="lg">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-black text-[#14213d]">Schedule New Test Series</h3>
+                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* Database Audit Status */}
-              <div className="bg-white border border-[#dce3ec] rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+              <form onSubmit={handleAddDraft} className="space-y-4 text-xs">
                 <div>
-                  <h2 className="text-base font-bold text-[#14213d] mb-4">Content Quality Verification</h2>
-                  <div className="space-y-3 text-xs">
-                    <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl">
-                      <strong className="block text-emerald-900 font-bold mb-0.5">Database Synced & Audited</strong>
-                      <span className="text-emerald-700">1,061 test papers indexed in Firestore database.</span>
-                    </div>
-
-                    <div className="p-3.5 bg-gray-50 rounded-xl">
-                      <strong className="block text-[#14213d] font-bold mb-0.5">KaTeX Equation Verification</strong>
-                      <span className="text-[#526079]">All mathematical formulas rendered with high precision.</span>
-                    </div>
-                  </div>
+                  <label className="block font-bold text-[#14213d] mb-1">Test Title</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Operating Systems Scheduling Mock #02"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full border border-[#dce3ec] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e]"
+                  />
                 </div>
-              </div>
-            </div>
 
-            {/* Test Series Release Table */}
-            <div className="bg-white border border-[#dce3ec] rounded-3xl p-6 shadow-sm">
-              <h2 className="text-base font-bold text-[#14213d] mb-4">Published & Scheduled Test Series</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#f8fafc] text-[#526079] uppercase font-bold">
-                    <tr>
-                      <th className="p-3">Series Title</th>
-                      <th className="p-3">Branch</th>
-                      <th className="p-3">Pass Access</th>
-                      <th className="p-3">Single Price</th>
-                      <th className="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#dce3ec]">
-                    {releases.map((r, i) => (
-                      <tr key={i}>
-                        <td className="p-3 font-bold text-[#14213d]">{r.title}</td>
-                        <td className="p-3 font-semibold">{r.branch}</td>
-                        <td className="p-3 text-[#0f766e] font-bold">{r.passImpact}</td>
-                        <td className="p-3 font-bold">{r.bundlePrice}</td>
-                        <td className="p-3 text-[#0f766e] font-bold">{r.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </>
+                <div>
+                  <label className="block font-bold text-[#14213d] mb-1">Engineering Branch</label>
+                  <select
+                    value={branch}
+                    onChange={(e) => setBranch(e.target.value)}
+                    className="w-full border border-[#dce3ec] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e] bg-white"
+                  >
+                    <option value="CS">Computer Science (CS)</option>
+                    <option value="DA">Data Science & AI (DA)</option>
+                    <option value="EE">Electrical (EE)</option>
+                    <option value="EC">Electronics (EC)</option>
+                    <option value="ME">Mechanical (ME)</option>
+                    <option value="CE">Civil (CE)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#14213d] mb-1">Standalone Price (₹)</label>
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="w-full border border-[#dce3ec] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e]"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button variant="secondary" onClick={() => setIsModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button variant="emerald" type="submit">
+                    Publish Release
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
         )}
       </main>
-
-      {/* New Series Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-[#14213d]/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-[#dce3ec] shadow-2xl">
-            <h2 className="text-xl font-bold text-[#14213d] mb-1">Publish New Test Series</h2>
-            <p className="text-xs text-[#526079] mb-4">
-              Add new subject practice series or mock tests to the catalogue.
-            </p>
-
-            <form onSubmit={handleAddDraft} className="space-y-4 text-xs">
-              <div>
-                <label className="block font-bold text-[#14213d] mb-1">Series Title</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Engineering Mathematics Practice Series"
-                  className="w-full border border-[#dce3ec] rounded-xl p-3 text-xs focus:outline-none focus:border-[#0f766e]"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#14213d] mb-1">Engineering Branch</label>
-                <select
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  className="w-full border border-[#dce3ec] rounded-xl p-3 text-xs bg-white focus:outline-none focus:border-[#0f766e]"
-                >
-                  <option value="CS">CS - Computer Science</option>
-                  <option value="DA">DA - Data Science & AI</option>
-                  <option value="EE">EE - Electrical Engineering</option>
-                  <option value="EC">EC - Electronics Engineering</option>
-                  <option value="ME">ME - Mechanical Engineering</option>
-                  <option value="CE">CE - Civil Engineering</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-[#14213d] mb-1">Series Price (INR)</label>
-                <input
-                  type="number"
-                  required
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="w-full border border-[#dce3ec] rounded-xl p-3 text-xs focus:outline-none focus:border-[#0f766e]"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-[#dce3ec] text-[#526079] font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#0f766e] text-white font-extrabold hover:bg-[#115e59] transition-colors"
-                >
-                  Publish Series
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <footer className="border-t border-[#dce3ec] bg-white py-6 text-center text-xs text-[#526079]">
-        GATEPrep Studio © 2026 · Management Console
-      </footer>
+      <Footer />
     </div>
   );
 }
