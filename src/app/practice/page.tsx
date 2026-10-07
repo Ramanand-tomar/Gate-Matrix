@@ -18,6 +18,9 @@ import {
   Lock,
   Layers,
   RotateCcw,
+  Target,
+  AlertTriangle,
+  ArrowRight,
 } from 'lucide-react';
 
 import { matchesSubjectTopic, getPaperCategory, TestCategoryFilter } from '@/lib/catalog/filters';
@@ -172,51 +175,98 @@ export default function PracticePage() {
   const startIdx = (currentPage - 1) * pageSize;
   const paginatedPapers = filteredPapers.slice(startIdx, startIdx + pageSize);
 
+  // Calculate subject counts dynamically
+  const getSubjectTestCount = (subj: string) => {
+    if (subj === 'All Subjects') return papers.length;
+    return papers.filter((p) => matchesSubjectTopic(p.title, subj)).length;
+  };
+
+  // Weak topic focus drills
+  const weakFocusAreas = [
+    { subject: 'Operating Systems', topic: 'Process Scheduling & Deadlocks', accuracy: 48, paperId: papers[0]?.paper_id },
+    { subject: 'Computer Networks', topic: 'TCP/IP Flow & Congestion Control', accuracy: 56, paperId: papers[1]?.paper_id },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] flex flex-col transition-colors">
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 text-[#0f766e] text-xs font-extrabold uppercase tracking-widest mb-1">
+          <div className="flex items-center gap-2 text-[#0f766e] dark:text-[#2dd4bf] text-xs font-extrabold uppercase tracking-widest mb-1">
             <Sparkles className="w-4 h-4" />
-            <span>Subject-Wise Practice Arena</span>
+            <span>Interactive Learning Engine</span>
           </div>
-          <h1 className="text-3xl font-black text-[#14213d] tracking-tight">
-            GATE Subject & Topic Wise Practice
+          <h1 className="text-3xl font-black text-[#14213d] dark:text-white tracking-tight">
+            Practice Arena
           </h1>
-          <p className="text-xs text-[#526079] mt-1 max-w-2xl">
-            Filter practice questions and test papers by subject. Free sample tests available or unlock all subjects with your Branch Pass.
+          <p className="text-xs sm:text-sm text-[#526079] dark:text-slate-400 mt-1 max-w-2xl">
+            What do you want to practice today? Choose your test format, focus on weak topics, or drill down into specific subject papers.
           </p>
         </div>
 
-        {/* Branch Selection Pills */}
-        <div className="flex gap-2 flex-wrap mb-6">
+        {/* Weak Topic Focus Drills Alert Card */}
+        <div className="bg-gradient-to-r from-[#14213d] to-[#0f172a] text-white p-6 rounded-3xl mb-8 border border-white/10 shadow-lg">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-white uppercase tracking-wider">Your Recommended Focus Areas</h2>
+              <p className="text-[11px] text-gray-300">Target your lowest accuracy subjects to prevent negative marking penalties.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {weakFocusAreas.map((fa, i) => (
+              <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-2xl flex justify-between items-center gap-3">
+                <div>
+                  <span className="text-[10px] font-extrabold text-[#8be0ce] uppercase">{fa.subject}</span>
+                  <h3 className="text-xs font-bold text-white mt-0.5">{fa.topic}</h3>
+                  <div className="text-[11px] text-amber-400 font-extrabold mt-1">Accuracy: {fa.accuracy}%</div>
+                </div>
+                {fa.paperId ? (
+                  <Link href={`/exam?paperId=${fa.paperId}`}>
+                    <Button variant="emerald" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                      Practice Now
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button variant="secondary" size="sm" onClick={() => setSelectedSubject(fa.subject)}>
+                    Filter Subject
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Branch Selection Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
           {branches.map((b) => (
             <button
               key={b.code}
               onClick={() => setSelectedBranch(b.code)}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold whitespace-nowrap transition-all ${
                 selectedBranch === b.code
-                  ? 'bg-[#14213d] text-white shadow-md'
-                  : 'bg-white text-[#526079] border border-[#dce3ec] hover:bg-slate-50 hover:text-[#14213d]'
+                  ? 'bg-[#14213d] dark:bg-[#0f766e] text-white shadow-md'
+                  : 'bg-white dark:bg-slate-900 text-[#526079] dark:text-slate-300 border border-[#dce3ec] dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
             >
-              {b.code} — {b.name}
+              GATE {b.code} — {b.name}
             </button>
           ))}
         </div>
 
-        {/* Test Format Category Filter Bar */}
-        <div className="mb-6 bg-white border border-[#dce3ec] p-2.5 rounded-2xl flex flex-wrap gap-2 items-center shadow-2xs">
-          <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-black text-[#14213d] uppercase tracking-wider">
-            <Filter className="w-3.5 h-3.5 text-[#0f766e]" />
-            <span>Test Format:</span>
+        {/* Test Format Category Selector */}
+        <div className="mb-8 bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-3 rounded-2xl flex flex-wrap gap-2 items-center shadow-xs">
+          <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-black text-[#14213d] dark:text-slate-200 uppercase tracking-wider">
+            <Filter className="w-3.5 h-3.5 text-[#0f766e] dark:text-[#2dd4bf]" />
+            <span>Format:</span>
           </div>
           {[
-            { id: 'ALL', label: 'All Test Formats' },
-            { id: 'FULL_LENGTH', label: '🏆 Full-Length Mocks' },
-            { id: 'TOPIC_WISE', label: '📚 Topic & Subject-Wise Tests' },
-            { id: 'PYQ', label: '📜 Previous Year Papers (PYQ)' },
+            { id: 'ALL', label: 'All Practice Papers' },
+            { id: 'FULL_LENGTH', label: '🏆 Full Mock' },
+            { id: 'TOPIC_WISE', label: '📚 Subject & Topic Test' },
+            { id: 'PYQ', label: '📜 Previous Year' },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -224,7 +274,7 @@ export default function PracticePage() {
               className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs transition-all ${
                 selectedCategory === cat.id
                   ? 'bg-[#0f766e] text-white shadow-xs'
-                  : 'bg-slate-50 text-[#526079] border border-[#dce3ec] hover:bg-slate-100 hover:text-[#14213d]'
+                  : 'bg-slate-50 dark:bg-slate-800 text-[#526079] dark:text-slate-300 border border-[#dce3ec] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
               }`}
             >
               {cat.label}
@@ -232,46 +282,64 @@ export default function PracticePage() {
           ))}
         </div>
 
-        {/* Subject Filter Pills */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 text-xs font-extrabold text-[#526079] mb-3">
-            <Layers className="w-4 h-4 text-[#0f766e]" />
-            <span>Select Subject to Practice:</span>
+        {/* Subject Test Count Cards Grid */}
+        <div className="mb-8 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-extrabold text-[#526079] dark:text-slate-400">
+            <Layers className="w-4 h-4 text-[#0f766e] dark:text-[#2dd4bf]" />
+            <span>Browse {selectedBranch} Subjects:</span>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {subjects.map((sub) => (
-              <button
-                key={sub}
-                onClick={() => setSelectedSubject(sub)}
-                className={`px-3 py-1.5 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all ${
-                  selectedSubject === sub
-                    ? 'bg-[#14213d] text-white shadow-2xs'
-                    : 'bg-white text-[#526079] border border-[#dce3ec] hover:bg-slate-50 hover:text-[#14213d]'
-                }`}
-              >
-                {sub}
-              </button>
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {subjects.map((sub) => {
+              const count = getSubjectTestCount(sub);
+              const isSelected = selectedSubject === sub;
+              return (
+                <button
+                  key={sub}
+                  onClick={() => setSelectedSubject(sub)}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex justify-between items-center gap-2 cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#14213d] text-white border-[#14213d] shadow-md dark:bg-[#0f766e] dark:border-[#0f766e]'
+                      : 'bg-white dark:bg-slate-900 text-[#14213d] dark:text-slate-200 border-[#dce3ec] dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="text-xs font-extrabold truncate" title={sub}>{sub}</div>
+                    <div className={`text-[10px] font-bold ${isSelected ? 'text-gray-300' : 'text-[#526079] dark:text-slate-400'}`}>
+                      {loading ? '...' : `${count} ${count === 1 ? 'test' : 'tests'}`}
+                    </div>
+                  </div>
+                  <Badge variant={isSelected ? 'emerald' : 'slate'} size="sm" className="shrink-0">
+                    Practice
+                  </Badge>
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="bg-white border border-[#dce3ec] p-4 rounded-2xl mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-4 rounded-2xl mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm">
           <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
             <input
               type="text"
-              placeholder="Search topic or question..."
+              placeholder="Search topic or question title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#f8fafc] border border-[#dce3ec] rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-[#0f766e] text-[#14213d]"
+              className="w-full bg-[#f8fafc] dark:bg-slate-800 border border-[#dce3ec] dark:border-slate-700 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-[#0f766e] text-[#14213d] dark:text-white"
             />
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-[#526079]">
-            <Filter className="w-4 h-4 text-[#0f766e]" />
+          <div className="flex items-center gap-3 text-xs text-[#526079] dark:text-slate-400">
+            <Filter className="w-4 h-4 text-[#0f766e] dark:text-[#2dd4bf]" />
             <span className="font-bold">
-              Showing {totalFilteredItems > 0 ? startIdx + 1 : 0}–{Math.min(startIdx + pageSize, totalFilteredItems)} of {totalFilteredItems} practice papers for {selectedBranch} ({selectedSubject})
+              {loading ? (
+                <span>Loading practice papers for GATE {selectedBranch}...</span>
+              ) : (
+                <span>
+                  Showing {totalFilteredItems > 0 ? startIdx + 1 : 0}–{Math.min(startIdx + pageSize, totalFilteredItems)} of {totalFilteredItems} practice papers for {selectedBranch} ({selectedSubject})
+                </span>
+              )}
             </span>
           </div>
         </div>
@@ -280,11 +348,11 @@ export default function PracticePage() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white border border-[#dce3ec] rounded-2xl p-6 h-48 animate-pulse"></div>
+              <div key={i} className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-2xl p-6 h-48 animate-pulse"></div>
             ))}
           </div>
         ) : filteredPapers.length === 0 ? (
-          <div className="bg-white border border-[#dce3ec] rounded-2xl p-12 text-center text-slate-500 text-xs">
+          <div className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-2xl p-12 text-center text-slate-500 dark:text-slate-400 text-xs">
             No practice papers matching <strong>{selectedSubject}</strong> in branch <strong>{selectedBranch}</strong>.
           </div>
         ) : (
@@ -303,7 +371,7 @@ export default function PracticePage() {
                     : 'Topic & Subject Test';
 
                 return (
-                  <Card key={paper.id} hoverEffect className="flex flex-col justify-between">
+                  <Card key={paper.id} hoverEffect className="flex flex-col justify-between border-[#dce3ec] dark:border-slate-800">
                     <div>
                       <div className="flex justify-between items-center mb-3">
                         <div className="flex items-center gap-1.5">
@@ -317,7 +385,7 @@ export default function PracticePage() {
                           </Badge>
                         ) : free ? (
                           <Badge variant="cyan" size="sm">
-                            Free Test
+                            Free Practice
                           </Badge>
                         ) : userHasAccessToBranch ? (
                           <Badge variant="emerald" size="sm">
@@ -330,20 +398,20 @@ export default function PracticePage() {
                           </Badge>
                         )}
                       </div>
-                      <h3 className="text-base font-bold text-[#14213d] mb-2 line-clamp-2" title={paper.title}>
+                      <h3 className="text-base font-bold text-[#14213d] dark:text-white mb-2 line-clamp-2" title={paper.title}>
                         {paper.title}
                       </h3>
-                      <div className="flex items-center gap-3 text-xs text-[#526079] mb-6 font-medium">
-                        <span className="font-bold text-[#0f766e]">{paper.total_questions} Questions</span>
+                      <div className="flex items-center gap-3 text-xs text-[#526079] dark:text-slate-400 mb-6 font-medium">
+                        <span className="font-bold text-[#0f766e] dark:text-[#2dd4bf]">{paper.total_questions} Questions</span>
                         <span>•</span>
                         <span>MCQ · MSQ · NAT</span>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t border-[#dce3ec] flex justify-between items-center">
+                    <div className="pt-4 border-t border-[#dce3ec] dark:border-slate-800 flex justify-between items-center">
                       {canAttempt ? (
                         <>
-                          <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                             <CheckCircle2 className="w-4 h-4" />
                             {pastAttempt
                               ? `Scored: ${pastAttempt.score} / ${pastAttempt.max_score}`
@@ -363,7 +431,7 @@ export default function PracticePage() {
                         </>
                       ) : (
                         <>
-                          <span className="text-xs font-bold text-slate-500">Branch Pass Required</span>
+                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Branch Pass Required</span>
                           <Link href={`/catalog?branch=${selectedBranch}`}>
                             <Button variant="primary" size="sm" leftIcon={<Lock className="w-3.5 h-3.5" />}>
                               Get Pass
@@ -379,14 +447,14 @@ export default function PracticePage() {
 
             {/* Interactive Pagination Bar */}
             {totalFilteredItems > 0 && (
-              <div className="mt-10 bg-white border border-[#dce3ec] p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-2xs text-xs">
-                <div className="text-[#526079] font-medium">
-                  Showing <strong className="text-[#14213d]">{startIdx + 1}–{Math.min(startIdx + pageSize, totalFilteredItems)}</strong> of{' '}
-                  <strong className="text-[#14213d]">{totalFilteredItems}</strong> practice papers
+              <div className="mt-10 bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4 shadow-2xs text-xs">
+                <div className="text-[#526079] dark:text-slate-400 font-medium">
+                  Showing <strong className="text-[#14213d] dark:text-white">{startIdx + 1}–{Math.min(startIdx + pageSize, totalFilteredItems)}</strong> of{' '}
+                  <strong className="text-[#14213d] dark:text-white">{totalFilteredItems}</strong> practice papers
                 </div>
 
                 <div className="flex items-center gap-4 flex-wrap">
-                  <div className="flex items-center gap-1.5 text-slate-500 font-bold">
+                  <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-bold">
                     <span>Show per page:</span>
                     {[12, 24, 48].map((size) => (
                       <button
@@ -397,8 +465,8 @@ export default function PracticePage() {
                         }}
                         className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
                           pageSize === size
-                            ? 'bg-[#14213d] text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            ? 'bg-[#14213d] dark:bg-[#0f766e] text-white'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                         }`}
                       >
                         {size}
@@ -416,7 +484,7 @@ export default function PracticePage() {
                       ← Previous
                     </Button>
 
-                    <span className="px-3 py-1 bg-slate-100 rounded-lg text-[#14213d] font-black">
+                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[#14213d] dark:text-white font-black">
                       Page {currentPage} of {totalPages}
                     </span>
 

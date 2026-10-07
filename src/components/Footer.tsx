@@ -2,142 +2,137 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, Award, GraduationCap, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Award, Sparkles } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="border-t border-[#dce3ec] bg-white text-xs text-[#526079] pt-12 pb-8 px-6">
+    <footer className="border-t border-[#dce3ec] dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-[#526079] dark:text-slate-400 pt-12 pb-8 px-6 transition-colors">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 mb-8">
-        {/* Brand Description */}
+        {/* Column 1: Brand & Tagline */}
         <div className="md:col-span-4 space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#14213d] text-white flex items-center justify-center font-black text-base">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#14213d] to-[#0f766e] text-white flex items-center justify-center font-black text-base shadow-sm">
               G
             </div>
-            <span className="font-black text-base text-[#14213d] tracking-tight">
-              GATE <span className="text-[#0f766e]">Matrix</span>
+            <span className="font-black text-base text-[#14213d] dark:text-white tracking-tight">
+              GATE <span className="text-[#0f766e] dark:text-[#2dd4bf]">Matrix</span>
             </span>
           </div>
-          <p className="text-xs text-[#526079] leading-relaxed max-w-sm">
-            GATE Matrix (GATEPrep Studio) is a premium GATE preparation platform providing CBT-pattern mock tests, topic-level diagnostic analytics, and KaTeX mathematical solutions for Indian engineering candidates.
+          <p className="text-xs text-[#526079] dark:text-slate-400 leading-relaxed max-w-sm font-medium">
+            Prepare smarter for GATE 2027. Realistic CBT-style test series, diagnostic topic analytics, and detailed step-by-step KaTeX mathematical solutions for Indian engineering aspirants.
           </p>
-          <div className="flex items-center gap-2 text-[11px] font-bold text-[#0f766e] bg-[#e7f4f0] px-3 py-1.5 rounded-xl w-fit">
+          <div className="flex items-center gap-2 text-[11px] font-bold text-[#0f766e] dark:text-[#2dd4bf] bg-[#e7f4f0] dark:bg-teal-950/60 px-3 py-1.5 rounded-xl w-fit">
             <ShieldCheck className="w-4 h-4" />
-            <span>IIT CBT Standard Compliant</span>
+            <span>Realistic GATE CBT Practice Engine</span>
           </div>
         </div>
 
-        {/* Target Disciplines */}
+        {/* Column 2: Product */}
         <div className="md:col-span-3 space-y-2">
-          <h4 className="font-extrabold text-[#14213d] uppercase tracking-wider text-[11px] mb-3">
-            Target Engineering Disciplines
+          <h4 className="font-extrabold text-[#14213d] dark:text-slate-200 uppercase tracking-wider text-[11px] mb-3">
+            Product
           </h4>
-          <ul className="space-y-1.5 font-medium">
+          <ul className="space-y-2 font-semibold text-slate-600 dark:text-slate-300">
             <li>
-              <Link href="/catalog?branch=CS" className="hover:text-[#0f766e] transition-colors">
-                Computer Science & IT (CS)
+              <Link href="/catalog" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Test Series Catalog
               </Link>
             </li>
             <li>
-              <Link href="/catalog?branch=DA" className="hover:text-[#0f766e] transition-colors">
-                Data Science & AI (DA)
+              <Link href="/practice" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Practice Arena
               </Link>
             </li>
             <li>
-              <Link href="/catalog?branch=EE" className="hover:text-[#0f766e] transition-colors">
-                Electrical Engineering (EE)
-              </Link>
-            </li>
-            <li>
-              <Link href="/catalog?branch=EC" className="hover:text-[#0f766e] transition-colors">
-                Electronics & Communication (EC)
-              </Link>
-            </li>
-            <li>
-              <Link href="/catalog?branch=ME" className="hover:text-[#0f766e] transition-colors">
-                Mechanical Engineering (ME)
-              </Link>
-            </li>
-            <li>
-              <Link href="/catalog?branch=CE" className="hover:text-[#0f766e] transition-colors">
-                Civil Engineering (CE)
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Learner Navigation */}
-        <div className="md:col-span-2 space-y-2">
-          <h4 className="font-extrabold text-[#14213d] uppercase tracking-wider text-[11px] mb-3">
-            Learner Tools
-          </h4>
-          <ul className="space-y-1.5 font-medium">
-            <li>
-              <Link href="/catalog" className="hover:text-[#0f766e] transition-colors">
-                Test Series Catalogue
-              </Link>
-            </li>
-            <li>
-              <Link href="/practice" className="hover:text-[#0f766e] transition-colors">
-                Topic Practice Hub
-              </Link>
-            </li>
-            <li>
-              <Link href="/performance" className="hover:text-[#0f766e] transition-colors">
+              <Link href="/performance" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
                 Performance Analytics
               </Link>
             </li>
             <li>
-              <Link href="/library" className="hover:text-[#0f766e] transition-colors">
-                My Library & Passes
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard" className="hover:text-[#0f766e] transition-colors">
-                Candidate Workspace
+              <Link href="/library" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                My Library
               </Link>
             </li>
           </ul>
         </div>
 
-        {/* Legal & Support */}
-        <div className="md:col-span-3 space-y-2">
-          <h4 className="font-extrabold text-[#14213d] uppercase tracking-wider text-[11px] mb-3">
-            Policies & Security
+        {/* Column 3: GATE Branches */}
+        <div className="md:col-span-2 space-y-2">
+          <h4 className="font-extrabold text-[#14213d] dark:text-slate-200 uppercase tracking-wider text-[11px] mb-3">
+            GATE Branches
           </h4>
-          <ul className="space-y-1.5 font-medium">
+          <ul className="space-y-2 font-semibold text-slate-600 dark:text-slate-300">
             <li>
-              <Link href="/privacy" className="hover:text-[#0f766e] transition-colors">
-                Privacy Policy
+              <Link href="/catalog?branch=CS" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Computer Science (CS)
               </Link>
             </li>
             <li>
-              <Link href="/terms" className="hover:text-[#0f766e] transition-colors">
+              <Link href="/catalog?branch=DA" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Data Science & AI (DA)
+              </Link>
+            </li>
+            <li>
+              <Link href="/catalog?branch=EE" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Electrical (EE)
+              </Link>
+            </li>
+            <li>
+              <Link href="/catalog?branch=EC" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Electronics (EC)
+              </Link>
+            </li>
+            <li>
+              <Link href="/catalog?branch=ME" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Mechanical (ME)
+              </Link>
+            </li>
+            <li>
+              <Link href="/catalog?branch=CE" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Civil (CE)
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Column 4: Company & Legal */}
+        <div className="md:col-span-3 space-y-2">
+          <h4 className="font-extrabold text-[#14213d] dark:text-slate-200 uppercase tracking-wider text-[11px] mb-3">
+            Company & Legal
+          </h4>
+          <ul className="space-y-2 font-semibold text-slate-600 dark:text-slate-300">
+            <li>
+              <Link href="/refund" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Refund Policy
+              </Link>
+            </li>
+            <li>
+              <Link href="/terms" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
                 Terms of Service
               </Link>
             </li>
             <li>
-              <Link href="/refund" className="hover:text-[#0f766e] transition-colors">
-                Refund & Cancellation Policy
+              <Link href="/privacy" className="hover:text-[#0f766e] dark:hover:text-[#2dd4bf] transition-colors">
+                Privacy Policy
               </Link>
             </li>
           </ul>
-          <div className="pt-2 text-[11px] text-slate-500 font-mono">
+          <div className="pt-3 text-[11px] text-slate-400 dark:text-slate-500 font-mono">
             Payments secured by Razorpay 256-bit SSL
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto border-t border-[#dce3ec] pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px]">
-        <div>
-          © 2026 <strong className="text-[#14213d] font-black">GATE Matrix / GATEPrep Studio</strong>. All rights reserved.
+      <div className="max-w-7xl mx-auto border-t border-[#dce3ec] dark:border-slate-800 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px]">
+        <div className="text-slate-500 dark:text-slate-400 font-medium">
+          © 2026 <strong className="text-[#14213d] dark:text-white font-black">GATE Matrix</strong>. All rights reserved.
         </div>
-        <div className="flex items-center gap-4 text-[#526079] font-medium">
-          <span className="flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#0f766e]" /> Verified IIT Pattern
+        <div className="flex items-center gap-4 text-[#526079] dark:text-slate-400 font-semibold">
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#0f766e] dark:text-[#2dd4bf]" /> Curated Test Series
           </span>
-          <span className="flex items-center gap-1">
-            <Award className="w-3.5 h-3.5 text-[#0f766e]" /> Real-time Analytics
+          <span className="flex items-center gap-1.5">
+            <Award className="w-3.5 h-3.5 text-[#0f766e] dark:text-[#2dd4bf]" /> Real-time Performance Analytics
           </span>
         </div>
       </div>

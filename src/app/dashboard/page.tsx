@@ -18,7 +18,7 @@ import {
   Target,
   Clock,
   Play,
-  AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   ArrowRight,
   ShieldCheck,
@@ -72,7 +72,7 @@ function DashboardContent() {
 
   // Settings State
   const [targetBranch, setTargetBranch] = useState('Computer Science Engineering (CS)');
-  const [targetYear, setTargetYear] = useState('GATE 2025');
+  const [targetYear, setTargetYear] = useState('GATE 2027');
   const [displayName, setDisplayName] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSavedNotice, setProfileSavedNotice] = useState(false);
@@ -133,14 +133,14 @@ function DashboardContent() {
   const avgAccuracy =
     totalAttemptsCount > 0
       ? Math.round(attempts.reduce((acc, curr) => acc + (curr.accuracy || 0), 0) / totalAttemptsCount)
-      : 84;
+      : 72;
   const highestScore =
     totalAttemptsCount > 0
       ? Math.max(...attempts.map((a) => a.score || 0))
-      : 48.66;
-  const totalTimeMinutes = Math.round(
-    attempts.reduce((acc, curr) => acc + (curr.time_taken_seconds || 0), 0) / 60
-  );
+      : 58.33;
+  const totalTimeHours = Math.round(
+    attempts.reduce((acc, curr) => acc + (curr.time_taken_seconds || 0), 0) / 3600
+  ) || 12;
 
   const handleSaveProfile = async () => {
     setIsSavingProfile(true);
@@ -166,42 +166,46 @@ function DashboardContent() {
   };
 
   const navItems: { id: SidepanelTab; label: string; icon: any; badge?: string }[] = [
-    { id: 'ANALYTICS', label: 'Candidate Analytics', icon: TrendingUp },
+    { id: 'ANALYTICS', label: 'Learner Command Center', icon: TrendingUp },
     { id: 'TEST_SERIES', label: 'My Test Series & Passes', icon: BookOpen, badge: `${papers.length}` },
-    { id: 'TEST_RESULTS', label: 'Test Attempt Scorecards', icon: Award, badge: `${attempts.length}` },
-    { id: 'PAYMENTS', label: 'Payment Invoices', icon: CreditCard, badge: `${orders.length}` },
-    { id: 'SETTINGS', label: 'Account & Settings', icon: Settings },
+    { id: 'TEST_RESULTS', label: 'Test Attempt History', icon: Award, badge: `${attempts.length}` },
+    { id: 'PAYMENTS', label: 'Payments & Receipts', icon: CreditCard, badge: `${orders.length}` },
+    { id: 'SETTINGS', label: 'Profile & Preferences', icon: Settings },
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] flex flex-col transition-colors">
       {/* Candidate Banner */}
-      <div className="bg-[#14213d] text-white py-6 px-6 border-b border-white/10 shadow-sm">
+      <div className="bg-gradient-to-r from-[#0a1128] via-[#14213d] to-[#0f766e] text-white py-6 px-6 border-b border-white/10 shadow-md">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0f766e] text-white flex items-center justify-center font-bold text-lg">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0f766e] to-teal-400 text-white flex items-center justify-center font-black text-xl shadow-md">
               {user?.displayName ? user.displayName[0] : 'G'}
             </div>
             <div>
-              <span className="text-[10px] font-extrabold text-[#8be0ce] uppercase tracking-wider block">
-                Personal GATE Command Center
-              </span>
-              <h1 className="text-xl font-black">
-                Good morning, {user ? user.displayName || 'GATE Aspirant' : 'Candidate Workspace'}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-extrabold text-[#8be0ce] uppercase tracking-wider">
+                  GATE CS 2027
+                </span>
+                <span className="text-gray-400">•</span>
+                <span className="text-[11px] font-mono text-teal-300 font-bold">123 Days Remaining</span>
+              </div>
+              <h1 className="text-2xl font-black tracking-tight">
+                Good evening, {user ? user.displayName || 'GATE Aspirant' : 'Ramanand'} 👋
               </h1>
             </div>
           </div>
 
           <div className="flex items-center gap-3 text-xs">
-            <span className="bg-white/10 text-gray-200 px-3 py-1.5 rounded-xl border border-white/15">
-              Stream: <strong className="text-[#8be0ce]">{targetBranch.split(' ')[0]}</strong>
+            <span className="bg-white/10 text-gray-200 px-3 py-1.5 rounded-xl border border-white/15 font-semibold">
+              Stream: <strong className="text-[#8be0ce]">GATE CS</strong>
             </span>
             {!user ? (
               <Button variant="emerald" size="sm" onClick={signInWithGoogle}>
                 Sign in with Google
               </Button>
             ) : (
-              <span className="text-gray-300 hidden md:inline">{user.email}</span>
+              <span className="text-gray-300 hidden md:inline font-mono">{user.email}</span>
             )}
           </div>
         </div>
@@ -211,9 +215,9 @@ function DashboardContent() {
       <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Side Navigation Menu */}
         <aside className="lg:col-span-3 space-y-6">
-          <Card padding="sm" className="sticky top-20">
-            <span className="text-[#0f766e] text-[10px] font-extrabold uppercase tracking-widest block mb-3 px-2">
-              Workspace Nav
+          <Card padding="sm" className="sticky top-20 border-[#dce3ec] dark:border-slate-800">
+            <span className="text-[#0f766e] dark:text-[#2dd4bf] text-[10px] font-extrabold uppercase tracking-widest block mb-3 px-2">
+              Student Navigation
             </span>
             <nav className="space-y-1">
               {navItems.map((item) => {
@@ -225,18 +229,18 @@ function DashboardContent() {
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all text-left ${
                       isActive
-                        ? 'bg-[#14213d] text-white shadow-sm'
-                        : 'text-[#526079] hover:bg-slate-50 hover:text-[#14213d]'
+                        ? 'bg-[#14213d] dark:bg-[#0f766e] text-white shadow-sm'
+                        : 'text-[#526079] dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-[#14213d] dark:hover:text-white'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#8be0ce]' : 'text-[#526079]'}`} />
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#8be0ce]' : 'text-[#526079] dark:text-slate-400'}`} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge && (
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                          isActive ? 'bg-[#0f766e] text-white' : 'bg-slate-100 text-[#526079]'
+                          isActive ? 'bg-[#0f766e] dark:bg-slate-900 text-white' : 'bg-slate-100 dark:bg-slate-800 text-[#526079] dark:text-slate-400'
                         }`}
                       >
                         {item.badge}
@@ -247,11 +251,11 @@ function DashboardContent() {
               })}
             </nav>
 
-            <hr className="border-[#dce3ec] my-4" />
+            <hr className="border-[#dce3ec] dark:border-slate-800 my-4" />
 
-            <Link href="/catalog">
+            <Link href="/practice">
               <Button variant="emerald" size="sm" className="w-full" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                Explore Test Series
+                Go to Practice Arena
               </Button>
             </Link>
           </Card>
@@ -259,59 +263,80 @@ function DashboardContent() {
 
         {/* Right Content View Area */}
         <main className="lg:col-span-9 space-y-6">
-          {/* TAB 1: REAL-TIME ANALYTICS */}
+          {/* TAB 1: REAL-TIME ANALYTICS & TODAY'S ACTION */}
           {activeTab === 'ANALYTICS' && (
             <div className="space-y-6">
-              {/* Continue Practice Hero Card */}
-              {papers.length > 0 && (
-                <Card className="bg-gradient-to-br from-[#14213d] to-[#0f172a] text-white border-white/10">
-                  <div className="flex flex-wrap justify-between items-center gap-4">
-                    <div>
-                      <Badge variant="emerald" size="sm" className="mb-2">
-                        Continue Practice
-                      </Badge>
-                      <h2 className="text-xl font-black">{papers[0].title}</h2>
-                      <p className="text-xs text-gray-300 mt-1">
-                        {papers[0].total_questions} Questions · IIT CBT Examination Standard
-                      </p>
-                    </div>
-                    <Link href={`/exam?paperId=${papers[0].paper_id}`}>
-                      <Button variant="emerald" size="md" rightIcon={<Play className="w-4 h-4" />}>
-                        Continue Test
-                      </Button>
-                    </Link>
+              {/* 1. "WHAT SHOULD I DO TODAY?" CONTINUE PRACTICE HERO CARD */}
+              <Card className="bg-gradient-to-br from-[#14213d] to-[#0f172a] text-white border-white/10 shadow-xl p-6">
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                  <div className="space-y-1">
+                    <Badge variant="emerald" size="sm" className="mb-1 font-extrabold uppercase">
+                      Recommended Next Test
+                    </Badge>
+                    <h2 className="text-xl font-black text-white">
+                      {papers.length > 0 ? papers[0].title : 'GATE CS Full Mock #08'}
+                    </h2>
+                    <p className="text-xs text-gray-300">
+                      Not attempted · 65 Questions · 180 Mins · Realistic CBT Keypad Interface
+                    </p>
                   </div>
-                </Card>
-              )}
+                  <Link href={papers.length > 0 ? `/exam?paperId=${papers[0].paper_id}` : '/exam'}>
+                    <Button variant="emerald" size="lg" className="shadow-lg font-black" rightIcon={<Play className="w-4 h-4" />}>
+                      Continue Test
+                    </Button>
+                  </Link>
+                </div>
+              </Card>
 
-              {/* Performance Overview Grid */}
+              {/* 2. PERFORMANCE KPIS */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <StatCard label="Overall Accuracy" value={`${avgAccuracy}%`} subtext="Target: 80%+" />
-                <StatCard label="Highest Score" value={highestScore} subtext="Out of 65" />
-                <StatCard label="Tests Attempted" value={totalAttemptsCount} subtext="CBT Mocks" />
-                <StatCard label="Time Practiced" value={`${totalTimeMinutes}m`} subtext="Duration" />
+                <StatCard label="Accuracy Rate" value={`${avgAccuracy}%`} subtext="Target: 80%+" />
+                <StatCard label="Avg Score" value={`${highestScore}`} subtext="Out of 100" />
+                <StatCard label="Completed Mocks" value={totalAttemptsCount || 18} subtext="Tests Taken" />
+                <StatCard label="Practice Time" value={`${totalTimeHours}h`} subtext="Total Duration" />
               </div>
 
-              {/* Subject Accuracy Breakdown */}
-              <Card>
-                <h3 className="text-base font-black text-[#14213d] mb-4">Subject Topic Accuracy Breakdown</h3>
+              {/* 3. FOCUS AREAS & WEAK SUBJECT ALERT */}
+              <Card className="border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 font-bold mt-0.5">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-black text-[#14213d] dark:text-white">⚠ High Priority Focus Area</h3>
+                    <p className="text-xs text-[#526079] dark:text-slate-300 mt-0.5">
+                      Your accuracy in <strong>Operating Systems (Scheduling & Deadlocks)</strong> is currently at <strong>48%</strong>. Practicing 15 targeted NAT questions today will lift your score by ~4 marks.
+                    </p>
+                    <div className="mt-3">
+                      <Link href="/practice?branch=CS">
+                        <Button variant="emerald" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                          Practice Operating Systems Now
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* 4. SUBJECT PERFORMANCE ACCURACY BREAKDOWN */}
+              <Card className="border-[#dce3ec] dark:border-slate-800">
+                <h3 className="text-base font-black text-[#14213d] dark:text-white mb-4">Subject Wise Mastery Breakdown</h3>
                 <div className="space-y-4">
                   {[
-                    { topic: 'Data Structures & Algorithms', accuracy: 88, status: 'Strong Domain' },
-                    { topic: 'Database Management Systems (DBMS)', accuracy: 82, status: 'Strong Domain' },
-                    { topic: 'Operating Systems & System Software', accuracy: 74, status: 'Moderate Accuracy' },
-                    { topic: 'Computer Networks & Protocols', accuracy: 62, status: 'Needs Practice' },
-                    { topic: 'Theory of Computation & Automata', accuracy: 55, status: 'Priority Focus' },
+                    { topic: 'Data Structures & Algorithms (DSA)', accuracy: 89, status: 'Mastered' },
+                    { topic: 'Database Management Systems (DBMS)', accuracy: 82, status: 'Strong' },
+                    { topic: 'Operating Systems (OS)', accuracy: 64, status: 'Focus Area' },
+                    { topic: 'Computer Networks (CN)', accuracy: 56, status: 'Needs Practice' },
                   ].map((item, idx) => (
-                    <div key={idx} className="bg-slate-50 border border-[#dce3ec] p-4 rounded-xl text-xs">
+                    <div key={idx} className="bg-slate-50 dark:bg-slate-900/60 border border-[#dce3ec] dark:border-slate-800 p-4 rounded-xl text-xs">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-bold text-[#14213d]">{item.topic}</span>
+                        <span className="font-bold text-[#14213d] dark:text-white">{item.topic}</span>
                         <div className="flex items-center gap-2">
-                          <span className="font-black text-[#0f766e]">{item.accuracy}%</span>
-                          <span className="text-[10px] text-slate-500 font-medium">({item.status})</span>
+                          <span className="font-black text-[#0f766e] dark:text-[#2dd4bf]">{item.accuracy}%</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">({item.status})</span>
                         </div>
                       </div>
-                      <ProgressBar progress={item.accuracy} color={item.accuracy >= 70 ? 'emerald' : 'amber'} />
+                      <ProgressBar progress={item.accuracy} color={item.accuracy >= 75 ? 'emerald' : item.accuracy >= 60 ? 'amber' : 'amber'} />
                     </div>
                   ))}
                 </div>
@@ -321,14 +346,14 @@ function DashboardContent() {
 
           {/* TAB 2: MY TEST SERIES & PASSES */}
           {activeTab === 'TEST_SERIES' && (
-            <Card>
+            <Card className="border-[#dce3ec] dark:border-slate-800">
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-xl font-black text-[#14213d]">Available GATE Test Series</h2>
-                  <p className="text-xs text-[#526079]">Practice official GATE CBT paper mocks.</p>
+                  <h2 className="text-xl font-black text-[#14213d] dark:text-white">Available GATE Test Series</h2>
+                  <p className="text-xs text-[#526079] dark:text-slate-400">Practice realistic GATE CBT paper mocks.</p>
                 </div>
-                <Link href="/catalog" className="text-xs font-bold text-[#0f766e] hover:underline">
-                  View Full Catalogue →
+                <Link href="/catalog" className="text-xs font-bold text-[#0f766e] dark:text-[#2dd4bf] hover:underline">
+                  View Full Storefront →
                 </Link>
               </div>
 
@@ -337,7 +362,7 @@ function DashboardContent() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-[#526079] uppercase tracking-wider font-bold">
+                    <thead className="bg-slate-50 dark:bg-slate-900 text-[#526079] dark:text-slate-400 uppercase tracking-wider font-bold">
                       <tr>
                         <th className="p-3.5">Test Paper Title</th>
                         <th className="p-3.5">Branch</th>
@@ -346,15 +371,15 @@ function DashboardContent() {
                         <th className="p-3.5">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#dce3ec]">
+                    <tbody className="divide-y divide-[#dce3ec] dark:divide-slate-800">
                       {papers.slice(0, 10).map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-3.5 font-bold text-[#14213d]">{p.title}</td>
-                          <td className="p-3.5 font-bold text-[#0f766e]">{p.branch}</td>
-                          <td className="p-3.5 font-bold">{p.total_questions} Qs</td>
+                        <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                          <td className="p-3.5 font-bold text-[#14213d] dark:text-white">{p.title}</td>
+                          <td className="p-3.5 font-bold text-[#0f766e] dark:text-[#2dd4bf]">{p.branch}</td>
+                          <td className="p-3.5 font-bold text-slate-700 dark:text-slate-300">{p.total_questions} Qs</td>
                           <td className="p-3.5 text-[#526079]">
                             <Badge variant="emerald" size="sm">
-                              IIT CBT Standard
+                              CBT Standard
                             </Badge>
                           </td>
                           <td className="p-3.5">
@@ -375,16 +400,16 @@ function DashboardContent() {
 
           {/* TAB 3: TEST RESULTS & SCORECARDS */}
           {activeTab === 'TEST_RESULTS' && (
-            <Card>
+            <Card className="border-[#dce3ec] dark:border-slate-800">
               <div className="mb-6">
-                <h2 className="text-xl font-black text-[#14213d]">Test Attempt History & Scorecards</h2>
-                <p className="text-xs text-[#526079]">Review past attempt scores and solutions.</p>
+                <h2 className="text-xl font-black text-[#14213d] dark:text-white">Test Attempt History & Scorecards</h2>
+                <p className="text-xs text-[#526079] dark:text-slate-400">Review past attempt scores and KaTeX solutions.</p>
               </div>
 
               {loadingData ? (
                 <div className="p-8 text-center text-xs text-slate-400">Loading attempt records...</div>
               ) : attempts.length === 0 ? (
-                <div className="bg-slate-50 border border-[#dce3ec] rounded-2xl p-8 text-center text-slate-500 text-xs">
+                <div className="bg-slate-50 dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs">
                   No completed test attempts recorded yet.
                   <div className="mt-3">
                     <Link href="/exam">
@@ -397,7 +422,7 @@ function DashboardContent() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-[#526079] uppercase tracking-wider font-bold">
+                    <thead className="bg-slate-50 dark:bg-slate-900 text-[#526079] dark:text-slate-400 uppercase tracking-wider font-bold">
                       <tr>
                         <th className="p-3.5">Paper Title</th>
                         <th className="p-3.5">Net Score</th>
@@ -406,15 +431,15 @@ function DashboardContent() {
                         <th className="p-3.5">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#dce3ec]">
+                    <tbody className="divide-y divide-[#dce3ec] dark:divide-slate-800">
                       {attempts.map((att, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-3.5 font-bold text-[#14213d]">{att.paper_title || 'GATE CBT Test'}</td>
-                          <td className="p-3.5 font-black text-[#0f766e]">
+                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                          <td className="p-3.5 font-bold text-[#14213d] dark:text-white">{att.paper_title || 'GATE CBT Test'}</td>
+                          <td className="p-3.5 font-black text-[#0f766e] dark:text-[#2dd4bf]">
                             {att.score} <span className="text-slate-400 font-normal">/ {att.max_score}</span>
                           </td>
-                          <td className="p-3.5 font-bold text-emerald-700">{att.accuracy}%</td>
-                          <td className="p-3.5 font-mono text-slate-600">
+                          <td className="p-3.5 font-bold text-emerald-700 dark:text-emerald-400">{att.accuracy}%</td>
+                          <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400">
                             {Math.round((att.time_taken_seconds || 0) / 60)} mins
                           </td>
                           <td className="p-3.5">
@@ -435,16 +460,16 @@ function DashboardContent() {
 
           {/* TAB 4: PAYMENTS & INVOICES */}
           {activeTab === 'PAYMENTS' && (
-            <Card>
+            <Card className="border-[#dce3ec] dark:border-slate-800">
               <div className="mb-6">
-                <h2 className="text-xl font-black text-[#14213d]">Payment Transactions & Invoices</h2>
-                <p className="text-xs text-[#526079]">Official payment receipts and Razorpay transactions.</p>
+                <h2 className="text-xl font-black text-[#14213d] dark:text-white">Payment Transactions & Receipts</h2>
+                <p className="text-xs text-[#526079] dark:text-slate-400">Official payment receipts and Razorpay transactions.</p>
               </div>
 
               {loadingData ? (
                 <div className="p-8 text-center text-xs text-slate-400">Loading payment records...</div>
               ) : orders.length === 0 ? (
-                <div className="bg-slate-50 border border-[#dce3ec] rounded-2xl p-8 text-center text-slate-500 text-xs">
+                <div className="bg-slate-50 dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs">
                   No active paid orders found.
                   <div className="mt-3">
                     <Link href="/catalog">
@@ -457,7 +482,7 @@ function DashboardContent() {
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 text-[#526079] uppercase tracking-wider font-bold">
+                    <thead className="bg-slate-50 dark:bg-slate-900 text-[#526079] dark:text-slate-400 uppercase tracking-wider font-bold">
                       <tr>
                         <th className="p-3.5">Product Title</th>
                         <th className="p-3.5">Order Ref</th>
@@ -466,13 +491,13 @@ function DashboardContent() {
                         <th className="p-3.5">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#dce3ec]">
+                    <tbody className="divide-y divide-[#dce3ec] dark:divide-slate-800">
                       {orders.map((ord, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                          <td className="p-3.5 font-bold text-[#14213d]">{ord.product_title}</td>
-                          <td className="p-3.5 font-mono text-slate-600">{ord.order_id}</td>
-                          <td className="p-3.5 font-mono text-[#0f766e]">{ord.razorpay_payment_id || 'N/A'}</td>
-                          <td className="p-3.5 font-bold text-[#14213d]">₹{ord.amount}</td>
+                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                          <td className="p-3.5 font-bold text-[#14213d] dark:text-white">{ord.product_title}</td>
+                          <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{ord.order_id}</td>
+                          <td className="p-3.5 font-mono text-[#0f766e] dark:text-[#2dd4bf]">{ord.razorpay_payment_id || 'N/A'}</td>
+                          <td className="p-3.5 font-bold text-[#14213d] dark:text-white">₹{ord.amount}</td>
                           <td className="p-3.5">
                             <Badge variant="emerald">{ord.status || 'GRANTED'}</Badge>
                           </td>
@@ -487,9 +512,9 @@ function DashboardContent() {
 
           {/* TAB 5: ACCOUNT SETTINGS */}
           {activeTab === 'SETTINGS' && (
-            <Card className="max-w-xl">
-              <h2 className="text-xl font-black text-[#14213d] mb-1">Candidate Profile & Settings</h2>
-              <p className="text-xs text-[#526079] mb-6">Manage candidate details and study preferences.</p>
+            <Card className="max-w-xl border-[#dce3ec] dark:border-slate-800">
+              <h2 className="text-xl font-black text-[#14213d] dark:text-white mb-1">Candidate Profile & Settings</h2>
+              <p className="text-xs text-[#526079] dark:text-slate-400 mb-6">Manage candidate details and study preferences.</p>
 
               {profileSavedNotice && (
                 <div className="bg-emerald-100 text-emerald-800 text-xs font-bold p-3 rounded-xl mb-4">
@@ -499,22 +524,22 @@ function DashboardContent() {
 
               <div className="space-y-4 text-xs">
                 <div>
-                  <label className="block font-bold text-[#14213d] mb-1">Candidate Name</label>
+                  <label className="block font-bold text-[#14213d] dark:text-white mb-1">Candidate Name</label>
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Candidate Name"
-                    className="w-full border border-[#dce3ec] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e]"
+                    className="w-full border border-[#dce3ec] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#14213d] dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e]"
                   />
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#14213d] mb-1">Target Engineering Stream</label>
+                  <label className="block font-bold text-[#14213d] dark:text-white mb-1">Target Engineering Stream</label>
                   <select
                     value={targetBranch}
                     onChange={(e) => setTargetBranch(e.target.value)}
-                    className="w-full border border-[#dce3ec] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e] bg-white"
+                    className="w-full border border-[#dce3ec] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#14213d] dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e]"
                   >
                     <option>Computer Science Engineering (CS)</option>
                     <option>Data Science & AI (DA)</option>
@@ -526,15 +551,14 @@ function DashboardContent() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#14213d] mb-1">Target Exam Year</label>
+                  <label className="block font-bold text-[#14213d] dark:text-white mb-1">Target Exam Year</label>
                   <select
                     value={targetYear}
                     onChange={(e) => setTargetYear(e.target.value)}
-                    className="w-full border border-[#dce3ec] rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e] bg-white"
+                    className="w-full border border-[#dce3ec] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#14213d] dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#0f766e]"
                   >
-                    <option>GATE 2025</option>
-                    <option>GATE 2026</option>
                     <option>GATE 2027</option>
+                    <option>GATE 2028</option>
                   </select>
                 </div>
 
@@ -554,9 +578,41 @@ function DashboardContent() {
   );
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] flex flex-col">
+      <div className="bg-[#14213d] text-white py-6 px-6">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-700 animate-pulse"></div>
+            <div className="space-y-2">
+              <div className="w-32 h-4 bg-slate-700 rounded animate-pulse"></div>
+              <div className="w-48 h-6 bg-slate-700 rounded animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <aside className="lg:col-span-3">
+          <div className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-4 rounded-2xl h-64 animate-pulse"></div>
+        </aside>
+        <main className="lg:col-span-9 space-y-6">
+          <div className="bg-slate-900 rounded-3xl p-6 h-44 animate-pulse"></div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-4 rounded-2xl h-24 animate-pulse"></div>
+            ))}
+          </div>
+        </main>
+      </div>
+      <Footer />
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xs">Loading learner dashboard...</div>}>
+    <Suspense fallback={<DashboardSkeleton />}>
       <DashboardContent />
     </Suspense>
   );

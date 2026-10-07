@@ -87,15 +87,12 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col leading-tight">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-black text-lg text-[#14213d] tracking-tight">
-                    GATE <span className="text-[#0f766e]">Matrix</span>
-                  </span>
-                  <span className="bg-[#e7f4f0] text-[#0f766e] text-[9px] font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase">
-                    PRO
+                  <span className="font-black text-lg text-[#14213d] dark:text-white tracking-tight">
+                    GATE <span className="text-[#0f766e] dark:text-[#2dd4bf]">Matrix</span>
                   </span>
                 </div>
-                <span className="text-[10px] text-[#526079] font-bold tracking-wider uppercase">
-                  Exam & Analytics Studio
+                <span className="text-[10px] text-[#526079] dark:text-slate-400 font-semibold tracking-wide hidden sm:block">
+                  GATE Test Series & Performance Analytics
                 </span>
               </div>
             </Link>

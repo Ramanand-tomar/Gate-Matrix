@@ -761,10 +761,46 @@ function CatalogContent() {
   );
 }
 
+function CatalogSkeleton() {
+  return (
+    <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1">
+      <div className="mb-8 space-y-2">
+        <div className="w-48 h-4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+        <div className="w-96 h-8 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse"></div>
+        <div className="w-full max-w-2xl h-4 bg-slate-200 dark:bg-slate-800 rounded animate-pulse"></div>
+      </div>
+      <div className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-4 rounded-2xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+        <div className="flex gap-2 overflow-x-auto w-full md:w-auto">
+          {['CS', 'DA', 'EE', 'EC', 'ME', 'CE'].map((b) => (
+            <div key={b} className="w-20 h-9 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse shrink-0"></div>
+          ))}
+        </div>
+        <div className="w-full md:w-72 h-9 bg-slate-200 dark:bg-slate-800 rounded-xl animate-pulse"></div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-2xl p-6 h-56 animate-pulse space-y-4">
+            <div className="flex justify-between">
+              <div className="w-20 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+              <div className="w-16 h-5 bg-slate-200 dark:bg-slate-800 rounded"></div>
+            </div>
+            <div className="w-3/4 h-6 bg-slate-200 dark:bg-slate-800 rounded"></div>
+            <div className="w-1/2 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <div className="w-24 h-4 bg-slate-200 dark:bg-slate-800 rounded"></div>
+              <div className="w-28 h-8 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
+
 export default function CatalogPage() {
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col">
-      <Suspense fallback={<div className="p-8 text-center text-xs">Loading catalog...</div>}>
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] flex flex-col transition-colors">
+      <Suspense fallback={<CatalogSkeleton />}>
         <CatalogContent />
       </Suspense>
       <Footer />

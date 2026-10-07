@@ -264,7 +264,7 @@ export default function Home() {
           <div className="lg:col-span-7 space-y-6 text-left">
             <div className="inline-flex items-center gap-2.5 bg-[#0f766e]/25 text-[#8be0ce] border border-[#0f766e]/50 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-inner">
               <Sparkles className="w-4 h-4 text-[#8be0ce] animate-pulse" />
-              <span>Official IIT GATE CBT Standard Engine</span>
+              <span>Realistic GATE CBT Practice Engine</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]">
@@ -317,7 +317,7 @@ export default function Home() {
                 <div className="flex items-center gap-2.5">
                   <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></div>
                   <div>
-                    <span className="font-extrabold text-white block">GATE 2025 Mock Simulator</span>
+                    <span className="font-extrabold text-white block">GATE 2027 Mock Simulator</span>
                     <span className="text-[10px] text-gray-400">CS & DA Stream Full Test #04</span>
                   </div>
                 </div>
@@ -420,7 +420,7 @@ export default function Home() {
           </div>
           <div className="p-3">
             <div className="text-3xl font-black text-[#14213d] dark:text-white tracking-tight">100%</div>
-            <div className="text-xs text-[#526079] dark:text-slate-400 font-extrabold uppercase tracking-wider mt-1">Official IIT CBT Interface</div>
+            <div className="text-xs text-[#526079] dark:text-slate-400 font-extrabold uppercase tracking-wider mt-1">Realistic GATE CBT Interface</div>
           </div>
           <div className="col-span-2 md:col-span-1 p-3">
             <div className="text-3xl font-black text-[#0f766e] dark:text-[#2dd4bf] tracking-tight">Instant</div>
@@ -437,7 +437,7 @@ export default function Home() {
               Engineering Disciplines
             </span>
             <h2 className="text-3xl sm:text-4xl font-black text-[#14213d] dark:text-white tracking-tight">
-              Select Your GATE 2025/2026 Branch
+              Select Your GATE 2027 Branch
             </h2>
           </div>
           <Link href="/catalog" className="text-xs font-extrabold text-[#0f766e] dark:text-[#2dd4bf] hover:underline flex items-center gap-1.5">
@@ -501,7 +501,7 @@ export default function Home() {
               100% Exam Fidelity
             </span>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
-              Engineered to Match the Official IIT GATE CBT Interface.
+              Engineered for Realistic GATE CBT Exam Practice.
             </h2>
             <p className="text-gray-300 text-xs sm:text-sm leading-relaxed">
               Don’t let virtual calculator mistakes or unknown exam UI layouts ruin your years of preparation. GATE Matrix provides exact CBT interface behavior matching TCS iON standards.
@@ -844,7 +844,7 @@ export default function Home() {
       <section className="bg-gradient-to-r from-[#0a1128] via-[#14213d] to-[#0f766e] text-white py-16 px-4 sm:px-6 text-center relative overflow-hidden">
         <div className="max-w-3xl mx-auto space-y-6 relative z-10">
           <Badge variant="emerald" className="uppercase tracking-widest font-extrabold text-[10px]">
-            GATE 2025 / 2026 Preparation Pass
+            GATE 2027 Preparation Pass
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
             Ready to Elevate Your All India GATE Rank?
