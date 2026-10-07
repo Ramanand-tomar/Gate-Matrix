@@ -286,7 +286,7 @@ export default function Home() {
                 </Button>
               </Link>
               <Link href="/exam">
-                <Button variant="secondary" size="lg" className="border-white/20 text-white hover:bg-white/10 font-extrabold" rightIcon={<Play className="w-4 h-4 text-[#8be0ce]" />}>
+                <Button variant="outline" size="lg" className="border-white/30 bg-white/10 hover:bg-white/20 text-white font-extrabold shadow-sm" rightIcon={<Play className="w-4 h-4 text-[#8be0ce]" />}>
                   Take Free CBT Mock Test
                 </Button>
               </Link>
