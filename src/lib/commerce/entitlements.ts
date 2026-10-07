@@ -111,16 +111,57 @@ export function isPaperFree(paper: { title?: string; paper_id?: string; is_free?
  * Helper: Evaluates whether candidate has an active one-time Branch Pass for a given branch.
  */
 export function hasUserBranchAccess(orders: any[], branchCode: string): boolean {
-  if (!orders || !Array.isArray(orders)) return false;
+  if (!orders || !Array.isArray(orders) || !branchCode) return false;
+  const upperBranch = branchCode.toUpperCase();
   const targetPassId = `${branchCode.toLowerCase()}_pass`;
 
   return orders.some((ord) => {
     const isGranted = ord.status === 'GRANTED' || ord.status === 'CAPTURED';
     if (!isGranted) return false;
 
+    const ordProdId = (ord.product_id || '').toLowerCase();
+    const ordTitle = (ord.product_title || '').toUpperCase();
+    const ordBranch = (ord.branch_code || '').toUpperCase();
+
     const matchesProd =
-      ord.product_id === targetPassId ||
-      (ord.product_title && ord.product_title.toUpperCase().includes(branchCode.toUpperCase()));
+      ordProdId === targetPassId ||
+      ordBranch === upperBranch ||
+      ordTitle.includes(`${upperBranch} BRANCH`) ||
+      ordTitle.includes(`${upperBranch} ALL-ACCESS`) ||
+      ordTitle.includes(`${upperBranch} PASS`);
+
     return matchesProd;
   });
 }
+
+/**
+ * Returns array of branch codes for which user owns active passes.
+ */
+export function getUserPurchasedBranches(orders: any[]): string[] {
+  const allBranches = ['CS', 'DA', 'EE', 'EC', 'ME', 'CE'];
+  return allBranches.filter((b) => hasUserBranchAccess(orders, b));
+}
+
+/**
+ * Helper: Evaluates whether a user can access a specific paper.
+ * Free papers are accessible as samples.
+ * Paid papers require an active Branch Pass for the paper's branch.
+ */
+export function canUserAccessPaper(
+  orders: any[],
+  paper: { branch?: string; paper_id?: string; title?: string; is_free?: boolean },
+  index: number = 0
+): { hasAccess: boolean; reason: 'FREE_SAMPLE' | 'BRANCH_PASS_ACTIVE' | 'BRANCH_PASS_REQUIRED'; requiredBranch: string } {
+  const paperBranch = (paper?.branch || 'CS').toUpperCase();
+
+  if (isPaperFree(paper, index)) {
+    return { hasAccess: true, reason: 'FREE_SAMPLE', requiredBranch: paperBranch };
+  }
+
+  if (hasUserBranchAccess(orders, paperBranch)) {
+    return { hasAccess: true, reason: 'BRANCH_PASS_ACTIVE', requiredBranch: paperBranch };
+  }
+
+  return { hasAccess: false, reason: 'BRANCH_PASS_REQUIRED', requiredBranch: paperBranch };
+}
+

@@ -26,7 +26,10 @@ import {
   HelpCircle,
   Sparkles,
   Award,
+  Lock,
 } from 'lucide-react';
+import { canUserAccessPaper, getUserPurchasedBranches } from '@/lib/commerce/entitlements';
+import { CheckoutModal } from '@/components/commerce/CheckoutModal';
 
 interface QuestionItem {
   qnum: number;
@@ -101,8 +104,12 @@ function ExamEngineContent() {
     },
   ];
 
-  // Engine state flow: LOADING -> INSTRUCTIONS -> EXAM -> SUBMITTED
-  const [phase, setPhase] = useState<'LOADING' | 'INSTRUCTIONS' | 'EXAM' | 'SUBMITTED'>('LOADING');
+  // Engine state flow: LOADING -> INSTRUCTIONS -> EXAM -> SUBMITTED -> LOCKED
+  const [phase, setPhase] = useState<'LOADING' | 'INSTRUCTIONS' | 'EXAM' | 'SUBMITTED' | 'LOCKED'>('LOADING');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [lockInfo, setLockInfo] = useState<{ requiredBranch: string; paperTitle: string } | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
   const [loadingProgress, setLoadingProgress] = useState(15);
   const [declarationChecked, setDeclarationChecked] = useState(false);
 
@@ -147,6 +154,20 @@ function ExamEngineContent() {
       }, 200);
 
       try {
+        let userOrders: any[] = [];
+        try {
+          const saved = localStorage.getItem('gate_user_orders');
+          if (saved) userOrders = JSON.parse(saved);
+          if (user) {
+            const ordRes = await fetch(`/api/orders?uid=${user.uid}`);
+            const ordData = await ordRes.json();
+            if (ordData.success && ordData.orders) {
+              userOrders = [...ordData.orders, ...userOrders];
+            }
+          }
+        } catch (e) {}
+        setOrders(userOrders);
+
         let targetId = paperId;
         if (!targetId) {
           const listRes = await fetch('/api/papers');
@@ -160,8 +181,20 @@ function ExamEngineContent() {
           const res = await fetch(`/api/papers/${targetId}`);
           const data = await res.json();
           if (data.success && data.paper && data.paper.questions && data.paper.questions.length > 0) {
-            setPaperTitle(data.paper.title);
-            if (data.paper.branch) setPaperBranch(data.paper.branch);
+            const paper = data.paper;
+            setPaperTitle(paper.title);
+            if (paper.branch) setPaperBranch(paper.branch);
+
+            // Enforce branch-based entitlement access
+            const access = canUserAccessPaper(userOrders, paper);
+            if (!access.hasAccess) {
+              setLockInfo({
+                requiredBranch: access.requiredBranch,
+                paperTitle: paper.title,
+              });
+              setPhase('LOCKED');
+              return;
+            }
 
             const mappedQs: QuestionItem[] = data.paper.questions.map((q: any, idx: number) => {
               let optionsArr: string[] | undefined = undefined;
@@ -887,6 +920,82 @@ function ExamEngineContent() {
             </div>
           </Card>
         </div>
+      )}
+
+      {/* ----------------------------------------------------
+          2.5 BRANCH TEST SERIES LOCKED INTERCEPTOR VIEW
+         ---------------------------------------------------- */}
+      {phase === 'LOCKED' && lockInfo && (
+        <div className="max-w-3xl mx-auto px-4 py-16 animate-fade-in">
+          <Card className="p-8 text-center space-y-6 relative overflow-hidden bg-slate-900 border-amber-500/40 text-slate-100 shadow-2xl">
+            <div className="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto border border-amber-500/30">
+              <Lock className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <Badge variant="cyan" className="font-mono text-xs">
+                  {lockInfo.requiredBranch} TEST SERIES LOCKED
+                </Badge>
+                <Badge variant="amber" className="text-xs">
+                  BRANCH ACCESS REQUIRED
+                </Badge>
+              </div>
+              <h2 className="text-2xl font-black text-white">{lockInfo.paperTitle}</h2>
+              <p className="text-slate-300 text-sm max-w-lg mx-auto leading-relaxed">
+                This test paper is part of the <strong className="text-amber-300 font-extrabold">{lockInfo.requiredBranch} Branch Test Series</strong>. To attempt this test paper, please unlock the {lockInfo.requiredBranch} Branch Pass.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 text-left space-y-2 max-w-md mx-auto text-xs">
+              <div className="flex justify-between items-center text-slate-300 font-medium">
+                <span>Your Active Branch Passes:</span>
+                {getUserPurchasedBranches(orders).length > 0 ? (
+                  <div className="flex gap-1.5 flex-wrap">
+                    {getUserPurchasedBranches(orders).map((b) => (
+                      <Badge key={b} variant="emerald" className="font-mono text-[10px]">
+                        {b} ACTIVE
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-slate-400 italic">No Active Passes</span>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/catalog">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                  Return to Test Catalog
+                </Button>
+              </Link>
+              <Button
+                variant="emerald"
+                size="lg"
+                className="w-full sm:w-auto font-black shadow-lg shadow-emerald-950/40"
+                onClick={() => setCheckoutOpen(true)}
+              >
+                Unlock {lockInfo.requiredBranch} Test Series (₹1,499)
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {checkoutOpen && lockInfo && (
+        <CheckoutModal
+          isOpen={checkoutOpen}
+          onClose={() => setCheckoutOpen(false)}
+          branchCode={lockInfo.requiredBranch}
+          user={user}
+          orders={orders}
+          onSuccess={(newOrd) => {
+            setOrders((prev) => [...prev, newOrd]);
+            setPhase('INSTRUCTIONS');
+            setCheckoutOpen(false);
+          }}
+        />
       )}
 
       {/* ----------------------------------------------------

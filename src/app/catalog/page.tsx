@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { isPaperFree, hasUserBranchAccess } from '@/lib/commerce/entitlements';
+import { CheckoutModal } from '@/components/commerce/CheckoutModal';
 import {
   BookOpen,
   Search,
@@ -687,75 +688,17 @@ function CatalogContent() {
 
       {/* Secure Razorpay Payment Checkout Modal */}
       {checkoutModal && (
-        <div className="fixed inset-0 bg-[#14213d]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl p-7 max-w-md w-full border border-[#dce3ec] shadow-2xl animate-fadeIn">
-            {!purchaseSuccess ? (
-              <>
-                <div className="flex justify-between items-center mb-4">
-                  <Badge variant="emerald" size="sm">
-                    <ShieldCheck className="w-3.5 h-3.5 inline mr-1" />
-                    Secure One-Time Checkout
-                  </Badge>
-                  <button
-                    onClick={() => setCheckoutModal(null)}
-                    className="text-slate-400 hover:text-slate-600 p-1"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <h2 className="text-xl font-bold text-[#14213d] mb-1">{checkoutModal.title}</h2>
-                <p className="text-xs text-[#526079] mb-6">
-                  Branch: <strong>{checkoutModal.branch}</strong> · 365-day access to all tests & series.
-                </p>
-
-                <div className="bg-slate-50 border border-[#dce3ec] p-5 rounded-2xl mb-6 space-y-3 text-xs">
-                  <div className="flex justify-between">
-                    <span className="text-[#526079]">One-Time Pass Price</span>
-                    <span className="font-bold text-[#14213d]">₹{checkoutModal.price}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-500">
-                    <span>GST & Platform Fee</span>
-                    <span>₹0 (Included)</span>
-                  </div>
-                  <hr className="border-[#dce3ec]" />
-                  <div className="flex justify-between text-sm font-black text-[#14213d]">
-                    <span>Total Payable</span>
-                    <span className="text-[#0f766e]">₹{checkoutModal.price}</span>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <Button variant="secondary" onClick={() => setCheckoutModal(null)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="emerald"
-                    onClick={executeCheckoutOrder}
-                    isLoading={purchasing}
-                  >
-                    Pay ₹{checkoutModal.price}
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <div className="w-14 h-14 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h2 className="text-xl font-black text-[#14213d] mb-1">Pass Activated!</h2>
-                <p className="text-xs text-[#526079] mb-4">
-                  Order Reference: <strong className="text-[#14213d]">{purchaseSuccess.order_id}</strong>
-                </p>
-                <div className="bg-[#e7f4f0] p-4 rounded-2xl text-xs text-[#0f766e] font-bold mb-6">
-                  All tests in GATE {selectedBranch} are now freely accessible for 365 days.
-                </div>
-                <Button variant="primary" className="w-full" onClick={() => setCheckoutModal(null)}>
-                  Start Attempting Tests
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+        <CheckoutModal
+          isOpen={Boolean(checkoutModal)}
+          onClose={() => setCheckoutModal(null)}
+          branchCode={checkoutModal.branch}
+          user={user}
+          orders={orders}
+          onSuccess={(grantedOrd) => {
+            setOrders((prev) => [...prev, grantedOrd]);
+            setCheckoutModal(null);
+          }}
+        />
       )}
     </main>
   );

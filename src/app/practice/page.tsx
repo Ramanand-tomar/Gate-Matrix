@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { isPaperFree, hasUserBranchAccess } from '@/lib/commerce/entitlements';
+import { CheckoutModal } from '@/components/commerce/CheckoutModal';
 import {
   Sparkles,
   BookOpen,
@@ -82,6 +83,7 @@ export default function PracticePage() {
   const [papers, setPapers] = useState<PaperDoc[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [attempts, setAttempts] = useState<AttemptRecord[]>([]);
+  const [checkoutBranch, setCheckoutBranch] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -255,6 +257,34 @@ export default function PracticePage() {
             </button>
           ))}
         </div>
+
+        {/* Branch Lock Alert Banner */}
+        {!userHasAccessToBranch && (
+          <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/40 shrink-0">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-white">
+                  GATE {selectedBranch} Practice Pass Required
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  You are viewing practice papers for <strong className="text-amber-300">{selectedBranch}</strong>. Unlock the {selectedBranch} Branch Pass for ₹1,499 to access all questions & detailed solutions.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="emerald"
+              size="md"
+              className="shrink-0 font-extrabold shadow-md shadow-emerald-950/30"
+              onClick={() => setCheckoutBranch(selectedBranch)}
+              leftIcon={<Lock className="w-4 h-4" />}
+            >
+              Unlock {selectedBranch} Pass (₹1,499)
+            </Button>
+          </div>
+        )}
 
         {/* Test Format Category Selector */}
         <div className="mb-8 bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-3 rounded-2xl flex flex-wrap gap-2 items-center shadow-xs">
@@ -431,12 +461,17 @@ export default function PracticePage() {
                         </>
                       ) : (
                         <>
-                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Branch Pass Required</span>
-                          <Link href={`/catalog?branch=${selectedBranch}`}>
-                            <Button variant="primary" size="sm" leftIcon={<Lock className="w-3.5 h-3.5" />}>
-                              Get Pass
-                            </Button>
-                          </Link>
+                          <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
+                            <Lock className="w-3.5 h-3.5" /> Pass Required
+                          </span>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => setCheckoutBranch(paper.branch || selectedBranch)}
+                            leftIcon={<Lock className="w-3.5 h-3.5" />}
+                          >
+                            Unlock Pass
+                          </Button>
                         </>
                       )}
                     </div>
@@ -503,6 +538,21 @@ export default function PracticePage() {
           </>
         )}
       </main>
+
+      {checkoutBranch && (
+        <CheckoutModal
+          isOpen={Boolean(checkoutBranch)}
+          onClose={() => setCheckoutBranch(null)}
+          branchCode={checkoutBranch}
+          user={user}
+          orders={orders}
+          onSuccess={(newOrd) => {
+            setOrders((prev) => [...prev, newOrd]);
+            setCheckoutBranch(null);
+          }}
+        />
+      )}
+
       <Footer />
     </div>
   );
