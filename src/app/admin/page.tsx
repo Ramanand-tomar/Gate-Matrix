@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { hasRolePermission, UserRole } from '@/lib/rbac';
@@ -34,7 +34,7 @@ interface DraftRelease {
 
 type AdminTab = 'OVERVIEW' | 'CONTENT' | 'SERIES' | 'USERS' | 'ORDERS' | 'ANALYTICS';
 
-export default function AdminPage() {
+function AdminContent() {
   const { userProfile } = useAuth();
   const currentRole: UserRole = userProfile?.role || 'LEARNER';
   const isAuthorized = hasRolePermission(currentRole, 'EDITOR');
@@ -302,5 +302,24 @@ export default function AdminPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+function AdminSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] flex flex-col">
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1">
+        <div className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-8 rounded-3xl h-64 animate-pulse"></div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<AdminSkeleton />}>
+      <AdminContent />
+    </Suspense>
   );
 }
