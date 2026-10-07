@@ -8,11 +8,11 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "GATE 2025/2026 Test Series & Topic Analytics — GATEPrep Studio",
-  description: "Master GATE Exam for Computer Science (CS), Data Science & AI (DA), Electrical (EE), Electronics (EC), Mechanical (ME), and Civil (CE). Practice official CBT pattern mocks, topic accuracy analytics, step-by-step KaTeX solutions, and subject bundles.",
+  title: "GATE 2027 Test Series & Performance Analytics — GATE Matrix",
+  description: "Master GATE Exam for Computer Science (CS), Data Science & AI (DA), Electrical (EE), Electronics (EC), Mechanical (ME), and Civil (CE). Practice CBT pattern mocks, topic accuracy analytics, step-by-step KaTeX solutions, and subject bundles.",
   keywords: [
-    "GATE 2025 Test Series",
-    "GATE 2026 Preparation",
+    "GATE 2027 Test Series",
+    "GATE 2028 Preparation",
     "GATE Computer Science Mock Test",
     "GATE Data Science AI Practice",
     "GATE Electrical Engineering Test Series",
@@ -22,23 +22,23 @@ export const metadata: Metadata = {
     "GATE Topic Wise Tests",
     "GATE CBT Online Exam Engine",
   ],
-  authors: [{ name: "GATEPrep Studio Team" }],
+  authors: [{ name: "GATE Matrix Team" }],
   metadataBase: new URL("https://gate-matrix.vercel.app"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "GATEPrep Studio — Official GATE Test Series & Topic Analytics",
+    title: "GATE Matrix — GATE Test Series & Performance Analytics",
     description: "Prepare for GATE with real CBT exam engine, topic-level weak area analysis, and past paper test series across all 6 major engineering streams.",
     url: "https://gate-matrix.vercel.app",
-    siteName: "GATEPrep Studio",
+    siteName: "GATE Matrix",
     locale: "en_IN",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "GATEPrep Studio — Official GATE Test Series",
-    description: "Practice 1,061+ official GATE test papers and topic analytics.",
+    title: "GATE Matrix — GATE Test Series",
+    description: "Practice 1,061+ GATE test papers and topic analytics.",
   },
   robots: {
     index: true,
