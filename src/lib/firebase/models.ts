@@ -106,7 +106,7 @@ export async function getUserProfile(uid: string): Promise<UserModel | null> {
   }
   try {
     const keyParam = API_KEY ? `?key=${API_KEY}` : '';
-    const res = await fetch(`${BASE_URL}/users/${uid}${keyParam}`);
+    const res = await fetch(`${BASE_URL}/users/${uid}${keyParam}`, { signal: AbortSignal.timeout(1500) });
     if (res.ok) {
       const data = await res.json();
       const user = parseFirestoreFields(data.fields) as UserModel;
@@ -277,32 +277,34 @@ export async function getPapers(
 ) {
   ensureLocalDatasetLoaded();
 
-  try {
-    const keyParam = API_KEY ? `&key=${API_KEY}` : '';
-    const res = await fetch(`${BASE_URL}/papers?pageSize=300${keyParam}`);
-    if (res.ok) {
-      const data = await res.json();
-      const docs = data.documents || [];
+  if (memoryPapers.size === 0) {
+    try {
+      const keyParam = API_KEY ? `&key=${API_KEY}` : '';
+      const res = await fetch(`${BASE_URL}/papers?pageSize=300${keyParam}`, { signal: AbortSignal.timeout(1500) });
+      if (res.ok) {
+        const data = await res.json();
+        const docs = data.documents || [];
 
-      docs.forEach((doc: any) => {
-        const docId = doc.name.split('/').pop();
-        const parsed = parseFirestoreFields(doc.fields);
-        const normBranch = normalizeBranchCode(parsed.branch || 'GENERAL');
+        docs.forEach((doc: any) => {
+          const docId = doc.name.split('/').pop();
+          const parsed = parseFirestoreFields(doc.fields);
+          const normBranch = normalizeBranchCode(parsed.branch || 'GENERAL');
 
-        const pObj: PaperModel = {
-          paper_id: parsed.paper_id || docId,
-          title: parsed.title || docId,
-          branch: normBranch,
-          provider: parsed.provider || 'GATEPrep',
-          series: parsed.series || 'Mock Series',
-          total_questions: parsed.total_questions || (parsed.questions ? parsed.questions.length : 0),
-          questions: parsed.questions || [],
-        };
-        memoryPapers.set(pObj.paper_id, pObj);
-      });
+          const pObj: PaperModel = {
+            paper_id: parsed.paper_id || docId,
+            title: parsed.title || docId,
+            branch: normBranch,
+            provider: parsed.provider || 'GATEPrep',
+            series: parsed.series || 'Mock Series',
+            total_questions: parsed.total_questions || (parsed.questions ? parsed.questions.length : 0),
+            questions: parsed.questions || [],
+          };
+          memoryPapers.set(pObj.paper_id, pObj);
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching papers via REST:', err);
     }
-  } catch (err) {
-    console.error('Error fetching papers via REST:', err);
   }
 
   let list = Array.from(memoryPapers.values()).map((p) => ({
@@ -375,7 +377,7 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
 
   try {
     const keyParam = API_KEY ? `?key=${API_KEY}` : '';
-    const res = await fetch(`${BASE_URL}/papers/${paperId}${keyParam}`);
+    const res = await fetch(`${BASE_URL}/papers/${paperId}${keyParam}`, { signal: AbortSignal.timeout(1500) });
     if (res.ok) {
       const data = await res.json();
       const paper = parseFirestoreFields(data.fields) as PaperModel;
@@ -621,7 +623,7 @@ export async function getUserAttempts(uid: string): Promise<AttemptModel[]> {
 
   try {
     const keyParam = API_KEY ? `&key=${API_KEY}` : '';
-    const res = await fetch(`${BASE_URL}/attempts?pageSize=200${keyParam}`);
+    const res = await fetch(`${BASE_URL}/attempts?pageSize=200${keyParam}`, { signal: AbortSignal.timeout(1500) });
     if (res.ok) {
       const data = await res.json();
       const docs = data.documents || [];

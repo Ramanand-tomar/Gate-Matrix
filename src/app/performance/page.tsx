@@ -21,6 +21,7 @@ import {
   Play,
   Zap,
 } from 'lucide-react';
+import { fastFetchJson } from '@/lib/fastFetch';
 
 interface AttemptRecord {
   id?: string;
@@ -45,8 +46,7 @@ export default function PerformancePage() {
       setLoading(true);
       try {
         const uid = user ? user.uid : 'aspirant_learner_101';
-        const res = await fetch(`/api/attempts?uid=${uid}`);
-        const data = await res.json();
+        const data = await fastFetchJson(`/api/attempts?uid=${uid}`);
 
         let apiAttempts: AttemptRecord[] = data.success && data.attempts ? data.attempts : [];
 

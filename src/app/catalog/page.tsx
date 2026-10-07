@@ -30,6 +30,7 @@ import {
 
 import { matchesSubjectTopic, getPaperCategory, TestCategoryFilter } from '@/lib/catalog/filters';
 import { getSavedTestIds, toggleSaveTest } from '@/lib/savedTests';
+import { fastFetchJson } from '@/lib/fastFetch';
 
 interface PaperDoc {
   id: string;
@@ -132,15 +133,11 @@ function CatalogContent() {
       try {
         const uid = user ? user.uid : 'aspirant_learner_101';
 
-        const [paperRes, orderRes, attemptRes] = await Promise.all([
-          fetch(`/api/papers?branch=${selectedBranch}`),
-          fetch(`/api/orders?uid=${uid}`),
-          fetch(`/api/attempts?uid=${uid}`),
+        const [paperData, orderData, attemptData] = await Promise.all([
+          fastFetchJson(`/api/papers?branch=${selectedBranch}`),
+          fastFetchJson(`/api/orders?uid=${uid}`),
+          fastFetchJson(`/api/attempts?uid=${uid}`),
         ]);
-
-        const paperData = await paperRes.json();
-        const orderData = await orderRes.json();
-        const attemptData = await attemptRes.json();
 
         if (isMounted) {
           if (paperData.success && paperData.papers) setPapers(paperData.papers);

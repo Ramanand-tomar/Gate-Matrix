@@ -28,6 +28,7 @@ import {
 import { hasUserBranchAccess } from '@/lib/commerce/entitlements';
 import { CheckoutModal } from '@/components/commerce/CheckoutModal';
 import { getSavedTestIds, isTestSaved, toggleSaveTest } from '@/lib/savedTests';
+import { fastFetchJson } from '@/lib/fastFetch';
 
 interface PaperDoc {
   id: string;
@@ -92,15 +93,11 @@ export default function LibraryPage() {
       try {
         const uid = user ? user.uid : 'aspirant_learner_101';
 
-        const [paperRes, attemptRes, orderRes] = await Promise.all([
-          fetch('/api/papers'),
-          fetch(`/api/attempts?uid=${uid}`),
-          fetch(`/api/orders?uid=${uid}`),
+        const [paperData, attemptData, orderData] = await Promise.all([
+          fastFetchJson('/api/papers'),
+          fastFetchJson(`/api/attempts?uid=${uid}`),
+          fastFetchJson(`/api/orders?uid=${uid}`),
         ]);
-
-        const paperData = await paperRes.json();
-        const attemptData = await attemptRes.json();
-        const orderData = await orderRes.json();
 
         if (isMounted) {
           if (paperData.success && paperData.papers) setPapers(paperData.papers);
