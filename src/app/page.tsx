@@ -353,7 +353,7 @@ export default function Home() {
                   <span className="text-gray-400 font-medium">{cbtPreviewContent[activeTab].marks}</span>
                 </div>
 
-                <div className="text-xs text-gray-100 font-medium leading-relaxed pt-1 border-t border-white/10">
+                <div className="text-xs text-white font-medium leading-relaxed pt-1 border-t border-white/10 [&_*]:text-white">
                   <MathRenderer content={cbtPreviewContent[activeTab].question} />
                 </div>
 
@@ -365,8 +365,8 @@ export default function Home() {
                         key={idx}
                         className={`p-2.5 rounded-xl border text-xs flex items-center justify-between transition-all ${
                           idx === 0
-                            ? 'bg-[#0f766e]/20 border-[#0f766e] text-[#8be0ce] font-bold'
-                            : 'bg-slate-900/40 border-white/10 text-gray-300'
+                            ? 'bg-[#0f766e]/20 border-[#0f766e] text-[#8be0ce] font-bold [&_*]:text-[#8be0ce]'
+                            : 'bg-slate-900/40 border-white/10 text-slate-200 [&_*]:text-slate-200'
                         }`}
                       >
                         <MathRenderer content={opt} />
@@ -377,12 +377,12 @@ export default function Home() {
                 ) : (
                   <div className="pt-2 space-y-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-300 font-bold">Virtual Keypad Input:</span>
+                      <span className="text-xs text-slate-200 font-bold">Virtual Keypad Input:</span>
                       <div className="bg-slate-900 border border-[#0f766e] px-4 py-1.5 rounded-xl font-mono text-sm text-[#8be0ce] font-black tracking-wider">
                         5
                       </div>
                     </div>
-                    <div className="grid grid-cols-4 gap-1 max-w-[200px] text-[10px] font-bold text-gray-300">
+                    <div className="grid grid-cols-4 gap-1 max-w-[200px] text-[10px] font-bold text-slate-200">
                       {['7', '8', '9', 'C', '4', '5', '6', '←', '1', '2', '3', '.', '0', '-', 'Bk', 'OK'].map((k, i) => (
                         <div key={i} className="bg-white/10 hover:bg-[#0f766e] p-1.5 rounded text-center cursor-pointer">
                           {k}
@@ -393,7 +393,7 @@ export default function Home() {
                 )}
 
                 {/* Explanation Reveal */}
-                <div className="pt-3 border-t border-white/10 text-[11px] text-gray-300 bg-slate-900/50 p-3 rounded-xl">
+                <div className="pt-3 border-t border-white/10 text-[11px] text-slate-200 bg-slate-900/80 p-3 rounded-xl [&_*]:text-slate-200">
                   <span className="text-[#8be0ce] font-extrabold block mb-1">KaTeX Solution Explanation:</span>
                   <MathRenderer content={cbtPreviewContent[activeTab].explanation} />
                 </div>

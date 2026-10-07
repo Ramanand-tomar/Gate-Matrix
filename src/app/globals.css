@@ -55,11 +55,11 @@ body {
 .math-renderer {
   font-size: 0.95rem;
   line-height: 1.6;
-  color: var(--ink);
+  color: inherit;
 }
 
-.katex {
-  font-size: 1.05em !important;
+.katex, .katex-display, .katex * {
+  color: inherit;
 }
 
 /* =========================================================
