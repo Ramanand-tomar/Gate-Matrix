@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import { Card, StatCard } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { LeetCodeProfileCard } from '@/components/profile/LeetCodeProfileCard';
 import { ProgressBar } from '@/components/ui/EmptyState';
 import {
   TrendingUp,
@@ -266,6 +267,14 @@ function DashboardContent() {
           {/* TAB 1: REAL-TIME ANALYTICS & TODAY'S ACTION */}
           {activeTab === 'ANALYTICS' && (
             <div className="space-y-6">
+              {/* LEETCODE-STYLE CANDIDATE PROFILE & BRANCH MASTERY CARD */}
+              <LeetCodeProfileCard
+                user={user}
+                papers={papers}
+                attempts={attempts}
+                orders={orders}
+              />
+
               {/* 1. "WHAT SHOULD I DO TODAY?" CONTINUE PRACTICE HERO CARD */}
               <Card className="bg-gradient-to-br from-[#14213d] to-[#0f172a] text-white border-white/10 shadow-xl p-6">
                 <div className="flex flex-wrap justify-between items-center gap-4">
