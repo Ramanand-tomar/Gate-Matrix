@@ -647,7 +647,7 @@ export interface OrderModel {
   razorpay_order_id?: string;
   razorpay_payment_id?: string;
   razorpay_signature?: string;
-  status: 'PENDING' | 'GRANTED' | 'FAILED' | 'REFUNDED';
+  status: 'PENDING' | 'GRANTED' | 'CAPTURED' | 'FAILED' | 'REFUNDED';
   created_at: string;
 }
 
@@ -661,73 +661,7 @@ function ensureLocalOrdersLoaded() {
     }
   } catch (err) {}
 
-  // Seed default granted passes for seamless user entitlement access if no orders exist
-  if (memoryOrders.size === 0) {
-    const seedOrders: OrderModel[] = [
-      {
-        order_id: 'ord_default_cs_pass',
-        uid: 'aspirant_learner_101',
-        product_id: 'cs_pass',
-        product_title: 'CS All-Access Branch Pass',
-        amount: 1499,
-        currency: 'INR',
-        status: 'GRANTED',
-        created_at: new Date().toISOString(),
-      },
-      {
-        order_id: 'ord_default_da_pass',
-        uid: 'aspirant_learner_101',
-        product_id: 'da_pass',
-        product_title: 'DA All-Access Branch Pass',
-        amount: 1499,
-        currency: 'INR',
-        status: 'GRANTED',
-        created_at: new Date().toISOString(),
-      },
-      {
-        order_id: 'ord_default_ee_pass',
-        uid: 'aspirant_learner_101',
-        product_id: 'ee_pass',
-        product_title: 'EE All-Access Branch Pass',
-        amount: 1499,
-        currency: 'INR',
-        status: 'GRANTED',
-        created_at: new Date().toISOString(),
-      },
-      {
-        order_id: 'ord_default_ec_pass',
-        uid: 'aspirant_learner_101',
-        product_id: 'ec_pass',
-        product_title: 'EC All-Access Branch Pass',
-        amount: 1499,
-        currency: 'INR',
-        status: 'GRANTED',
-        created_at: new Date().toISOString(),
-      },
-      {
-        order_id: 'ord_default_me_pass',
-        uid: 'aspirant_learner_101',
-        product_id: 'me_pass',
-        product_title: 'ME All-Access Branch Pass',
-        amount: 1499,
-        currency: 'INR',
-        status: 'GRANTED',
-        created_at: new Date().toISOString(),
-      },
-      {
-        order_id: 'ord_default_ce_pass',
-        uid: 'aspirant_learner_101',
-        product_id: 'ce_pass',
-        product_title: 'CE All-Access Branch Pass',
-        amount: 1499,
-        currency: 'INR',
-        status: 'GRANTED',
-        created_at: new Date().toISOString(),
-      },
-    ];
-    seedOrders.forEach((o) => memoryOrders.set(o.order_id, o));
-    saveLocalOrdersDisk();
-  }
+  // No default mock orders
 }
 
 function saveLocalOrdersDisk() {
@@ -802,7 +736,7 @@ export async function getUserOrders(uid: string): Promise<OrderModel[]> {
   ensureLocalOrdersLoaded();
   const allOrders = Array.from(memoryOrders.values());
   const matchingOrders = allOrders.filter(
-    (o) => o.uid === uid || o.uid === 'aspirant_learner_101' || o.status === 'GRANTED'
+    (o) => o.uid === uid && (o.status === 'GRANTED' || o.status === 'CAPTURED')
   );
   return matchingOrders;
 }

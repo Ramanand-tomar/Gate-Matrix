@@ -537,92 +537,119 @@ function CatalogContent() {
               const isSaved = savedTestIds.includes(p.paper_id);
 
               return (
-                <Card key={p.id} hoverEffect className="flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="emerald">{p.branch || selectedBranch}</Badge>
-                        <Badge variant="slate" size="sm">{catLabel}</Badge>
-                        <button
-                          onClick={() => toggleSaveTest(p.paper_id)}
-                          title={isSaved ? 'Remove from Saved' : 'Save Test'}
-                          className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-                            isSaved
-                              ? 'bg-amber-50 border-amber-300 text-amber-600 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-400'
-                              : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600 dark:bg-slate-800 dark:border-slate-700'
-                          }`}
-                        >
-                          {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 fill-current" /> : <Bookmark className="w-3.5 h-3.5" />}
-                        </button>
+                <Card key={p.id} hoverEffect className="flex flex-col justify-between relative overflow-hidden group">
+                  <div className={!canAttempt ? 'filter blur-[2px] opacity-60 pointer-events-none select-none transition-all' : ''}>
+                    <div>
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="emerald">{p.branch || selectedBranch}</Badge>
+                          <Badge variant="slate" size="sm">{catLabel}</Badge>
+                          <button
+                            onClick={() => toggleSaveTest(p.paper_id)}
+                            title={isSaved ? 'Remove from Saved' : 'Save Test'}
+                            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                              isSaved
+                                ? 'bg-amber-50 border-amber-300 text-amber-600 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-400'
+                                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-slate-600 dark:bg-slate-800 dark:border-slate-700'
+                            }`}
+                          >
+                            {isSaved ? <BookmarkCheck className="w-3.5 h-3.5 fill-current" /> : <Bookmark className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                        {pastAttempt ? (
+                          <Badge variant="purple" size="sm">
+                            <CheckCircle2 className="w-3 h-3 inline mr-1" />
+                            Completed ({pastAttempt.score} / {pastAttempt.max_score})
+                          </Badge>
+                        ) : free ? (
+                          <Badge variant="cyan" size="sm">
+                            Free Test
+                          </Badge>
+                        ) : userHasAccessToBranch ? (
+                          <Badge variant="emerald" size="sm">
+                            Access Granted
+                          </Badge>
+                        ) : (
+                          <Badge variant="amber" size="sm">
+                            <Lock className="w-3 h-3 inline mr-1" />
+                            Pass Required
+                          </Badge>
+                        )}
                       </div>
-                      {pastAttempt ? (
-                        <Badge variant="purple" size="sm">
-                          <CheckCircle2 className="w-3 h-3 inline mr-1" />
-                          Completed ({pastAttempt.score} / {pastAttempt.max_score})
-                        </Badge>
-                      ) : free ? (
-                        <Badge variant="cyan" size="sm">
-                          Free Test
-                        </Badge>
-                      ) : userHasAccessToBranch ? (
-                        <Badge variant="emerald" size="sm">
-                          Access Granted
-                        </Badge>
-                      ) : (
-                        <Badge variant="amber" size="sm">
-                          <Lock className="w-3 h-3 inline mr-1" />
-                          Pass Required
-                        </Badge>
-                      )}
+                      <h3 className="text-base font-extrabold text-[#14213d] dark:text-white mb-2 line-clamp-2" title={p.title}>
+                        {p.title}
+                      </h3>
+                      <p className="text-xs text-[#526079] dark:text-slate-400 mb-4">
+                        Series: {p.series || 'Official GATE CBT Mock'}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-[#526079] dark:text-slate-400 font-medium mb-6">
+                        <span className="font-bold text-[#0f766e] dark:text-[#2dd4bf]">{p.total_questions} Questions</span>
+                        <span>•</span>
+                        <span>IIT CBT Standard</span>
+                      </div>
                     </div>
-                    <h3 className="text-base font-extrabold text-[#14213d] mb-2 line-clamp-2" title={p.title}>
-                      {p.title}
-                    </h3>
-                    <p className="text-xs text-[#526079] mb-4">
-                      Series: {p.series || 'Official GATE CBT Mock'}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-[#526079] font-medium mb-6">
-                      <span className="font-bold text-[#0f766e]">{p.total_questions} Questions</span>
-                      <span>•</span>
-                      <span>IIT CBT Standard</span>
+
+                    <div className="pt-4 border-t border-[#dce3ec] dark:border-slate-800 flex justify-between items-center gap-2">
+                      {canAttempt ? (
+                        <>
+                          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 className="w-4 h-4" />
+                            {pastAttempt
+                              ? `Scored: ${pastAttempt.score} / ${pastAttempt.max_score}`
+                              : free
+                              ? 'Free Starter Test'
+                              : 'Unlocked with Pass'}
+                          </span>
+                          <Link href={`/exam?paperId=${p.paper_id}`}>
+                            <Button
+                              variant={pastAttempt ? 'secondary' : 'emerald'}
+                              size="sm"
+                              rightIcon={pastAttempt ? <RotateCcw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                            >
+                              {pastAttempt ? 'Re-attempt' : 'Attempt Test'}
+                            </Button>
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xs font-bold text-slate-500 font-mono">LOCKED CARD</span>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleBuyBranchPass(selectedBranch)}
+                            leftIcon={<Lock className="w-3.5 h-3.5" />}
+                          >
+                            Unlock Pass
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-[#dce3ec] flex justify-between items-center gap-2">
-                    {canAttempt ? (
-                      <>
-                        <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
-                          <CheckCircle2 className="w-4 h-4" />
-                          {pastAttempt
-                            ? `Scored: ${pastAttempt.score} / ${pastAttempt.max_score}`
-                            : free
-                            ? 'Free Starter Test'
-                            : 'Unlocked with Pass'}
+                  {!canAttempt && (
+                    <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center z-10 space-y-3 animate-fade-in">
+                      <div className="w-11 h-11 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center shadow-lg">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-extrabold block">
+                          GATE {selectedBranch} PASS REQUIRED
                         </span>
-                        <Link href={`/exam?paperId=${p.paper_id}`}>
-                          <Button
-                            variant={pastAttempt ? 'secondary' : 'emerald'}
-                            size="sm"
-                            rightIcon={pastAttempt ? <RotateCcw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                          >
-                            {pastAttempt ? 'Re-attempt' : 'Attempt Test'}
-                          </Button>
-                        </Link>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-xs font-bold text-slate-500">Branch Pass Included</span>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleBuyBranchPass(selectedBranch)}
-                          leftIcon={<Lock className="w-3.5 h-3.5" />}
-                        >
-                          Unlock Branch Pass
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                        <h4 className="text-xs font-bold text-white mt-1 max-w-[220px] line-clamp-1">
+                          {p.title}
+                        </h4>
+                      </div>
+                      <Button
+                        variant="emerald"
+                        size="sm"
+                        className="font-extrabold text-xs shadow-lg shadow-emerald-950/60"
+                        onClick={() => handleBuyBranchPass(selectedBranch)}
+                        leftIcon={<Lock className="w-3.5 h-3.5" />}
+                      >
+                        Unlock Test Series (₹1,499)
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               );
             })}
