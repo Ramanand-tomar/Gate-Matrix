@@ -386,7 +386,8 @@ export default function PracticePage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {paginatedPapers.map((paper, idx) => {
-                const free = isPaperFree(paper, idx);
+                const globalIdx = startIdx + idx;
+                const free = isPaperFree(paper, globalIdx);
                 const canAttempt = free || userHasAccessToBranch;
                 const pastAttempt = attemptMap[paper.paper_id];
                 const paperCat = getPaperCategory(paper.title, idx);

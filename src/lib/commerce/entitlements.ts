@@ -92,19 +92,8 @@ export function checkUserEntitlement(
  */
 export function isPaperFree(paper: { title?: string; paper_id?: string; is_free?: boolean }, index: number = 0): boolean {
   if (paper.is_free) return true;
-  const titleLower = (paper.title || '').toLowerCase();
-  const idLower = (paper.paper_id || '').toLowerCase();
-
-  if (
-    titleLower.includes('free') ||
-    titleLower.includes('sample') ||
-    titleLower.includes('starter') ||
-    idLower.includes('free') ||
-    idLower.includes('sample')
-  ) {
-    return true;
-  }
-  return index % 3 === 0;
+  // Strictly only the first 3 papers (index 0, 1, 2) in the starting grid are free starter tests
+  return index < 3;
 }
 
 /**
