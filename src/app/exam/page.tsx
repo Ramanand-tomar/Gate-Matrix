@@ -1523,10 +1523,25 @@ function ExamEngineContent() {
   );
 }
 
+function ExamSkeleton() {
+  return (
+    <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+      <div className="bg-[#14213d] text-white p-4 rounded-2xl mb-6 flex justify-between items-center animate-pulse h-16">
+        <div className="w-48 h-6 bg-slate-700 rounded"></div>
+        <div className="w-32 h-6 bg-slate-700 rounded"></div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-3xl p-6 h-96 animate-pulse"></div>
+        <div className="lg:col-span-4 bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-3xl p-6 h-96 animate-pulse"></div>
+      </div>
+    </main>
+  );
+}
+
 export default function ExamEnginePage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] flex flex-col transition-colors duration-200">
-      <Suspense fallback={<div className="p-8 text-center text-xs">Loading exam engine...</div>}>
+      <Suspense fallback={<ExamSkeleton />}>
         <ExamEngineContent />
       </Suspense>
       <Footer />
