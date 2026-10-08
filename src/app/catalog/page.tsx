@@ -191,7 +191,7 @@ function CatalogContent() {
     setCheckoutModal({
       open: true,
       title: `${passBranch} All-Access Branch Pass`,
-      price: 1499,
+      price: 500,
       branch: passBranch,
     });
     setPurchaseSuccess(null);
@@ -474,7 +474,7 @@ function CatalogContent() {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <span className="text-3xl font-black text-white">₹1,499</span>
+              <span className="text-3xl font-black text-white">₹500</span>
               <span className="text-[10px] text-gray-300 block">365 Days Full Access</span>
             </div>
             <Button

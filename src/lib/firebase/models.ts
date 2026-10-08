@@ -736,7 +736,7 @@ export async function updateOrderStatus(
       uid: 'aspirant_learner_101',
       product_id: 'cs_pass',
       product_title: 'GATE CS All-Access Branch Pass',
-      amount: 1499,
+      amount: 500,
       currency: 'INR',
       status,
       ...paymentDetails,

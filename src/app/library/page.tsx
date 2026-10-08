@@ -394,7 +394,7 @@ export default function LibraryPage() {
 
                     <div className="pt-4 border-t border-slate-700/50 flex justify-between items-center">
                       <span className="text-sm font-black text-emerald-400">
-                        {isOwned ? 'ACTIVE' : '₹1,499'}
+                        {isOwned ? 'ACTIVE' : '₹500'}
                       </span>
                       {isOwned ? (
                         <Link href={`/catalog?branch=${branch.code}`}>

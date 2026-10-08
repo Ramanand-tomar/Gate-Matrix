@@ -33,7 +33,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const productId = `${upperBranch.toLowerCase()}_pass`;
   const productInfo = OFFICIAL_PRODUCT_CATALOG[productId] || {
     title: `${upperBranch} Branch Pass`,
-    priceINR: 1499,
+    priceINR: 500,
   };
 
   const ownedBranches = getUserPurchasedBranches(orders);
