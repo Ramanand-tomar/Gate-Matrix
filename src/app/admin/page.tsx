@@ -30,6 +30,11 @@ import {
   AlertCircle,
   Building2,
   Download,
+  UserCheck,
+  UserX,
+  ShieldAlert,
+  Edit,
+  Key,
 } from 'lucide-react';
 
 interface OrderRecord {
@@ -56,7 +61,30 @@ interface SalesMetrics {
   orders: OrderRecord[];
 }
 
-type AdminTab = 'ORDERS' | 'OVERVIEW' | 'CONTENT' | 'SERIES' | 'USERS' | 'ANALYTICS';
+interface UserRecord {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role: UserRole;
+  status?: 'ACTIVE' | 'SUSPENDED';
+  activePasses?: string[];
+  createdAt: string;
+  lastLoginAt: string;
+}
+
+interface UserMetrics {
+  totalUsers: number;
+  learnersCount: number;
+  instructorsCount: number;
+  editorsCount: number;
+  adminsCount: number;
+  activePassHoldersCount: number;
+  suspendedCount: number;
+  users: UserRecord[];
+}
+
+type AdminTab = 'USERS' | 'ORDERS' | 'OVERVIEW' | 'CONTENT' | 'SERIES' | 'ANALYTICS';
 
 const STREAM_NAMES: Record<string, string> = {
   CS: 'Computer Science',
@@ -81,19 +109,30 @@ function AdminContent() {
   const currentRole: UserRole = userProfile?.role || 'LEARNER';
   const isAuthorized = hasRolePermission(currentRole, 'EDITOR');
 
-  const [activeTab, setActiveTab] = useState<AdminTab>('ORDERS');
+  const [activeTab, setActiveTab] = useState<AdminTab>('USERS');
 
-  // Sales Data State
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [metrics, setMetrics] = useState<SalesMetrics | null>(null);
+  // Sales Data State (Phase 1)
+  const [salesLoading, setSalesLoading] = useState(true);
+  const [salesError, setSalesError] = useState<string | null>(null);
+  const [salesMetrics, setSalesMetrics] = useState<SalesMetrics | null>(null);
 
-  // Filters & Search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [branchFilter, setBranchFilter] = useState<string>('ALL');
+  // User Roster State (Phase 2)
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [userMetrics, setUserMetrics] = useState<UserMetrics | null>(null);
 
-  // Grant Pass Modal State
+  // Phase 1 Filters & Search
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>('ALL');
+  const [orderBranchFilter, setOrderBranchFilter] = useState<string>('ALL');
+
+  // Phase 2 User Roster Filters & Search
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
+  const [userStatusFilter, setUserStatusFilter] = useState<string>('ALL');
+  const [userPassFilter, setUserPassFilter] = useState<string>('ALL');
+
+  // Grant Pass Modal State (Phase 1)
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
   const [grantUserId, setGrantUserId] = useState('');
   const [grantBranch, setGrantBranch] = useState('CS');
@@ -102,27 +141,56 @@ function AdminContent() {
   const [grantSuccessMsg, setGrantSuccessMsg] = useState<string | null>(null);
   const [grantErrorMsg, setGrantErrorMsg] = useState<string | null>(null);
 
+  // Manage User Modal State (Phase 2)
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
+  const [editRole, setEditRole] = useState<UserRole>('LEARNER');
+  const [editStatus, setEditStatus] = useState<'ACTIVE' | 'SUSPENDED'>('ACTIVE');
+  const [editPasses, setEditPasses] = useState<string[]>([]);
+  const [userSubmitting, setUserSubmitting] = useState(false);
+  const [userSuccessMsg, setUserSuccessMsg] = useState<string | null>(null);
+  const [userModalError, setUserModalError] = useState<string | null>(null);
+
   const fetchSalesData = async () => {
-    setLoading(true);
-    setError(null);
+    setSalesLoading(true);
+    setSalesError(null);
     try {
       const res = await fetch('/api/admin/orders');
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to load sales metrics');
       }
-      setMetrics(data);
+      setSalesMetrics(data);
     } catch (err: any) {
       console.error('Error fetching sales metrics:', err);
-      setError(err.message || 'Network error loading sales data');
+      setSalesError(err.message || 'Network error loading sales data');
     } finally {
-      setLoading(false);
+      setSalesLoading(false);
+    }
+  };
+
+  const fetchUsersData = async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+    try {
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to load candidate roster');
+      }
+      setUserMetrics(data);
+    } catch (err: any) {
+      console.error('Error fetching candidate roster:', err);
+      setUsersError(err.message || 'Network error loading candidate roster');
+    } finally {
+      setUsersLoading(false);
     }
   };
 
   useEffect(() => {
     if (isAuthorized) {
       fetchSalesData();
+      fetchUsersData();
     }
   }, [isAuthorized]);
 
@@ -157,6 +225,7 @@ function AdminContent() {
       setGrantUserId('');
       setGrantNotes('');
       fetchSalesData();
+      fetchUsersData();
 
       setTimeout(() => {
         setIsGrantModalOpen(false);
@@ -169,26 +238,107 @@ function AdminContent() {
     }
   };
 
+  const handleOpenUserModal = (user: UserRecord) => {
+    setSelectedUser(user);
+    setEditRole(user.role);
+    setEditStatus(user.status || 'ACTIVE');
+    setEditPasses(user.activePasses || []);
+    setUserSuccessMsg(null);
+    setUserModalError(null);
+    setIsUserModalOpen(true);
+  };
+
+  const handleTogglePass = (branchCode: string) => {
+    if (editPasses.includes(branchCode)) {
+      setEditPasses(editPasses.filter((b) => b !== branchCode));
+    } else {
+      setEditPasses([...editPasses, branchCode]);
+    }
+  };
+
+  const handleUpdateUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    setUserSubmitting(true);
+    setUserSuccessMsg(null);
+    setUserModalError(null);
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: selectedUser.uid,
+          role: editRole,
+          status: editStatus,
+          activePasses: editPasses,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update candidate profile');
+      }
+
+      setUserSuccessMsg(`Successfully updated candidate ${selectedUser.displayName || selectedUser.uid}`);
+      fetchUsersData();
+
+      setTimeout(() => {
+        setIsUserModalOpen(false);
+        setUserSuccessMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      setUserModalError(err.message || 'An unexpected error occurred while updating profile.');
+    } finally {
+      setUserSubmitting(false);
+    }
+  };
+
   const navItems: { id: AdminTab; label: string; icon: any; badge?: string }[] = [
+    { id: 'USERS', label: 'Phase 2: Learners & Roster', icon: Users, badge: 'Phase 2' },
     { id: 'ORDERS', label: 'Phase 1: Sales & Passes', icon: CreditCard, badge: 'Phase 1' },
-    { id: 'USERS', label: 'Learners & Roster', icon: Users, badge: 'Phase 2' },
-    { id: 'CONTENT', label: 'CMS & Test Papers', icon: BookOpen, badge: 'Phase 3' },
+    { id: 'CONTENT', label: 'Phase 3: CMS & Papers', icon: BookOpen, badge: 'Phase 3' },
     { id: 'OVERVIEW', label: 'Console Overview', icon: BarChart3 },
     { id: 'ANALYTICS', label: 'Platform Traffic', icon: TrendingUp },
   ];
 
-  // Filtered Orders Calculation
-  const filteredOrders = (metrics?.orders || []).filter((ord) => {
+  // Phase 1 Filtered Orders
+  const filteredOrders = (salesMetrics?.orders || []).filter((ord) => {
     const matchesSearch =
-      searchQuery.trim() === '' ||
-      ord.userId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ord.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (ord.razorpayPaymentId && ord.razorpayPaymentId.toLowerCase().includes(searchQuery.toLowerCase()));
+      orderSearch.trim() === '' ||
+      ord.userId.toLowerCase().includes(orderSearch.toLowerCase()) ||
+      ord.id.toLowerCase().includes(orderSearch.toLowerCase()) ||
+      (ord.razorpayPaymentId && ord.razorpayPaymentId.toLowerCase().includes(orderSearch.toLowerCase()));
 
-    const matchesStatus = statusFilter === 'ALL' || ord.status === statusFilter;
-    const matchesBranch = branchFilter === 'ALL' || ord.branch === branchFilter;
+    const matchesStatus = orderStatusFilter === 'ALL' || ord.status === orderStatusFilter;
+    const matchesBranch = orderBranchFilter === 'ALL' || ord.branch === orderBranchFilter;
 
     return matchesSearch && matchesStatus && matchesBranch;
+  });
+
+  // Phase 2 Filtered Users
+  const filteredUsers = (userMetrics?.users || []).filter((usr) => {
+    const query = userSearch.toLowerCase().trim();
+    const matchesSearch =
+      query === '' ||
+      usr.uid.toLowerCase().includes(query) ||
+      (usr.displayName && usr.displayName.toLowerCase().includes(query)) ||
+      (usr.email && usr.email.toLowerCase().includes(query));
+
+    const matchesRole = userRoleFilter === 'ALL' || usr.role === userRoleFilter;
+    const matchesStatus = userStatusFilter === 'ALL' || (usr.status || 'ACTIVE') === userStatusFilter;
+
+    let matchesPass = true;
+    if (userPassFilter !== 'ALL') {
+      if (userPassFilter === 'NO_PASS') {
+        matchesPass = !usr.activePasses || usr.activePasses.length === 0;
+      } else {
+        matchesPass = !!(usr.activePasses && usr.activePasses.includes(userPassFilter));
+      }
+    }
+
+    return matchesSearch && matchesRole && matchesStatus && matchesPass;
   });
 
   return (
@@ -219,7 +369,7 @@ function AdminContent() {
                     <span className="font-black text-sm text-[#14213d] dark:text-slate-100">Admin Control</span>
                   </div>
                   <Badge variant="emerald" className="text-[10px] uppercase font-bold">
-                    v2.4
+                    v2.5
                   </Badge>
                 </div>
 
@@ -268,11 +418,13 @@ function AdminContent() {
                     <span className="text-[#0f766e] dark:text-[#8be0ce] text-xs font-black uppercase tracking-widest">
                       GATE Matrix Admin Console
                     </span>
-                    <Badge variant="emerald">Phase 1 Live</Badge>
+                    <Badge variant={activeTab === 'USERS' ? 'cyan' : 'emerald'}>
+                      {activeTab === 'USERS' ? 'Phase 2 Live' : 'Phase 1 Live'}
+                    </Badge>
                   </div>
                   <h1 className="text-2xl font-black text-[#14213d] dark:text-slate-100">
+                    {activeTab === 'USERS' && 'Learner Roster, Roles & Candidate Access'}
                     {activeTab === 'ORDERS' && 'Sales, Revenue & Branch Pass Management'}
-                    {activeTab === 'USERS' && 'Learner Roster & Account Administration'}
                     {activeTab === 'CONTENT' && 'CMS & Test Paper Pipeline Management'}
                     {activeTab === 'OVERVIEW' && 'Console Master Overview'}
                     {activeTab === 'ANALYTICS' && 'Platform Analytics & Traffic Insights'}
@@ -283,9 +435,12 @@ function AdminContent() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={fetchSalesData}
-                    disabled={loading}
-                    leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+                    onClick={() => {
+                      fetchSalesData();
+                      fetchUsersData();
+                    }}
+                    disabled={salesLoading || usersLoading}
+                    leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${salesLoading || usersLoading ? 'animate-spin' : ''}`} />}
                   >
                     Sync
                   </Button>
@@ -302,13 +457,239 @@ function AdminContent() {
                 </div>
               </div>
 
-              {/* Main Phase 1 View */}
-              {activeTab === 'ORDERS' && (
+              {/* PHASE 2: LEARNER & USER ROSTER VIEW */}
+              {activeTab === 'USERS' && (
                 <>
-                  {error && (
+                  {usersError && (
                     <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-2xl p-4 flex items-center gap-3 text-red-700 dark:text-red-300 text-xs font-semibold">
                       <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-                      <span>{error}</span>
+                      <span>{usersError}</span>
+                    </div>
+                  )}
+
+                  {/* Candidate Roster Stat Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <StatCard
+                      label="Enrolled Learners"
+                      value={usersLoading ? '...' : userMetrics?.learnersCount || 0}
+                      subtext="Candidate Accounts"
+                    />
+                    <StatCard
+                      label="Active Pass Holders"
+                      value={usersLoading ? '...' : userMetrics?.activePassHoldersCount || 0}
+                      subtext="1+ Branch Pass"
+                    />
+                    <StatCard
+                      label="Staff & Creators"
+                      value={
+                        usersLoading
+                          ? '...' : (userMetrics?.instructorsCount || 0) + (userMetrics?.editorsCount || 0) + (userMetrics?.adminsCount || 0)
+                      }
+                      subtext="Instructors, Editors, Admins"
+                    />
+                    <StatCard
+                      label="Suspended Accounts"
+                      value={usersLoading ? '...' : userMetrics?.suspendedCount || 0}
+                      subtext="Access Locked"
+                    />
+                  </div>
+
+                  {/* Learner Roster & Filtering Table */}
+                  <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
+                    {/* Search & Filter Header */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                      <div>
+                        <h3 className="text-base font-black text-[#14213d] dark:text-slate-100 flex items-center gap-2">
+                          <Users className="w-4 h-4 text-[#0f766e] dark:text-[#8be0ce]" />
+                          Candidate Roster & Access Directory
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Search candidates, assign roles, toggle suspension, or edit active branch passes.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Search Input */}
+                        <div className="relative min-w-[200px]">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="text"
+                            placeholder="Search Name / Email / UID..."
+                            value={userSearch}
+                            onChange={(e) => setUserSearch(e.target.value)}
+                            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:border-[#0f766e]"
+                          />
+                        </div>
+
+                        {/* Role Filter */}
+                        <select
+                          value={userRoleFilter}
+                          onChange={(e) => setUserRoleFilter(e.target.value)}
+                          className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0f766e]"
+                        >
+                          <option value="ALL">All Roles</option>
+                          <option value="LEARNER">LEARNER</option>
+                          <option value="INSTRUCTOR">INSTRUCTOR</option>
+                          <option value="EDITOR">EDITOR</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+
+                        {/* Status Filter */}
+                        <select
+                          value={userStatusFilter}
+                          onChange={(e) => setUserStatusFilter(e.target.value)}
+                          className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0f766e]"
+                        >
+                          <option value="ALL">All Account Statuses</option>
+                          <option value="ACTIVE">ACTIVE</option>
+                          <option value="SUSPENDED">SUSPENDED</option>
+                        </select>
+
+                        {/* Pass Filter */}
+                        <select
+                          value={userPassFilter}
+                          onChange={(e) => setUserPassFilter(e.target.value)}
+                          className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0f766e]"
+                        >
+                          <option value="ALL">All Pass Holders</option>
+                          <option value="NO_PASS">No Active Pass</option>
+                          {Object.keys(STREAM_NAMES).map((b) => (
+                            <option key={b} value={b}>
+                              {b} Pass Holders
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Table View */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">
+                          <tr>
+                            <th className="p-3.5">Candidate User</th>
+                            <th className="p-3.5">UID</th>
+                            <th className="p-3.5">Role</th>
+                            <th className="p-3.5">Branch Passes</th>
+                            <th className="p-3.5">Account Status</th>
+                            <th className="p-3.5">Joined</th>
+                            <th className="p-3.5 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {usersLoading ? (
+                            <tr>
+                              <td colSpan={7} className="p-8 text-center text-slate-400">
+                                Loading candidate directory...
+                              </td>
+                            </tr>
+                          ) : filteredUsers.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+                                No candidate records match your search query or filters.
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredUsers.map((usr) => (
+                              <tr key={usr.uid} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                                <td className="p-3.5">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#0f766e] to-[#14213d] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                                      {(usr.displayName || usr.email || usr.uid).substring(0, 1).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <h4 className="font-bold text-slate-900 dark:text-slate-100">
+                                        {usr.displayName || 'GATE Candidate'}
+                                      </h4>
+                                      <span className="block text-[11px] text-slate-500 dark:text-slate-400">
+                                        {usr.email || 'No email associated'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-3.5 font-mono text-slate-500 dark:text-slate-400 text-[11px]">
+                                  {usr.uid}
+                                </td>
+                                <td className="p-3.5">
+                                  <Badge
+                                    variant={
+                                      usr.role === 'ADMIN'
+                                        ? 'rose'
+                                        : usr.role === 'EDITOR'
+                                        ? 'purple'
+                                        : usr.role === 'INSTRUCTOR'
+                                        ? 'amber'
+                                        : 'cyan'
+                                    }
+                                  >
+                                    {usr.role}
+                                  </Badge>
+                                </td>
+                                <td className="p-3.5">
+                                  <div className="flex flex-wrap gap-1">
+                                    {usr.activePasses && usr.activePasses.length > 0 ? (
+                                      usr.activePasses.map((p) => (
+                                        <span
+                                          key={p}
+                                          className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-[#0f766e] dark:text-[#8be0ce]"
+                                        >
+                                          {p}
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="text-[11px] text-slate-400 dark:text-slate-500 italic">None</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-3.5">
+                                  {usr.status === 'SUSPENDED' ? (
+                                    <Badge variant="rose" className="flex items-center gap-1 w-max">
+                                      <UserX className="w-3 h-3" />
+                                      SUSPENDED
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="emerald" className="flex items-center gap-1 w-max">
+                                      <UserCheck className="w-3 h-3" />
+                                      ACTIVE
+                                    </Badge>
+                                  )}
+                                </td>
+                                <td className="p-3.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                                  {usr.createdAt
+                                    ? new Date(usr.createdAt).toLocaleDateString('en-IN', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                      })
+                                    : 'Recent'}
+                                </td>
+                                <td className="p-3.5 text-right">
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => handleOpenUserModal(usr)}
+                                    leftIcon={<Edit className="w-3.5 h-3.5 text-[#0f766e] dark:text-[#8be0ce]" />}
+                                  >
+                                    Manage
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
+              )}
+
+              {/* PHASE 1: SALES & ORDERS VIEW */}
+              {activeTab === 'ORDERS' && (
+                <>
+                  {salesError && (
+                    <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-2xl p-4 flex items-center gap-3 text-red-700 dark:text-red-300 text-xs font-semibold">
+                      <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                      <span>{salesError}</span>
                     </div>
                   )}
 
@@ -316,22 +697,22 @@ function AdminContent() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <StatCard
                       label="Gross Revenue"
-                      value={loading ? '...' : `₹${(metrics?.totalGrossRevenue || 0).toLocaleString('en-IN')}`}
+                      value={salesLoading ? '...' : `₹${(salesMetrics?.totalGrossRevenue || 0).toLocaleString('en-IN')}`}
                       subtext="From Paid Pass Sales"
                     />
                     <StatCard
                       label="Paid Pass Orders"
-                      value={loading ? '...' : metrics?.paidOrdersCount || 0}
+                      value={salesLoading ? '...' : salesMetrics?.paidOrdersCount || 0}
                       subtext="₹500 / Branch Pass"
                     />
                     <StatCard
                       label="Granted Passes"
-                      value={loading ? '...' : metrics?.grantedOrdersCount || 0}
+                      value={salesLoading ? '...' : salesMetrics?.grantedOrdersCount || 0}
                       subtext="Manual Admin Grants"
                     />
                     <StatCard
                       label="Total Transactions"
-                      value={loading ? '...' : metrics?.totalOrders || 0}
+                      value={salesLoading ? '...' : salesMetrics?.totalOrders || 0}
                       subtext="All Recorded Orders"
                     />
                   </div>
@@ -352,10 +733,10 @@ function AdminContent() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {Object.keys(STREAM_NAMES).map((branchKey) => {
-                        const count = metrics?.streamBreakdown?.[branchKey] || 0;
-                        const revenue = metrics?.streamRevenue?.[branchKey] || 0;
+                        const count = salesMetrics?.streamBreakdown?.[branchKey] || 0;
+                        const revenue = salesMetrics?.streamRevenue?.[branchKey] || 0;
                         const colors = STREAM_COLORS[branchKey] || STREAM_COLORS.CS;
-                        const maxCount = Math.max(...Object.values(metrics?.streamBreakdown || { CS: 1 }), 1);
+                        const maxCount = Math.max(...Object.values(salesMetrics?.streamBreakdown || { CS: 1 }), 1);
                         const pct = Math.min(100, Math.round((count / maxCount) * 100));
 
                         return (
@@ -413,16 +794,16 @@ function AdminContent() {
                           <input
                             type="text"
                             placeholder="Search UID / Order ID..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            value={orderSearch}
+                            onChange={(e) => setOrderSearch(e.target.value)}
                             className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:border-[#0f766e]"
                           />
                         </div>
 
                         {/* Status Filter */}
                         <select
-                          value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value)}
+                          value={orderStatusFilter}
+                          onChange={(e) => setOrderStatusFilter(e.target.value)}
                           className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0f766e]"
                         >
                           <option value="ALL">All Statuses</option>
@@ -434,8 +815,8 @@ function AdminContent() {
 
                         {/* Stream Filter */}
                         <select
-                          value={branchFilter}
-                          onChange={(e) => setBranchFilter(e.target.value)}
+                          value={orderBranchFilter}
+                          onChange={(e) => setOrderBranchFilter(e.target.value)}
                           className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0f766e]"
                         >
                           <option value="ALL">All Branches</option>
@@ -463,7 +844,7 @@ function AdminContent() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {loading ? (
+                          {salesLoading ? (
                             <tr>
                               <td colSpan={7} className="p-8 text-center text-slate-400">
                                 Loading order records...
@@ -529,20 +910,7 @@ function AdminContent() {
                 </>
               )}
 
-              {/* Placeholder for Phase 2 & 3 */}
-              {activeTab === 'USERS' && (
-                <Card className="text-center py-12 border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-                  <Users className="w-12 h-12 text-[#0f766e] dark:text-[#8be0ce] mx-auto mb-3" />
-                  <h3 className="text-xl font-black text-[#14213d] dark:text-slate-100 mb-2">Phase 2: Learner & User Roster</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
-                    Phase 2 will introduce learner search, account suspension, custom role overrides, and branch pass history for individual candidates.
-                  </p>
-                  <Button variant="emerald" onClick={() => setActiveTab('ORDERS')}>
-                    Return to Phase 1 Sales Dashboard
-                  </Button>
-                </Card>
-              )}
-
+              {/* Placeholder for Phase 3 */}
               {activeTab === 'CONTENT' && (
                 <Card className="text-center py-12 border-slate-200 dark:border-slate-800 dark:bg-slate-900">
                   <BookOpen className="w-12 h-12 text-[#0f766e] dark:text-[#8be0ce] mx-auto mb-3" />
@@ -550,8 +918,8 @@ function AdminContent() {
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
                     Phase 3 will add dynamic test paper drafting, question bank uploading, free paper flags, and custom answer key validation.
                   </p>
-                  <Button variant="emerald" onClick={() => setActiveTab('ORDERS')}>
-                    Return to Phase 1 Sales Dashboard
+                  <Button variant="emerald" onClick={() => setActiveTab('USERS')}>
+                    View Phase 2 Candidate Roster
                   </Button>
                 </Card>
               )}
@@ -561,10 +929,10 @@ function AdminContent() {
                   <BarChart3 className="w-12 h-12 text-[#0f766e] dark:text-[#8be0ce] mx-auto mb-3" />
                   <h3 className="text-xl font-black text-[#14213d] dark:text-slate-100 mb-2">System Performance Overview</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
-                    All core systems online. Revenue and pass issuance are actively tracked in real-time under Phase 1.
+                    All core systems online. Candidate accounts, roles, and branch pass entitlements are actively managed under Phase 2.
                   </p>
-                  <Button variant="emerald" onClick={() => setActiveTab('ORDERS')}>
-                    View Phase 1 Sales Dashboard
+                  <Button variant="emerald" onClick={() => setActiveTab('USERS')}>
+                    View Phase 2 Candidate Roster
                   </Button>
                 </Card>
               )}
@@ -572,7 +940,7 @@ function AdminContent() {
           </div>
         )}
 
-        {/* Modal: Grant Branch Pass Manually */}
+        {/* Modal Phase 1: Grant Branch Pass Manually */}
         {isGrantModalOpen && (
           <div className="fixed inset-0 bg-[#14213d]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
             <Card className="max-w-md w-full animate-fadeIn border-slate-200 dark:border-slate-800 dark:bg-slate-900" padding="lg">
@@ -658,6 +1026,109 @@ function AdminContent() {
                   </Button>
                   <Button variant="emerald" type="submit" disabled={grantSubmitting}>
                     {grantSubmitting ? 'Granting Pass...' : 'Grant 365-Day Pass'}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {/* Modal Phase 2: Manage Candidate Role, Status & Passes */}
+        {isUserModalOpen && selectedUser && (
+          <div className="fixed inset-0 bg-[#14213d]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full animate-fadeIn border-slate-200 dark:border-slate-800 dark:bg-slate-900" padding="lg">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#0f766e] to-[#14213d] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                    {(selectedUser.displayName || selectedUser.email || selectedUser.uid).substring(0, 1).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-[#14213d] dark:text-slate-100">
+                      {selectedUser.displayName || 'Candidate Settings'}
+                    </h3>
+                    <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">{selectedUser.uid}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsUserModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {userModalError && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-600 dark:text-red-300 font-medium">
+                  {userModalError}
+                </div>
+              )}
+
+              {userSuccessMsg && (
+                <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{userSuccessMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleUpdateUserSubmit} className="space-y-4 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">System Permission Role</label>
+                  <select
+                    value={editRole}
+                    onChange={(e) => setEditRole(e.target.value as UserRole)}
+                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#0f766e] font-bold"
+                  >
+                    <option value="LEARNER">LEARNER (Standard candidate)</option>
+                    <option value="INSTRUCTOR">INSTRUCTOR (Content contributor)</option>
+                    <option value="EDITOR">EDITOR (Console moderator)</option>
+                    <option value="ADMIN">ADMIN (Full management access)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Account Lock & Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value as 'ACTIVE' | 'SUSPENDED')}
+                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#0f766e] font-bold"
+                  >
+                    <option value="ACTIVE">ACTIVE (Full candidate access)</option>
+                    <option value="SUSPENDED">SUSPENDED (Access locked)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Entitled Branch Passes (365-Day Access)
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {Object.keys(STREAM_NAMES).map((bCode) => {
+                      const isChecked = editPasses.includes(bCode);
+                      return (
+                        <button
+                          key={bCode}
+                          type="button"
+                          onClick={() => handleTogglePass(bCode)}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border font-bold text-xs transition-all ${
+                            isChecked
+                              ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 text-[#0f766e] dark:text-[#8be0ce]'
+                              : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          <span>{bCode}</span>
+                          {isChecked && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3">
+                  <Button variant="secondary" onClick={() => setIsUserModalOpen(false)} disabled={userSubmitting}>
+                    Cancel
+                  </Button>
+                  <Button variant="emerald" type="submit" disabled={userSubmitting}>
+                    {userSubmitting ? 'Saving Changes...' : 'Save Candidate Settings'}
                   </Button>
                 </div>
               </form>

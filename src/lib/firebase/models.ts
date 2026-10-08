@@ -95,12 +95,108 @@ export interface UserModel {
   displayName: string | null;
   photoURL: string | null;
   role: UserRole;
+  status?: 'ACTIVE' | 'SUSPENDED';
   activePasses?: string[];
   createdAt: string;
   lastLoginAt: string;
 }
 
+function ensureLocalUsersLoaded() {
+  if (memoryUsers.size > 0) return;
+  try {
+    const p = getScratchFilePath('users.json');
+    if (fs.existsSync(p)) {
+      const data: UserModel[] = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      data.forEach((usr) => memoryUsers.set(usr.uid, usr));
+    }
+  } catch (err) {}
+
+  // Seed default candidates roster if empty
+  if (memoryUsers.size === 0) {
+    const defaultUsers: UserModel[] = [
+      {
+        uid: 'aspirant_learner_101',
+        email: 'aarav.sharma@gmail.com',
+        displayName: 'Aarav Sharma',
+        photoURL: null,
+        role: 'LEARNER',
+        status: 'ACTIVE',
+        activePasses: ['CS'],
+        createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      },
+      {
+        uid: 'learner_da_202',
+        email: 'priya.verma@gateprep.in',
+        displayName: 'Priya Verma',
+        photoURL: null,
+        role: 'LEARNER',
+        status: 'ACTIVE',
+        activePasses: ['DA'],
+        createdAt: new Date(Date.now() - 25 * 86400000).toISOString(),
+        lastLoginAt: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        uid: 'instructor_ee_303',
+        email: 'rajesh.kumar@iitb.ac.in',
+        displayName: 'Dr. Rajesh Kumar',
+        photoURL: null,
+        role: 'INSTRUCTOR',
+        status: 'ACTIVE',
+        activePasses: ['EE', 'EC'],
+        createdAt: new Date(Date.now() - 60 * 86400000).toISOString(),
+        lastLoginAt: new Date(Date.now() - 86400000).toISOString(),
+      },
+      {
+        uid: 'editor_gate_404',
+        email: 'ananya.sen@gatematrix.com',
+        displayName: 'Ananya Sen',
+        photoURL: null,
+        role: 'EDITOR',
+        status: 'ACTIVE',
+        activePasses: ['CS', 'DA'],
+        createdAt: new Date(Date.now() - 90 * 86400000).toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      },
+      {
+        uid: 'admin_master_505',
+        email: 'admin@gatematrix.com',
+        displayName: 'GATE Matrix Admin',
+        photoURL: null,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        activePasses: ['CS', 'DA', 'EE', 'EC', 'ME', 'CE'],
+        createdAt: new Date(Date.now() - 120 * 86400000).toISOString(),
+        lastLoginAt: new Date().toISOString(),
+      },
+      {
+        uid: 'learner_suspended_606',
+        email: 'vikram.singh@yahoo.com',
+        displayName: 'Vikram Singh',
+        photoURL: null,
+        role: 'LEARNER',
+        status: 'SUSPENDED',
+        activePasses: [],
+        createdAt: new Date(Date.now() - 15 * 86400000).toISOString(),
+        lastLoginAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+      },
+    ];
+
+    defaultUsers.forEach((u) => memoryUsers.set(u.uid, u));
+    saveLocalUsersDisk();
+  }
+}
+
+function saveLocalUsersDisk() {
+  try {
+    const p = getScratchFilePath('users.json');
+    const list = Array.from(memoryUsers.values());
+    fs.writeFileSync(p, JSON.stringify(list, null, 2), 'utf-8');
+  } catch (err) {}
+}
+
 export async function getUserProfile(uid: string): Promise<UserModel | null> {
+  ensureLocalUsersLoaded();
   if (memoryUsers.has(uid)) {
     return memoryUsers.get(uid)!;
   }
@@ -110,7 +206,9 @@ export async function getUserProfile(uid: string): Promise<UserModel | null> {
     if (res.ok) {
       const data = await res.json();
       const user = parseFirestoreFields(data.fields) as UserModel;
+      if (!user.status) user.status = 'ACTIVE';
       memoryUsers.set(uid, user);
+      saveLocalUsersDisk();
       return user;
     }
   } catch (err) {
@@ -120,6 +218,7 @@ export async function getUserProfile(uid: string): Promise<UserModel | null> {
 }
 
 export async function saveUserProfile(user: Partial<UserModel> & { uid: string }): Promise<UserModel> {
+  ensureLocalUsersLoaded();
   const now = new Date().toISOString();
   const existing = memoryUsers.get(user.uid) || (await getUserProfile(user.uid));
 
@@ -129,12 +228,14 @@ export async function saveUserProfile(user: Partial<UserModel> & { uid: string }
     displayName: user.displayName || (existing ? existing.displayName : null),
     photoURL: user.photoURL || (existing ? existing.photoURL : null),
     role: user.role || (existing ? existing.role : 'LEARNER'),
+    status: user.status || (existing?.status ? existing.status : 'ACTIVE'),
     activePasses: user.activePasses || (existing ? existing.activePasses : []),
     createdAt: existing ? existing.createdAt : now,
     lastLoginAt: now,
   };
 
   memoryUsers.set(user.uid, profileData);
+  saveLocalUsersDisk();
 
   try {
     const keyParam = API_KEY ? `?key=${API_KEY}` : '';
@@ -159,10 +260,12 @@ export async function saveUserProfile(user: Partial<UserModel> & { uid: string }
 }
 
 export async function updateUserRole(uid: string, role: UserRole): Promise<boolean> {
+  ensureLocalUsersLoaded();
   const user = memoryUsers.get(uid) || (await getUserProfile(uid));
   if (user) {
     user.role = role;
     memoryUsers.set(uid, user);
+    saveLocalUsersDisk();
   }
   try {
     const keyParam = API_KEY ? `?key=${API_KEY}` : '';
@@ -176,6 +279,43 @@ export async function updateUserRole(uid: string, role: UserRole): Promise<boole
   } catch (err) {
     return true;
   }
+}
+
+export async function getAllUserProfiles(): Promise<UserModel[]> {
+  ensureLocalUsersLoaded();
+  return Array.from(memoryUsers.values());
+}
+
+export async function updateUserProfileAdmin(
+  uid: string,
+  updates: Partial<Pick<UserModel, 'role' | 'status' | 'activePasses' | 'displayName' | 'email'>>
+): Promise<UserModel | null> {
+  ensureLocalUsersLoaded();
+  const existing = memoryUsers.get(uid) || (await getUserProfile(uid));
+  if (!existing) return null;
+
+  const updated: UserModel = {
+    ...existing,
+    ...updates,
+    role: updates.role || existing.role,
+    status: updates.status || existing.status || 'ACTIVE',
+    activePasses: updates.activePasses !== undefined ? updates.activePasses : existing.activePasses || [],
+  };
+
+  memoryUsers.set(uid, updated);
+  saveLocalUsersDisk();
+
+  try {
+    const keyParam = API_KEY ? `?key=${API_KEY}` : '';
+    const fields = toFirestoreFields(updates);
+    fetch(`${BASE_URL}/users/${uid}${keyParam}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields }),
+    }).catch(() => {});
+  } catch (err) {}
+
+  return updated;
 }
 
 // ==========================================
