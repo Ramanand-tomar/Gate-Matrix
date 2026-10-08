@@ -26,6 +26,7 @@ import {
   User,
   Sparkles,
 } from 'lucide-react';
+import { GoogleIcon } from '@/components/ui/GoogleIcon';
 
 interface PaperDoc {
   id: string;
@@ -202,7 +203,7 @@ function DashboardContent() {
               Stream: <strong className="text-[#8be0ce]">GATE CS</strong>
             </span>
             {!user ? (
-              <Button variant="emerald" size="sm" onClick={signInWithGoogle}>
+              <Button variant="emerald" size="sm" onClick={signInWithGoogle} leftIcon={<GoogleIcon className="w-4 h-4 bg-white rounded-full p-0.5" />}>
                 Sign in with Google
               </Button>
             ) : (

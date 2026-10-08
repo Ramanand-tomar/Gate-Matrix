@@ -24,6 +24,7 @@ import {
   Sun,
   Moon,
 } from 'lucide-react';
+import { GoogleIcon } from '@/components/ui/GoogleIcon';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -258,10 +259,10 @@ export default function Navbar() {
                 </Link>
                 <button
                   onClick={signInWithGoogle}
-                  className="bg-[#14213d] hover:bg-[#1d2d50] text-white text-xs font-extrabold px-4 py-2 rounded-xl flex items-center gap-2 transition-all shadow-sm active:scale-95"
+                  className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-[#14213d] dark:text-white border border-[#dce3ec] dark:border-slate-700 text-xs font-extrabold px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all shadow-xs active:scale-95"
                 >
-                  <User className="w-4 h-4" />
-                  <span>Sign in</span>
+                  <GoogleIcon className="w-4 h-4" />
+                  <span>Sign in with Google</span>
                 </button>
               </div>
             )}
@@ -381,9 +382,9 @@ export default function Navbar() {
               ) : (
                 <button
                   onClick={signInWithGoogle}
-                  className="w-full bg-[#14213d] text-white font-extrabold text-xs py-3 rounded-xl flex items-center justify-center gap-2 shadow-md"
+                  className="w-full bg-white dark:bg-slate-800 text-[#14213d] dark:text-white border border-[#dce3ec] dark:border-slate-700 font-extrabold text-xs py-3 rounded-xl flex items-center justify-center gap-2.5 shadow-sm active:scale-95"
                 >
-                  <User className="w-4 h-4" />
+                  <GoogleIcon className="w-4 h-4" />
                   <span>Sign in with Google</span>
                 </button>
               )}
