@@ -366,20 +366,20 @@ function CatalogContent() {
     <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 text-[#0f766e] text-xs font-extrabold uppercase tracking-widest mb-1">
+        <div className="flex items-center gap-2 text-[#0f766e] dark:text-[#2dd4bf] text-xs font-extrabold uppercase tracking-widest mb-1">
           <BookOpen className="w-4 h-4" />
           <span>GATE Test Series & Subject Practice</span>
         </div>
-        <h1 className="text-3xl font-black text-[#14213d] tracking-tight">
+        <h1 className="text-3xl font-black text-[#14213d] dark:text-white tracking-tight">
           Explore Test Series & Subject Wise Practice
         </h1>
-        <p className="text-xs text-[#526079] mt-1 max-w-2xl">
+        <p className="text-xs text-[#526079] dark:text-slate-300 mt-1 max-w-2xl">
           Get unlimited 365-day access to all test series in your stream with a single one-time Branch Pass. Free sample tests available for all candidates.
         </p>
       </div>
 
       {/* Branch Selector Tabs & Search Bar */}
-      <div className="bg-white border border-[#dce3ec] p-4 rounded-2xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-4 rounded-2xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
         <div className="flex gap-2 flex-wrap">
           {branches.map((b) => (
             <button
@@ -387,8 +387,8 @@ function CatalogContent() {
               onClick={() => setSelectedBranch(b)}
               className={`px-4 py-2 rounded-xl font-extrabold text-xs transition-all ${
                 selectedBranch === b
-                  ? 'bg-[#14213d] text-white shadow-xs'
-                  : 'bg-slate-50 text-[#526079] hover:bg-slate-100 hover:text-[#14213d]'
+                  ? 'bg-[#14213d] dark:bg-[#0f766e] text-white shadow-xs'
+                  : 'bg-slate-50 dark:bg-slate-800 text-[#526079] dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-[#14213d] dark:hover:text-white'
               }`}
             >
               GATE {b}
@@ -404,15 +404,15 @@ function CatalogContent() {
             placeholder="Search test or subject..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-[#dce3ec] rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-[#0f766e] text-[#14213d]"
+            className="w-full bg-slate-50 dark:bg-slate-800 border border-[#dce3ec] dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-[#0f766e] text-[#14213d] dark:text-white placeholder:text-slate-400"
           />
         </div>
       </div>
 
       {/* Test Category Filter Bar (Full Length vs Topic-Wise vs PYQ) */}
-      <div className="mb-6 bg-slate-100/70 border border-[#dce3ec] p-2 rounded-2xl flex flex-wrap gap-2 items-center">
-        <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-black text-[#14213d] uppercase tracking-wider">
-          <Filter className="w-3.5 h-3.5 text-[#0f766e]" />
+      <div className="mb-6 bg-slate-100/70 dark:bg-slate-800/70 border border-[#dce3ec] dark:border-slate-700 p-2 rounded-2xl flex flex-wrap gap-2 items-center">
+        <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-black text-[#14213d] dark:text-white uppercase tracking-wider">
+          <Filter className="w-3.5 h-3.5 text-[#0f766e] dark:text-[#2dd4bf]" />
           <span>Test Format:</span>
         </div>
         {[
@@ -427,7 +427,7 @@ function CatalogContent() {
             className={`px-3.5 py-1.5 rounded-xl font-extrabold text-xs transition-all ${
               selectedCategory === cat.id
                 ? 'bg-[#0f766e] text-white shadow-xs'
-                : 'bg-white text-[#526079] border border-[#dce3ec] hover:bg-slate-50 hover:text-[#14213d]'
+                : 'bg-white dark:bg-slate-900 text-[#526079] dark:text-slate-300 border border-[#dce3ec] dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#14213d] dark:hover:text-white'
             }`}
           >
             {cat.label}
@@ -437,8 +437,8 @@ function CatalogContent() {
 
       {/* Subject-Wise Practice Filter Pills */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-extrabold text-[#526079] mb-3">
-          <Layers className="w-4 h-4 text-[#0f766e]" />
+        <div className="flex items-center gap-2 text-xs font-extrabold text-[#526079] dark:text-slate-300 mb-3">
+          <Layers className="w-4 h-4 text-[#0f766e] dark:text-[#2dd4bf]" />
           <span>Select Subject to Practice:</span>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2">
@@ -448,8 +448,8 @@ function CatalogContent() {
               onClick={() => setSelectedSubject(sub)}
               className={`px-3 py-1.5 rounded-xl font-extrabold text-xs whitespace-nowrap transition-all ${
                 selectedSubject === sub
-                  ? 'bg-[#14213d] text-white shadow-2xs'
-                  : 'bg-white text-[#526079] border border-[#dce3ec] hover:bg-slate-50 hover:text-[#14213d]'
+                  ? 'bg-[#14213d] dark:bg-[#0f766e] text-white shadow-2xs'
+                  : 'bg-white dark:bg-slate-900 text-[#526079] dark:text-slate-300 border border-[#dce3ec] dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#14213d] dark:hover:text-white'
               }`}
             >
               {sub}

@@ -63,6 +63,55 @@ body {
 }
 
 /* =========================================================
+   CUSTOM THEMED SCROLLBARS (LIGHT & DARK MODE)
+   ========================================================= */
+
+/* Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #0f766e #e2e8f0;
+}
+
+html.dark * {
+  scrollbar-color: #2dd4bf #0f172a;
+}
+
+/* Chrome, Edge, Safari Webkit Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0f766e;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0d9488;
+}
+
+/* Dark Mode Webkit Scrollbars */
+html.dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 9999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #0f766e;
+  border-radius: 9999px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #2dd4bf;
+}
+
+/* =========================================================
    GLOBAL DARK MODE UI OVERRIDES FOR MAXIMUM TEXT VISIBILITY
    ========================================================= */
 
@@ -102,13 +151,30 @@ html.dark [class*="bg-[#f8fafc]"] {
   background-color: #090d16 !important;
 }
 
-/* High-Contrast Text Rules */
-html.dark .text-\[\#14213d\] {
+/* High-Contrast Text & Heading Rules */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6,
+html.dark .text-\[\#14213d\],
+html.dark [class*="text-[#14213d]"] {
   color: #f8fafc !important;
 }
 
-html.dark .text-\[\#526079\] {
+html.dark p,
+html.dark span:not([class*="text-"]),
+html.dark .text-\[\#526079\],
+html.dark [class*="text-[#526079]"] {
   color: #94a3b8 !important;
+}
+
+html.dark .bg-slate-100\/70,
+html.dark [class*="bg-slate-100"] {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
 }
 
 html.dark .text-slate-600,
