@@ -482,7 +482,7 @@ function AdminContent() {
       }, 1500);
     } catch (err: any) {
       setEditPaperError(err.message || 'Error updating paper.');
-    } fontally {
+    } finally {
       setEditPaperSubmitting(false);
     }
   };
