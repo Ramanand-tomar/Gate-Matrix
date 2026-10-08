@@ -232,6 +232,29 @@ function findLocalPaperFile(paperId: string): string | null {
 function ensureLocalDatasetLoaded() {
   if (memoryPapers.size > 100) return;
   try {
+    const indexPath = path.join(process.cwd(), 'src', 'lib', 'data', 'papers_index.json');
+    if (fs.existsSync(indexPath)) {
+      const list = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
+      if (Array.isArray(list) && list.length > 0) {
+        list.forEach((p: any) => {
+          if (!memoryPapers.has(p.paper_id)) {
+            memoryPapers.set(p.paper_id, {
+              paper_id: p.paper_id,
+              title: p.title || p.paper_id,
+              branch: normalizeBranchCode(p.branch || 'CS'),
+              provider: p.provider || 'GATEPrep',
+              series: p.series || 'Official GATE Series',
+              total_questions: p.total_questions || 65,
+              questions: [],
+            });
+          }
+        });
+        if (memoryPapers.size > 0) return;
+      }
+    }
+  } catch (e) {}
+
+  try {
     const datasetDir = path.join(process.cwd(), 'scraped_dataset');
     if (fs.existsSync(datasetDir)) {
       const branches = fs.readdirSync(datasetDir);
