@@ -29,6 +29,10 @@ import { GoogleIcon } from '@/components/ui/GoogleIcon';
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/admin-room')) {
+    return null;
+  }
   const { user, userProfile, loading, signInWithGoogle, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
