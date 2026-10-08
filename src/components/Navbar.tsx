@@ -82,9 +82,11 @@ export default function Navbar() {
               href="/"
               className="flex items-center gap-3 group focus:outline-none"
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14213d] to-[#0f766e] text-white flex items-center justify-center font-black text-xl shadow-md group-hover:scale-105 transition-transform">
-                G
-              </div>
+              <img
+                src="/logo-icon.png"
+                alt="GATE Matrix Logo"
+                className="w-10 h-10 object-contain group-hover:scale-105 transition-transform drop-shadow-xs"
+              />
               <div className="flex flex-col leading-tight">
                 <div className="flex items-center gap-1.5">
                   <span className="font-black text-lg text-[#14213d] dark:text-white tracking-tight">

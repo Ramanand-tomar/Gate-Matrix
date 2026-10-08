@@ -11,9 +11,11 @@ export default function Footer() {
         {/* Column 1: Brand & Tagline */}
         <div className="md:col-span-4 space-y-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#14213d] to-[#0f766e] text-white flex items-center justify-center font-black text-base shadow-sm">
-              G
-            </div>
+            <img
+              src="/logo-icon.png"
+              alt="GATE Matrix Logo"
+              className="w-8 h-8 object-contain"
+            />
             <span className="font-black text-base text-[#14213d] dark:text-white tracking-tight">
               GATE <span className="text-[#0f766e] dark:text-[#2dd4bf]">Matrix</span>
             </span>

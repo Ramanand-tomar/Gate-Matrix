@@ -23,6 +23,11 @@ export const metadata: Metadata = {
     "GATE CBT Online Exam Engine",
   ],
   authors: [{ name: "GATE Matrix Team" }],
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/logo-icon.png",
+    apple: "/logo-icon.png",
+  },
   metadataBase: new URL("https://gate-matrix.vercel.app"),
   alternates: {
     canonical: "/",
