@@ -309,21 +309,39 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Column: Interactive CBT Interface Preview Simulator */}
-          <div className="lg:col-span-5">
-            <div className="bg-[#0f172a]/80 backdrop-blur-2xl border border-white/15 rounded-3xl p-5 shadow-2xl space-y-4">
+          {/* Right Column: High-Res Aesthetic 3D CBT Simulator Preview */}
+          <div className="lg:col-span-5 relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-[#0f766e] via-[#38bdf8] to-purple-600 rounded-3xl blur-xl opacity-40 group-hover:opacity-75 transition-opacity"></div>
+            <div className="relative bg-[#0f172a]/90 backdrop-blur-2xl border border-white/20 rounded-3xl p-3 shadow-2xl overflow-hidden space-y-3">
               {/* CBT Header Simulation Bar */}
-              <div className="bg-[#14213d] border border-white/10 rounded-2xl p-4 flex justify-between items-center text-xs">
+              <div className="bg-[#14213d] border border-white/10 rounded-2xl p-3 flex justify-between items-center text-xs">
                 <div className="flex items-center gap-2.5">
                   <div className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></div>
                   <div>
-                    <span className="font-extrabold text-white block">GATE 2027 Mock Simulator</span>
-                    <span className="text-[10px] text-gray-400">CS & DA Stream Full Test #04</span>
+                    <span className="font-extrabold text-white block text-xs">GATE 2027 Official CBT Engine</span>
+                    <span className="text-[10px] text-[#8be0ce] font-semibold">Real Exam Simulator & Palette</span>
                   </div>
                 </div>
-                <div className="bg-slate-900/90 border border-[#0f766e]/60 px-3 py-1.5 rounded-xl flex items-center gap-1.5 text-[#8be0ce] font-mono font-bold">
+                <div className="bg-slate-900/90 border border-[#0f766e]/60 px-3 py-1 rounded-xl flex items-center gap-1.5 text-[#8be0ce] font-mono font-bold text-xs">
                   <Clock className="w-3.5 h-3.5" />
                   <span>{formatTime(simulatedTime)}</span>
+                </div>
+              </div>
+
+              {/* Aesthetic High-Res 3D CBT Engine Visual */}
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-inner group">
+                <img
+                  src="/hero-cbt-preview.jpg"
+                  alt="GATE CBT Exam Simulator Interface"
+                  className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-80"></div>
+                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center bg-[#14213d]/90 backdrop-blur-md p-3 rounded-xl border border-white/15 text-xs text-white">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[#8be0ce]" />
+                    <span className="font-bold">1,061+ GATE Test Papers Ready</span>
+                  </div>
+                  <Badge variant="emerald" size="sm">CBT Standard 2027</Badge>
                 </div>
               </div>
 
@@ -546,14 +564,30 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Interactive Feature Visual Card */}
-          <div className="lg:col-span-6">
-            <div className="bg-[#14213d] border border-white/15 rounded-3xl p-6 shadow-2xl space-y-6">
-              <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                <span className="text-xs font-extrabold text-[#8be0ce] uppercase tracking-wider">
-                  CBT Palette Navigation Status
+          {/* Interactive Feature Visual Card with High-Res AI Analytics Image */}
+          <div className="lg:col-span-6 relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition-opacity"></div>
+            <div className="relative bg-[#14213d] border border-white/20 rounded-3xl p-4 shadow-2xl space-y-4 overflow-hidden">
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <span className="text-xs font-extrabold text-[#8be0ce] uppercase tracking-wider flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-[#8be0ce]" />
+                  <span>AI Diagnostic Analytics Engine</span>
                 </span>
-                <span className="text-xs text-gray-400 font-mono">Question 34 of 65</span>
+                <Badge variant="cyan" size="sm">GATE 2027 AIR Predictor</Badge>
+              </div>
+
+              {/* Aesthetic High-Res 3D Analytics Visual Image */}
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-inner group">
+                <img
+                  src="/gate-analytics-hero.jpg"
+                  alt="GATE AI Diagnostic Performance Analytics Dashboard"
+                  className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#14213d] via-transparent to-transparent opacity-70"></div>
+                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-center bg-[#0f172a]/90 backdrop-blur-md p-3 rounded-xl border border-white/15 text-xs text-white">
+                  <span className="font-bold text-[#8be0ce]">Real-time AIR Rank & Topic Weakness Heatmap</span>
+                  <span className="font-mono font-bold text-amber-400">Accuracy: 87.2%</span>
+                </div>
               </div>
 
               {/* Simulated Palette Grid */}
