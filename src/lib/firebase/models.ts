@@ -765,3 +765,8 @@ export async function getUserOrders(uid: string): Promise<OrderModel[]> {
   );
   return matchingOrders;
 }
+
+export async function getAllOrders(): Promise<OrderModel[]> {
+  ensureLocalOrdersLoaded();
+  return Array.from(memoryOrders.values());
+}
