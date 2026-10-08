@@ -46,20 +46,24 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { uid, role, status, activePasses, displayName, email } = body as {
-      uid: string;
+    const { uid, email, role, status, activePasses, displayName } = body as {
+      uid?: string;
+      email?: string;
       role?: UserRole;
       status?: 'ACTIVE' | 'SUSPENDED';
       activePasses?: string[];
       displayName?: string;
-      email?: string;
     };
 
-    if (!uid) {
-      return NextResponse.json({ success: false, error: 'Candidate UID is required' }, { status: 400 });
+    const targetIdentifier = uid || email;
+    if (!targetIdentifier) {
+      return NextResponse.json(
+        { success: false, error: 'Candidate UID or email is required' },
+        { status: 400 }
+      );
     }
 
-    const updatedUser = await updateUserProfileAdmin(uid, {
+    const updatedUser = await updateUserProfileAdmin(targetIdentifier, {
       role,
       status,
       activePasses,

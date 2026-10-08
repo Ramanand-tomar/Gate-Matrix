@@ -147,6 +147,38 @@ function AdminContent() {
   const isAuthorized = hasRolePermission(currentRole, 'EDITOR');
 
   const [activeTab, setActiveTab] = useState<AdminTab>('CONTENT');
+  const [elevateLoading, setElevateLoading] = useState(false);
+  const [elevateMsg, setElevateMsg] = useState<string | null>(null);
+
+  const handlePromoteSelfToAdmin = async () => {
+    if (!userProfile?.uid && !userProfile?.email) {
+      alert('Please sign in with Google first to promote your account.');
+      return;
+    }
+    setElevateLoading(true);
+    setElevateMsg(null);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: userProfile.uid,
+          email: userProfile.email,
+          role: 'ADMIN',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update role');
+      setElevateMsg('Role successfully updated to ADMIN! Reloading console...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    } catch (err: any) {
+      alert(err.message || 'Failed to promote account');
+    } finally {
+      setElevateLoading(false);
+    }
+  };
 
   // Sales Data State (Phase 1)
   const [salesLoading, setSalesLoading] = useState(true);
@@ -580,13 +612,34 @@ function AdminContent() {
             <div className="bg-amber-100/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-300 font-medium mb-6">
               🔒 Security Guard Enforced: All API calls, content tools, sales tracking, and candidate rosters require authenticated administrator credentials.
             </div>
-            <div className="flex justify-center gap-3">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-3">
               <Link href="/">
                 <Button variant="secondary" size="sm">
                   Return to Homepage
                 </Button>
               </Link>
+              {userProfile ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={elevateLoading}
+                  onClick={handlePromoteSelfToAdmin}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                >
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  {elevateLoading ? 'Promoting...' : 'Promote My Account to Admin'}
+                </Button>
+              ) : (
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold">
+                  Sign in with Google on top right, then click promote to unlock console.
+                </p>
+              )}
             </div>
+            {elevateMsg && (
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-extrabold mt-4 animate-pulse">
+                {elevateMsg}
+              </p>
+            )}
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

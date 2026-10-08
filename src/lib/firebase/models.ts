@@ -287,13 +287,21 @@ export async function getAllUserProfiles(): Promise<UserModel[]> {
 }
 
 export async function updateUserProfileAdmin(
-  uid: string,
+  identifier: string,
   updates: Partial<Pick<UserModel, 'role' | 'status' | 'activePasses' | 'displayName' | 'email'>>
 ): Promise<UserModel | null> {
   ensureLocalUsersLoaded();
-  const existing = memoryUsers.get(uid) || (await getUserProfile(uid));
+  let existing = memoryUsers.get(identifier) || (await getUserProfile(identifier));
+  if (!existing) {
+    const searchLower = identifier.toLowerCase();
+    const found = Array.from(memoryUsers.values()).find(
+      (u) => (u.email && u.email.toLowerCase() === searchLower) || u.uid === identifier
+    );
+    if (found) existing = found;
+  }
   if (!existing) return null;
 
+  const targetUid = existing.uid;
   const updated: UserModel = {
     ...existing,
     ...updates,
@@ -302,13 +310,13 @@ export async function updateUserProfileAdmin(
     activePasses: updates.activePasses !== undefined ? updates.activePasses : existing.activePasses || [],
   };
 
-  memoryUsers.set(uid, updated);
+  memoryUsers.set(targetUid, updated);
   saveLocalUsersDisk();
 
   try {
     const keyParam = API_KEY ? `?key=${API_KEY}` : '';
     const fields = toFirestoreFields(updates);
-    fetch(`${BASE_URL}/users/${uid}${keyParam}`, {
+    fetch(`${BASE_URL}/users/${targetUid}${keyParam}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fields }),
