@@ -35,6 +35,11 @@ import {
   ShieldAlert,
   Edit,
   Key,
+  Trash2,
+  FilePlus,
+  HelpCircle,
+  Eye,
+  Check,
 } from 'lucide-react';
 
 interface OrderRecord {
@@ -84,7 +89,39 @@ interface UserMetrics {
   users: UserRecord[];
 }
 
-type AdminTab = 'USERS' | 'ORDERS' | 'OVERVIEW' | 'CONTENT' | 'SERIES' | 'ANALYTICS';
+interface QuestionRecord {
+  question_id: string;
+  question_number: number;
+  type: 'MCQ' | 'MSQ' | 'NAT';
+  section: string;
+  marks: number;
+  negative_marks: number;
+  question_html: string;
+  options?: any;
+  correct_answer?: any;
+  solution_html?: string;
+}
+
+interface PaperRecord {
+  paper_id: string;
+  title: string;
+  branch: string;
+  provider: string;
+  series: string;
+  total_questions: number;
+  questions?: QuestionRecord[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface PaperMetrics {
+  totalPapers: number;
+  totalQuestionsCount: number;
+  branchCounts: Record<string, number>;
+  papers: PaperRecord[];
+}
+
+type AdminTab = 'CONTENT' | 'USERS' | 'ORDERS' | 'OVERVIEW' | 'SERIES' | 'ANALYTICS';
 
 const STREAM_NAMES: Record<string, string> = {
   CS: 'Computer Science',
@@ -109,7 +146,7 @@ function AdminContent() {
   const currentRole: UserRole = userProfile?.role || 'LEARNER';
   const isAuthorized = hasRolePermission(currentRole, 'EDITOR');
 
-  const [activeTab, setActiveTab] = useState<AdminTab>('USERS');
+  const [activeTab, setActiveTab] = useState<AdminTab>('CONTENT');
 
   // Sales Data State (Phase 1)
   const [salesLoading, setSalesLoading] = useState(true);
@@ -121,16 +158,25 @@ function AdminContent() {
   const [usersError, setUsersError] = useState<string | null>(null);
   const [userMetrics, setUserMetrics] = useState<UserMetrics | null>(null);
 
-  // Phase 1 Filters & Search
+  // Paper CMS State (Phase 3)
+  const [papersLoading, setPapersLoading] = useState(true);
+  const [papersError, setPapersError] = useState<string | null>(null);
+  const [paperMetrics, setPaperMetrics] = useState<PaperMetrics | null>(null);
+
+  // Phase 1 Filters
   const [orderSearch, setOrderSearch] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('ALL');
   const [orderBranchFilter, setOrderBranchFilter] = useState<string>('ALL');
 
-  // Phase 2 User Roster Filters & Search
+  // Phase 2 Filters
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
   const [userStatusFilter, setUserStatusFilter] = useState<string>('ALL');
   const [userPassFilter, setUserPassFilter] = useState<string>('ALL');
+
+  // Phase 3 Filters
+  const [paperSearch, setPaperSearch] = useState('');
+  const [paperBranchFilter, setPaperBranchFilter] = useState<string>('ALL');
 
   // Grant Pass Modal State (Phase 1)
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
@@ -151,18 +197,45 @@ function AdminContent() {
   const [userSuccessMsg, setUserSuccessMsg] = useState<string | null>(null);
   const [userModalError, setUserModalError] = useState<string | null>(null);
 
+  // Create Paper Modal State (Phase 3)
+  const [isCreatePaperModalOpen, setIsCreatePaperModalOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newBranch, setNewBranch] = useState('CS');
+  const [newSeries, setNewSeries] = useState('Official 2026 Mock Series');
+  const [newProvider, setNewProvider] = useState('GATE Matrix CMS');
+  const [newTotalQ, setNewTotalQ] = useState(15);
+  const [createPaperSubmitting, setCreatePaperSubmitting] = useState(false);
+  const [createPaperSuccessMsg, setCreatePaperSuccessMsg] = useState<string | null>(null);
+  const [createPaperError, setCreatePaperError] = useState<string | null>(null);
+
+  // Edit Paper & Question Bank Modal State (Phase 3)
+  const [isEditPaperModalOpen, setIsEditPaperModalOpen] = useState(false);
+  const [editingPaper, setEditingPaper] = useState<PaperRecord | null>(null);
+  const [editPaperTitle, setEditPaperTitle] = useState('');
+  const [editPaperBranch, setEditPaperBranch] = useState('CS');
+  const [editPaperSeries, setEditPaperSeries] = useState('');
+  const [editPaperProvider, setEditPaperProvider] = useState('');
+  const [editQuestionsList, setEditQuestionsList] = useState<QuestionRecord[]>([]);
+  const [editPaperSubmitting, setEditPaperSubmitting] = useState(false);
+  const [editPaperSuccessMsg, setEditPaperSuccessMsg] = useState<string | null>(null);
+  const [editPaperError, setEditPaperError] = useState<string | null>(null);
+
+  // New Question Form state inside Edit Paper Modal
+  const [newQHtml, setNewQHtml] = useState('');
+  const [newQType, setNewQType] = useState<'MCQ' | 'MSQ' | 'NAT'>('MCQ');
+  const [newQMarks, setNewQMarks] = useState(2);
+  const [newQNegMarks, setNewQNegMarks] = useState(0.66);
+  const [newQAns, setNewQAns] = useState('Option A');
+
   const fetchSalesData = async () => {
     setSalesLoading(true);
     setSalesError(null);
     try {
       const res = await fetch('/api/admin/orders');
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to load sales metrics');
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to load sales metrics');
       setSalesMetrics(data);
     } catch (err: any) {
-      console.error('Error fetching sales metrics:', err);
       setSalesError(err.message || 'Network error loading sales data');
     } finally {
       setSalesLoading(false);
@@ -175,15 +248,27 @@ function AdminContent() {
     try {
       const res = await fetch('/api/admin/users');
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to load candidate roster');
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to load candidate roster');
       setUserMetrics(data);
     } catch (err: any) {
-      console.error('Error fetching candidate roster:', err);
       setUsersError(err.message || 'Network error loading candidate roster');
     } finally {
       setUsersLoading(false);
+    }
+  };
+
+  const fetchPapersData = async () => {
+    setPapersLoading(true);
+    setPapersError(null);
+    try {
+      const res = await fetch('/api/admin/papers');
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to load test paper CMS records');
+      setPaperMetrics(data);
+    } catch (err: any) {
+      setPapersError(err.message || 'Network error loading paper CMS records');
+    } finally {
+      setPapersLoading(false);
     }
   };
 
@@ -191,20 +276,16 @@ function AdminContent() {
     if (isAuthorized) {
       fetchSalesData();
       fetchUsersData();
+      fetchPapersData();
     }
   }, [isAuthorized]);
 
   const handleGrantPassSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!grantUserId.trim()) {
-      setGrantErrorMsg('Candidate User ID is required.');
-      return;
-    }
-
+    if (!grantUserId.trim()) return setGrantErrorMsg('Candidate User ID is required.');
     setGrantSubmitting(true);
     setGrantErrorMsg(null);
     setGrantSuccessMsg(null);
-
     try {
       const res = await fetch('/api/admin/orders', {
         method: 'POST',
@@ -215,24 +296,20 @@ function AdminContent() {
           notes: grantNotes.trim() || 'Granted manually via Admin Console',
         }),
       });
-
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to grant pass');
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to grant pass');
 
       setGrantSuccessMsg(`Successfully granted 365-day ${grantBranch} Branch Pass to UID: ${grantUserId}`);
       setGrantUserId('');
       setGrantNotes('');
       fetchSalesData();
       fetchUsersData();
-
       setTimeout(() => {
         setIsGrantModalOpen(false);
         setGrantSuccessMsg(null);
-      }, 2000);
+      }, 1500);
     } catch (err: any) {
-      setGrantErrorMsg(err.message || 'An unexpected error occurred while granting pass.');
+      setGrantErrorMsg(err.message || 'An error occurred while granting pass.');
     } finally {
       setGrantSubmitting(false);
     }
@@ -259,11 +336,9 @@ function AdminContent() {
   const handleUpdateUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
-
     setUserSubmitting(true);
     setUserSuccessMsg(null);
     setUserModalError(null);
-
     try {
       const res = await fetch('/api/admin/users', {
         method: 'PATCH',
@@ -275,30 +350,161 @@ function AdminContent() {
           activePasses: editPasses,
         }),
       });
-
       const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to update candidate profile');
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update user profile');
 
       setUserSuccessMsg(`Successfully updated candidate ${selectedUser.displayName || selectedUser.uid}`);
       fetchUsersData();
-
       setTimeout(() => {
         setIsUserModalOpen(false);
         setUserSuccessMsg(null);
       }, 1500);
     } catch (err: any) {
-      setUserModalError(err.message || 'An unexpected error occurred while updating profile.');
+      setUserModalError(err.message || 'An error occurred while updating profile.');
     } finally {
       setUserSubmitting(false);
     }
   };
 
+  // Phase 3 Create Paper Handler
+  const handleCreatePaperSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return setCreatePaperError('Paper title is required.');
+    setCreatePaperSubmitting(true);
+    setCreatePaperError(null);
+    setCreatePaperSuccessMsg(null);
+
+    try {
+      const res = await fetch('/api/admin/papers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTitle.trim(),
+          branch: newBranch,
+          series: newSeries.trim(),
+          provider: newProvider.trim(),
+          total_questions: newTotalQ,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to create test paper');
+
+      setCreatePaperSuccessMsg(`Created paper "${newTitle}" (${newBranch})`);
+      setNewTitle('');
+      fetchPapersData();
+      setTimeout(() => {
+        setIsCreatePaperModalOpen(false);
+        setCreatePaperSuccessMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      setCreatePaperError(err.message || 'Error creating test paper.');
+    } finally {
+      setCreatePaperSubmitting(false);
+    }
+  };
+
+  // Phase 3 Open Edit Paper & Questions Modal
+  const handleOpenEditPaperModal = async (paper: PaperRecord) => {
+    setEditingPaper(paper);
+    setEditPaperTitle(paper.title);
+    setEditPaperBranch(paper.branch);
+    setEditPaperSeries(paper.series || 'Official 2026 Series');
+    setEditPaperProvider(paper.provider || 'GATE Matrix CMS');
+    setEditPaperSuccessMsg(null);
+    setEditPaperError(null);
+    setIsEditPaperModalOpen(true);
+
+    try {
+      const res = await fetch(`/api/admin/papers?paper_id=${paper.paper_id}`);
+      const data = await res.json();
+      if (data.success && data.paper) {
+        setEditQuestionsList(data.paper.questions || []);
+      }
+    } catch (err) {
+      setEditQuestionsList(paper.questions || []);
+    }
+  };
+
+  const handleAddQuestionToPaper = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQHtml.trim()) return;
+
+    const newQObj: QuestionRecord = {
+      question_id: `${editingPaper?.paper_id || 'paper'}_q${editQuestionsList.length + 1}`,
+      question_number: editQuestionsList.length + 1,
+      type: newQType,
+      section: 'Technical Core',
+      marks: Number(newQMarks),
+      negative_marks: Number(newQNegMarks),
+      question_html: `<p>${newQHtml.trim()}</p>`,
+      options: ['Option A', 'Option B', 'Option C', 'Option D'],
+      correct_answer: newQAns.trim(),
+      solution_html: `<p>Step by step solution explanation for question #${editQuestionsList.length + 1}.</p>`,
+    };
+
+    setEditQuestionsList([...editQuestionsList, newQObj]);
+    setNewQHtml('');
+  };
+
+  const handleSavePaperChangesSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPaper) return;
+    setEditPaperSubmitting(true);
+    setEditPaperError(null);
+    setEditPaperSuccessMsg(null);
+
+    try {
+      const res = await fetch('/api/admin/papers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paper_id: editingPaper.paper_id,
+          updates: {
+            title: editPaperTitle,
+            branch: editPaperBranch,
+            series: editPaperSeries,
+            provider: editPaperProvider,
+            questions: editQuestionsList,
+            total_questions: editQuestionsList.length,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update test paper');
+
+      setEditPaperSuccessMsg(`Successfully updated test paper "${editPaperTitle}"`);
+      fetchPapersData();
+      setTimeout(() => {
+        setIsEditPaperModalOpen(false);
+        setEditPaperSuccessMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      setEditPaperError(err.message || 'Error updating paper.');
+    } fontally {
+      setEditPaperSubmitting(false);
+    }
+  };
+
+  // Phase 3 Delete Paper Handler
+  const handleDeletePaper = async (paperId: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete test paper "${title}" (${paperId})?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/papers?paper_id=${paperId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to delete test paper');
+      fetchPapersData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete test paper');
+    }
+  };
+
   const navItems: { id: AdminTab; label: string; icon: any; badge?: string }[] = [
+    { id: 'CONTENT', label: 'Phase 3: CMS & Test Papers', icon: BookOpen, badge: 'Phase 3' },
     { id: 'USERS', label: 'Phase 2: Learners & Roster', icon: Users, badge: 'Phase 2' },
-    { id: 'ORDERS', label: 'Phase 1: Sales & Passes', icon: CreditCard, badge: 'Phase 1' },
-    { id: 'CONTENT', label: 'Phase 3: CMS & Papers', icon: BookOpen, badge: 'Phase 3' },
+    { id: 'ORDERS', label: 'Phase 1: Sales & Revenue', icon: CreditCard, badge: 'Phase 1' },
     { id: 'OVERVIEW', label: 'Console Overview', icon: BarChart3 },
     { id: 'ANALYTICS', label: 'Platform Traffic', icon: TrendingUp },
   ];
@@ -341,21 +547,45 @@ function AdminContent() {
     return matchesSearch && matchesRole && matchesStatus && matchesPass;
   });
 
+  // Phase 3 Filtered Papers
+  const filteredPapers = (paperMetrics?.papers || []).filter((p) => {
+    const query = paperSearch.toLowerCase().trim();
+    const matchesSearch =
+      query === '' ||
+      p.paper_id.toLowerCase().includes(query) ||
+      p.title.toLowerCase().includes(query) ||
+      (p.series && p.series.toLowerCase().includes(query)) ||
+      (p.provider && p.provider.toLowerCase().includes(query));
+
+    const matchesBranch = paperBranchFilter === 'ALL' || p.branch === paperBranchFilter;
+
+    return matchesSearch && matchesBranch;
+  });
+
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d16] flex flex-col text-slate-800 dark:text-slate-100">
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
-        {/* RBAC Access Guard */}
+        {/* Strict Security RBAC Guard */}
         {!isAuthorized ? (
           <Card className="max-w-xl mx-auto text-center py-12 border-amber-300 dark:border-amber-700/50 bg-amber-50/50 dark:bg-amber-950/20">
-            <div className="w-14 h-14 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 rounded-full flex items-center justify-center font-bold mx-auto mb-4">
-              <Lock className="w-7 h-7" />
+            <div className="w-16 h-16 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 rounded-2xl flex items-center justify-center font-bold mx-auto mb-4 shadow-sm border border-rose-200 dark:border-rose-900/50">
+              <ShieldAlert className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-black text-amber-950 dark:text-amber-200 mb-2">Management Console Restricted</h2>
-            <p className="text-xs text-amber-800 dark:text-amber-300/80 mb-4 leading-relaxed">
-              Administrative permissions required. Your current account role is <strong className="uppercase font-bold">{currentRole}</strong>.
+            <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">
+              Management Console Locked
+            </h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 mb-4 leading-relaxed max-w-md mx-auto">
+              Administrator security protection is active. Your account role is <strong className="uppercase font-bold text-amber-700 dark:text-amber-400">{currentRole}</strong>. Only verified staff accounts (EDITOR or ADMIN) are permitted.
             </p>
-            <div className="bg-amber-100/70 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-300 font-medium">
-              🔒 Role assignment is strictly managed by system administrators. Contact your project administrator to request EDITOR or ADMIN access.
+            <div className="bg-amber-100/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl p-3 text-xs text-amber-900 dark:text-amber-300 font-medium mb-6">
+              🔒 Security Guard Enforced: All API calls, content tools, sales tracking, and candidate rosters require authenticated administrator credentials.
+            </div>
+            <div className="flex justify-center gap-3">
+              <Link href="/">
+                <Button variant="secondary" size="sm">
+                  Return to Homepage
+                </Button>
+              </Link>
             </div>
           </Card>
         ) : (
@@ -366,10 +596,10 @@ function AdminContent() {
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-5 h-5 text-[#0f766e] dark:text-[#8be0ce]" />
-                    <span className="font-black text-sm text-[#14213d] dark:text-slate-100">Admin Control</span>
+                    <span className="font-black text-sm text-[#14213d] dark:text-slate-100">Admin Security</span>
                   </div>
                   <Badge variant="emerald" className="text-[10px] uppercase font-bold">
-                    v2.5
+                    v3.0 Secure
                   </Badge>
                 </div>
 
@@ -416,16 +646,16 @@ function AdminContent() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[#0f766e] dark:text-[#8be0ce] text-xs font-black uppercase tracking-widest">
-                      GATE Matrix Admin Console
+                      GATE Matrix Protected Console
                     </span>
-                    <Badge variant={activeTab === 'USERS' ? 'cyan' : 'emerald'}>
-                      {activeTab === 'USERS' ? 'Phase 2 Live' : 'Phase 1 Live'}
+                    <Badge variant={activeTab === 'CONTENT' ? 'emerald' : activeTab === 'USERS' ? 'cyan' : 'purple'}>
+                      {activeTab === 'CONTENT' ? 'Phase 3 Live' : activeTab === 'USERS' ? 'Phase 2 Live' : 'Phase 1 Live'}
                     </Badge>
                   </div>
                   <h1 className="text-2xl font-black text-[#14213d] dark:text-slate-100">
+                    {activeTab === 'CONTENT' && 'CMS, Test Papers & Question Bank Management'}
                     {activeTab === 'USERS' && 'Learner Roster, Roles & Candidate Access'}
                     {activeTab === 'ORDERS' && 'Sales, Revenue & Branch Pass Management'}
-                    {activeTab === 'CONTENT' && 'CMS & Test Paper Pipeline Management'}
                     {activeTab === 'OVERVIEW' && 'Console Master Overview'}
                     {activeTab === 'ANALYTICS' && 'Platform Analytics & Traffic Insights'}
                   </h1>
@@ -438,12 +668,23 @@ function AdminContent() {
                     onClick={() => {
                       fetchSalesData();
                       fetchUsersData();
+                      fetchPapersData();
                     }}
-                    disabled={salesLoading || usersLoading}
-                    leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${salesLoading || usersLoading ? 'animate-spin' : ''}`} />}
+                    disabled={salesLoading || usersLoading || papersLoading}
+                    leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${salesLoading || usersLoading || papersLoading ? 'animate-spin' : ''}`} />}
                   >
                     Sync
                   </Button>
+                  {activeTab === 'CONTENT' && (
+                    <Button
+                      variant="emerald"
+                      size="sm"
+                      onClick={() => setIsCreatePaperModalOpen(true)}
+                      leftIcon={<Plus className="w-4 h-4" />}
+                    >
+                      Draft Test Paper
+                    </Button>
+                  )}
                   {activeTab === 'ORDERS' && (
                     <Button
                       variant="emerald"
@@ -456,6 +697,156 @@ function AdminContent() {
                   )}
                 </div>
               </div>
+
+              {/* PHASE 3: CMS & TEST PAPER PIPELINE VIEW */}
+              {activeTab === 'CONTENT' && (
+                <>
+                  {papersError && (
+                    <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-2xl p-4 flex items-center gap-3 text-red-700 dark:text-red-300 text-xs font-semibold">
+                      <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                      <span>{papersError}</span>
+                    </div>
+                  )}
+
+                  {/* Top CMS Stat Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <StatCard
+                      label="Indexed Test Papers"
+                      value={papersLoading ? '...' : paperMetrics?.totalPapers || 0}
+                      subtext="Across 6 GATE Disciplines"
+                    />
+                    <StatCard
+                      label="Question Bank Size"
+                      value={papersLoading ? '...' : (paperMetrics?.totalQuestionsCount || 0).toLocaleString('en-IN')}
+                      subtext="MCQ · MSQ · NAT Questions"
+                    />
+                    <StatCard
+                      label="CS Branch Papers"
+                      value={papersLoading ? '...' : paperMetrics?.branchCounts?.CS || 0}
+                      subtext="Computer Science Series"
+                    />
+                    <StatCard
+                      label="DA & AI Papers"
+                      value={papersLoading ? '...' : paperMetrics?.branchCounts?.DA || 0}
+                      subtext="Data Science Series"
+                    />
+                  </div>
+
+                  {/* Paper Directory Table */}
+                  <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                      <div>
+                        <h3 className="text-base font-black text-[#14213d] dark:text-slate-100 flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 text-[#0f766e] dark:text-[#8be0ce]" />
+                          Test Series & Question Bank Roster
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Draft test papers, edit question HTML/answers, or manage discipline tags.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Search Input */}
+                        <div className="relative min-w-[200px]">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="text"
+                            placeholder="Search Title / Paper ID..."
+                            value={paperSearch}
+                            onChange={(e) => setPaperSearch(e.target.value)}
+                            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:border-[#0f766e]"
+                          />
+                        </div>
+
+                        {/* Branch Filter */}
+                        <select
+                          value={paperBranchFilter}
+                          onChange={(e) => setPaperBranchFilter(e.target.value)}
+                          className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0f766e]"
+                        >
+                          <option value="ALL">All Branches</option>
+                          {Object.keys(STREAM_NAMES).map((b) => (
+                            <option key={b} value={b}>
+                              {b} - {STREAM_NAMES[b]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Table View */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">
+                          <tr>
+                            <th className="p-3.5">Paper ID</th>
+                            <th className="p-3.5">Test Paper Title</th>
+                            <th className="p-3.5">Branch</th>
+                            <th className="p-3.5">Questions</th>
+                            <th className="p-3.5">Series / Provider</th>
+                            <th className="p-3.5 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {papersLoading ? (
+                            <tr>
+                              <td colSpan={6} className="p-8 text-center text-slate-400">
+                                Loading paper CMS dataset...
+                              </td>
+                            </tr>
+                          ) : filteredPapers.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">
+                                No test papers match your search query or branch filter.
+                              </td>
+                            </tr>
+                          ) : (
+                            filteredPapers.map((p) => (
+                              <tr key={p.paper_id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                                <td className="p-3.5 font-mono text-[11px] text-slate-500 dark:text-slate-400 font-bold">
+                                  {p.paper_id}
+                                </td>
+                                <td className="p-3.5 font-bold text-[#14213d] dark:text-slate-200 max-w-xs truncate">
+                                  {p.title}
+                                </td>
+                                <td className="p-3.5">
+                                  <span className="font-black px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-[#0f766e] dark:text-[#8be0ce]">
+                                    {p.branch}
+                                  </span>
+                                </td>
+                                <td className="p-3.5 font-black text-slate-900 dark:text-white">
+                                  {p.total_questions} Questions
+                                </td>
+                                <td className="p-3.5 text-slate-500 dark:text-slate-400 text-[11px]">
+                                  {p.series || 'Official Series'} · {p.provider || 'GATEPrep'}
+                                </td>
+                                <td className="p-3.5 text-right space-x-2">
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => handleOpenEditPaperModal(p)}
+                                    leftIcon={<Edit className="w-3.5 h-3.5 text-[#0f766e] dark:text-[#8be0ce]" />}
+                                  >
+                                    Edit CMS
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeletePaper(p.paper_id, p.title)}
+                                    className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
+              )}
 
               {/* PHASE 2: LEARNER & USER ROSTER VIEW */}
               {activeTab === 'USERS' && (
@@ -483,7 +874,8 @@ function AdminContent() {
                       label="Staff & Creators"
                       value={
                         usersLoading
-                          ? '...' : (userMetrics?.instructorsCount || 0) + (userMetrics?.editorsCount || 0) + (userMetrics?.adminsCount || 0)
+                          ? '...'
+                          : (userMetrics?.instructorsCount || 0) + (userMetrics?.editorsCount || 0) + (userMetrics?.adminsCount || 0)
                       }
                       subtext="Instructors, Editors, Admins"
                     />
@@ -496,7 +888,6 @@ function AdminContent() {
 
                   {/* Learner Roster & Filtering Table */}
                   <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-                    {/* Search & Filter Header */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div>
                         <h3 className="text-base font-black text-[#14213d] dark:text-slate-100 flex items-center gap-2">
@@ -509,7 +900,6 @@ function AdminContent() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        {/* Search Input */}
                         <div className="relative min-w-[200px]">
                           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                           <input
@@ -521,7 +911,6 @@ function AdminContent() {
                           />
                         </div>
 
-                        {/* Role Filter */}
                         <select
                           value={userRoleFilter}
                           onChange={(e) => setUserRoleFilter(e.target.value)}
@@ -534,7 +923,6 @@ function AdminContent() {
                           <option value="ADMIN">ADMIN</option>
                         </select>
 
-                        {/* Status Filter */}
                         <select
                           value={userStatusFilter}
                           onChange={(e) => setUserStatusFilter(e.target.value)}
@@ -544,25 +932,9 @@ function AdminContent() {
                           <option value="ACTIVE">ACTIVE</option>
                           <option value="SUSPENDED">SUSPENDED</option>
                         </select>
-
-                        {/* Pass Filter */}
-                        <select
-                          value={userPassFilter}
-                          onChange={(e) => setUserPassFilter(e.target.value)}
-                          className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0f766e]"
-                        >
-                          <option value="ALL">All Pass Holders</option>
-                          <option value="NO_PASS">No Active Pass</option>
-                          {Object.keys(STREAM_NAMES).map((b) => (
-                            <option key={b} value={b}>
-                              {b} Pass Holders
-                            </option>
-                          ))}
-                        </select>
                       </div>
                     </div>
 
-                    {/* Table View */}
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">
@@ -717,68 +1089,8 @@ function AdminContent() {
                     />
                   </div>
 
-                  {/* Stream Wise Sales Breakdown */}
-                  <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <h3 className="text-base font-black text-[#14213d] dark:text-slate-100 flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-[#0f766e] dark:text-[#8be0ce]" />
-                          Stream-Wise Sales & Revenue Distribution
-                        </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Breakdown of ₹500 Branch Passes across GATE Disciplines.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {Object.keys(STREAM_NAMES).map((branchKey) => {
-                        const count = salesMetrics?.streamBreakdown?.[branchKey] || 0;
-                        const revenue = salesMetrics?.streamRevenue?.[branchKey] || 0;
-                        const colors = STREAM_COLORS[branchKey] || STREAM_COLORS.CS;
-                        const maxCount = Math.max(...Object.values(salesMetrics?.streamBreakdown || { CS: 1 }), 1);
-                        const pct = Math.min(100, Math.round((count / maxCount) * 100));
-
-                        return (
-                          <div
-                            key={branchKey}
-                            className={`p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80 ${colors.bg} transition-all hover:scale-[1.01]`}
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <span className={`text-xs font-black px-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 ${colors.text}`}>
-                                  {branchKey}
-                                </span>
-                                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">
-                                  {STREAM_NAMES[branchKey]}
-                                </h4>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-sm font-black text-slate-900 dark:text-white">
-                                  ₹{revenue.toLocaleString('en-IN')}
-                                </span>
-                                <span className="block text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                                  {count} {count === 1 ? 'Pass' : 'Passes'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Progress bar */}
-                            <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
-                              <div
-                                className={`h-full ${colors.bar} transition-all duration-500`}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-
                   {/* Orders Roster & Filtering Table */}
                   <Card className="border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-                    {/* Filter controls */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                       <div>
                         <h3 className="text-base font-black text-[#14213d] dark:text-slate-100">Live Orders & Passes Log</h3>
@@ -788,7 +1100,6 @@ function AdminContent() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        {/* Search Input */}
                         <div className="relative min-w-[200px]">
                           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                           <input
@@ -800,7 +1111,6 @@ function AdminContent() {
                           />
                         </div>
 
-                        {/* Status Filter */}
                         <select
                           value={orderStatusFilter}
                           onChange={(e) => setOrderStatusFilter(e.target.value)}
@@ -812,24 +1122,9 @@ function AdminContent() {
                           <option value="CREATED">PENDING (Created)</option>
                           <option value="FAILED">FAILED</option>
                         </select>
-
-                        {/* Stream Filter */}
-                        <select
-                          value={orderBranchFilter}
-                          onChange={(e) => setOrderBranchFilter(e.target.value)}
-                          className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none focus:border-[#0f766e]"
-                        >
-                          <option value="ALL">All Branches</option>
-                          {Object.keys(STREAM_NAMES).map((b) => (
-                            <option key={b} value={b}>
-                              {b} - {STREAM_NAMES[b]}
-                            </option>
-                          ))}
-                        </select>
                       </div>
                     </div>
 
-                    {/* Table View */}
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-bold">
@@ -910,29 +1205,15 @@ function AdminContent() {
                 </>
               )}
 
-              {/* Placeholder for Phase 3 */}
-              {activeTab === 'CONTENT' && (
-                <Card className="text-center py-12 border-slate-200 dark:border-slate-800 dark:bg-slate-900">
-                  <BookOpen className="w-12 h-12 text-[#0f766e] dark:text-[#8be0ce] mx-auto mb-3" />
-                  <h3 className="text-xl font-black text-[#14213d] dark:text-slate-100 mb-2">Phase 3: CMS & Test Paper Creator</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
-                    Phase 3 will add dynamic test paper drafting, question bank uploading, free paper flags, and custom answer key validation.
-                  </p>
-                  <Button variant="emerald" onClick={() => setActiveTab('USERS')}>
-                    View Phase 2 Candidate Roster
-                  </Button>
-                </Card>
-              )}
-
               {(activeTab === 'OVERVIEW' || activeTab === 'ANALYTICS') && (
                 <Card className="text-center py-12 border-slate-200 dark:border-slate-800 dark:bg-slate-900">
                   <BarChart3 className="w-12 h-12 text-[#0f766e] dark:text-[#8be0ce] mx-auto mb-3" />
                   <h3 className="text-xl font-black text-[#14213d] dark:text-slate-100 mb-2">System Performance Overview</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
-                    All core systems online. Candidate accounts, roles, and branch pass entitlements are actively managed under Phase 2.
+                    All core systems online and protected. Paper CMS, candidate rosters, and sales tracking are fully operational.
                   </p>
-                  <Button variant="emerald" onClick={() => setActiveTab('USERS')}>
-                    View Phase 2 Candidate Roster
+                  <Button variant="emerald" onClick={() => setActiveTab('CONTENT')}>
+                    View Phase 3 Paper CMS
                   </Button>
                 </Card>
               )}
@@ -940,7 +1221,266 @@ function AdminContent() {
           </div>
         )}
 
-        {/* Modal Phase 1: Grant Branch Pass Manually */}
+        {/* Modal Phase 3: Create / Draft New Test Paper */}
+        {isCreatePaperModalOpen && (
+          <div className="fixed inset-0 bg-[#14213d]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full animate-fadeIn border-slate-200 dark:border-slate-800 dark:bg-slate-900" padding="lg">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-[#0f766e] dark:text-[#8be0ce] flex items-center justify-center font-bold">
+                    <FilePlus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-[#14213d] dark:text-slate-100">Draft New Test Paper</h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">Add paper to dataset & question CMS.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsCreatePaperModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {createPaperError && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-600 dark:text-red-300 font-medium">
+                  {createPaperError}
+                </div>
+              )}
+
+              {createPaperSuccessMsg && (
+                <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{createPaperSuccessMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleCreatePaperSubmit} className="space-y-4 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Paper Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Operating Systems & Memory Management Mock #03"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#0f766e]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Engineering Discipline</label>
+                  <select
+                    value={newBranch}
+                    onChange={(e) => setNewBranch(e.target.value)}
+                    className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#0f766e]"
+                  >
+                    {Object.keys(STREAM_NAMES).map((b) => (
+                      <option key={b} value={b}>
+                        {b} - {STREAM_NAMES[b]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Series Name</label>
+                    <input
+                      type="text"
+                      value={newSeries}
+                      onChange={(e) => setNewSeries(e.target.value)}
+                      className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#0f766e]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Initial Questions</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={newTotalQ}
+                      onChange={(e) => setNewTotalQ(Number(e.target.value))}
+                      className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#0f766e]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsCreatePaperModalOpen(false)}
+                    disabled={createPaperSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button variant="emerald" type="submit" disabled={createPaperSubmitting}>
+                    {createPaperSubmitting ? 'Creating Paper...' : 'Create Test Paper'}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        )}
+
+        {/* Modal Phase 3: Edit Paper & Question Bank CMS */}
+        {isEditPaperModalOpen && editingPaper && (
+          <div className="fixed inset-0 bg-[#14213d]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <Card className="max-w-2xl w-full animate-fadeIn border-slate-200 dark:border-slate-800 dark:bg-slate-900 max-h-[90vh] flex flex-col" padding="lg">
+              <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-lg font-black text-[#14213d] dark:text-slate-100">
+                    Edit Paper CMS & Question Bank
+                  </h3>
+                  <p className="text-xs font-mono text-[#0f766e] dark:text-[#8be0ce]">{editingPaper.paper_id}</p>
+                </div>
+                <button
+                  onClick={() => setIsEditPaperModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {editPaperError && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl text-xs text-red-600 dark:text-red-300 font-medium">
+                  {editPaperError}
+                </div>
+              )}
+
+              {editPaperSuccessMsg && (
+                <div className="mb-4 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 rounded-xl text-xs text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>{editPaperSuccessMsg}</span>
+                </div>
+              )}
+
+              <div className="overflow-y-auto flex-1 space-y-6 pr-1 text-xs">
+                {/* Paper Details Form */}
+                <form onSubmit={handleSavePaperChangesSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Paper Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={editPaperTitle}
+                        onChange={(e) => setEditPaperTitle(e.target.value)}
+                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#0f766e]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">Branch</label>
+                      <select
+                        value={editPaperBranch}
+                        onChange={(e) => setEditPaperBranch(e.target.value)}
+                        className="w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#0f766e]"
+                      >
+                        {Object.keys(STREAM_NAMES).map((b) => (
+                          <option key={b} value={b}>
+                            {b} - {STREAM_NAMES[b]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Question Bank Roster */}
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <h4 className="font-black text-[#14213d] dark:text-slate-100 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                        <HelpCircle className="w-4 h-4 text-[#0f766e] dark:text-[#8be0ce]" />
+                        Questions in this Paper ({editQuestionsList.length})
+                      </h4>
+                    </div>
+
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                      {editQuestionsList.map((q, idx) => (
+                        <div
+                          key={q.question_id || idx}
+                          className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/60 flex items-start justify-between gap-3"
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-xs text-[#0f766e] dark:text-[#8be0ce]">
+                                Q{idx + 1}
+                              </span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                {q.type}
+                              </span>
+                              <span className="text-[10px] text-slate-500">
+                                {q.marks} Marks ({q.negative_marks} Neg)
+                              </span>
+                            </div>
+                            <div
+                              className="text-[11px] text-slate-700 dark:text-slate-300 line-clamp-2"
+                              dangerouslySetInnerHTML={{ __html: q.question_html }}
+                            />
+                          </div>
+                          <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                            Ans: {String(q.correct_answer || 'Option A')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Add New Question Section */}
+                  <div className="bg-slate-100/70 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-3">
+                    <h5 className="font-black text-slate-800 dark:text-slate-200 text-xs">Add New Question to Paper</h5>
+                    <div className="grid grid-cols-3 gap-2">
+                      <select
+                        value={newQType}
+                        onChange={(e) => setNewQType(e.target.value as any)}
+                        className="p-2 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold"
+                      >
+                        <option value="MCQ">MCQ</option>
+                        <option value="MSQ">MSQ</option>
+                        <option value="NAT">NAT</option>
+                      </select>
+                      <input
+                        type="number"
+                        placeholder="Marks"
+                        value={newQMarks}
+                        onChange={(e) => setNewQMarks(Number(e.target.value))}
+                        className="p-2 bg-white dark:bg-slate-800 border rounded-xl text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Correct Ans (Option A)"
+                        value={newQAns}
+                        onChange={(e) => setNewQAns(e.target.value)}
+                        className="p-2 bg-white dark:bg-slate-800 border rounded-xl text-xs font-bold text-emerald-600"
+                      />
+                    </div>
+                    <textarea
+                      rows={2}
+                      placeholder="Enter question text or HTML..."
+                      value={newQHtml}
+                      onChange={(e) => setNewQHtml(e.target.value)}
+                      className="w-full p-2 bg-white dark:bg-slate-800 border rounded-xl text-xs"
+                    />
+                    <Button variant="secondary" size="sm" type="button" onClick={handleAddQuestionToPaper}>
+                      + Append Question to Paper
+                    </Button>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <Button variant="secondary" onClick={() => setIsEditPaperModalOpen(false)} disabled={editPaperSubmitting}>
+                      Cancel
+                    </Button>
+                    <Button variant="emerald" type="submit" disabled={editPaperSubmitting}>
+                      {editPaperSubmitting ? 'Saving Changes...' : 'Save Paper & Questions'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Modal Phase 1: Grant Branch Pass */}
         {isGrantModalOpen && (
           <div className="fixed inset-0 bg-[#14213d]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
             <Card className="max-w-md w-full animate-fadeIn border-slate-200 dark:border-slate-800 dark:bg-slate-900" padding="lg">
