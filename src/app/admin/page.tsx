@@ -503,7 +503,7 @@ function AdminContent() {
                                         : ord.status === 'GRANTED'
                                         ? 'cyan'
                                         : ord.status === 'FAILED'
-                                        ? 'red'
+                                        ? 'rose'
                                         : 'amber'
                                     }
                                   >
