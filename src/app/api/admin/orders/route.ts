@@ -3,8 +3,16 @@ import { getAllOrders, createOrder, OrderModel } from '@/lib/firebase/models';
 
 export const dynamic = 'force-dynamic';
 
+function isAuthorizedAdminCall(request: Request): boolean {
+  const secret = request.headers.get('x-admin-secret');
+  return secret === (process.env.ADMIN_SECRET_KEY || 'GATE_MATRIX_SECURE_ADMIN_2026');
+}
+
 // GET /api/admin/orders - Fetch all orders & revenue statistics for admin dashboard
 export async function GET(request: Request) {
+  if (!isAuthorizedAdminCall(request)) {
+    return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
+  }
   try {
     const orders = await getAllOrders();
     
@@ -54,6 +62,9 @@ export async function GET(request: Request) {
 
 // POST /api/admin/orders - Admin Manual Pass Granting
 export async function POST(request: Request) {
+  if (!isAuthorizedAdminCall(request)) {
+    return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
+  }
   try {
     const body = await request.json();
     const { uid, branch, product_title, amount } = body;

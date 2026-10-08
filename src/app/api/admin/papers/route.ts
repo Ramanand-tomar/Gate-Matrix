@@ -3,8 +3,16 @@ import { getPapers, getPaperById, createPaper, updatePaper, deletePaper, PaperMo
 
 export const dynamic = 'force-dynamic';
 
+function isAuthorizedAdminCall(request: Request): boolean {
+  const secret = request.headers.get('x-admin-secret');
+  return secret === (process.env.ADMIN_SECRET_KEY || 'GATE_MATRIX_SECURE_ADMIN_2026');
+}
+
 // GET /api/admin/papers - Fetch all paper records and question metrics
 export async function GET(request: Request) {
+  if (!isAuthorizedAdminCall(request)) {
+    return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const branch = searchParams.get('branch') || undefined;
@@ -45,6 +53,9 @@ export async function GET(request: Request) {
 
 // POST /api/admin/papers - Create a new test paper release
 export async function POST(request: Request) {
+  if (!isAuthorizedAdminCall(request)) {
+    return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
+  }
   try {
     const body = await request.json();
     const { title, branch, series, provider, total_questions, questions } = body as {
@@ -113,6 +124,9 @@ export async function POST(request: Request) {
 
 // PATCH /api/admin/papers - Edit test paper metadata or question payload
 export async function PATCH(request: Request) {
+  if (!isAuthorizedAdminCall(request)) {
+    return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
+  }
   try {
     const body = await request.json();
     const { paper_id, updates } = body as {
@@ -152,6 +166,9 @@ export async function PATCH(request: Request) {
 
 // DELETE /api/admin/papers - Delete a test paper record
 export async function DELETE(request: Request) {
+  if (!isAuthorizedAdminCall(request)) {
+    return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const paper_id = searchParams.get('paper_id');

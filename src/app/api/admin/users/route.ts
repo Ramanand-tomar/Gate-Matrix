@@ -4,8 +4,17 @@ import { UserRole } from '@/lib/rbac';
 
 export const dynamic = 'force-dynamic';
 
+function isAuthorizedAdminCall(request: Request): boolean {
+  const secret = request.headers.get('x-admin-secret');
+  return secret === (process.env.ADMIN_SECRET_KEY || 'GATE_MATRIX_SECURE_ADMIN_2026');
+}
+
 // GET /api/admin/users - Roster overview and candidate user metrics
-export async function GET() {
+export async function GET(request: Request) {
+  if (!isAuthorizedAdminCall(request)) {
+    return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
+  }
+
   try {
     const users = await getAllUserProfiles();
 
@@ -44,6 +53,10 @@ export async function GET() {
 
 // PATCH /api/admin/users - Admin update role, status, or branch passes for a candidate
 export async function PATCH(request: Request) {
+  if (!isAuthorizedAdminCall(request)) {
+    return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
+  }
+
   try {
     const body = await request.json();
     const { uid, email, role, status, activePasses, displayName } = body as {
