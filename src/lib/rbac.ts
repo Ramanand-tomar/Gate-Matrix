@@ -1,4 +1,4 @@
-export type UserRole = 'LEARNER' | 'EDITOR' | 'FINANCE' | 'ADMIN';
+export type UserRole = 'LEARNER' | 'EDITOR' | 'FINANCE' | 'INSTRUCTOR' | 'ADMIN';
 
 export interface UserProfile {
   uid: string;
@@ -16,7 +16,9 @@ export interface UserProfile {
 export function hasRolePermission(userRole: UserRole, requiredRole: UserRole): boolean {
   if (userRole === 'ADMIN') return true; // ADMIN has full access
   if (requiredRole === 'LEARNER') return true; // Everyone is at least a learner
-  if (requiredRole === 'EDITOR') return userRole === 'EDITOR';
+  if (requiredRole === 'EDITOR') return userRole === 'EDITOR' || userRole === 'INSTRUCTOR';
   if (requiredRole === 'FINANCE') return userRole === 'FINANCE';
+  if (requiredRole === 'INSTRUCTOR') return userRole === 'INSTRUCTOR' || userRole === 'EDITOR';
   return false;
 }
+
