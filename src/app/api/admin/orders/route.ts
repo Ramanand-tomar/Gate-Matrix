@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getAllOrders, createOrder, OrderModel } from '@/lib/firebase/models';
+import {
+  getAllOrders,
+  createOrder,
+  OrderModel,
+  grantBranchAccessByEmail,
+  revokeBranchAccessByEmail,
+} from '@/lib/firebase/models';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,40 +66,51 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/admin/orders - Admin Manual Pass Granting
+// POST /api/admin/orders - Admin Grant Branch Test Series Access by Email
 export async function POST(request: Request) {
   if (!isAuthorizedAdminCall(request)) {
     return NextResponse.json({ success: false, error: 'Route not found' }, { status: 404 });
   }
   try {
     const body = await request.json();
-    const { uid, branch, product_title, amount } = body;
+    const { email, uid, branch, action, notes } = body;
 
-    if (!uid || !branch) {
-      return NextResponse.json({ success: false, error: 'Candidate UID and Branch code are required' }, { status: 400 });
+    const targetUser = email || uid;
+    if (!targetUser || !branch) {
+      return NextResponse.json(
+        { success: false, error: 'Candidate email/UID and Branch code (e.g. CS, EC, DA) are required' },
+        { status: 400 }
+      );
     }
 
-    const branchCode = branch.toUpperCase();
-    const productId = `${branchCode.toLowerCase()}_pass`;
-    const title = product_title || `GATE ${branchCode} All-Access Branch Pass (Admin Granted)`;
+    const branchCode = branch.trim().toUpperCase();
 
-    const newOrder: Omit<OrderModel, 'created_at'> = {
-      order_id: `ord_admin_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-      uid,
-      product_id: productId,
-      product_title: title,
-      amount: amount || 500,
-      currency: 'INR',
-      razorpay_payment_id: `pay_admin_manual_${Date.now()}`,
-      status: 'GRANTED',
-    };
+    // Support Revoking
+    if (action === 'REVOKE') {
+      const res = await revokeBranchAccessByEmail({ email: targetUser, branch: branchCode });
+      return NextResponse.json(res);
+    }
 
-    const created = await createOrder(newOrder);
-    return NextResponse.json({
-      success: true,
-      message: `Pass for GATE ${branchCode} granted to user ${uid} successfully.`,
-      order: created,
+    // Support granting 'ALL' branches
+    if (branchCode === 'ALL') {
+      const allBranches = ['CS', 'DA', 'EE', 'EC', 'ME', 'CE'];
+      for (const b of allBranches) {
+        await grantBranchAccessByEmail({ email: targetUser, branch: b, notes });
+      }
+      return NextResponse.json({
+        success: true,
+        message: `All 6 GATE Branch Passes successfully granted to ${targetUser}`,
+      });
+    }
+
+    // Single branch grant (e.g. CS, EC, DA)
+    const result = await grantBranchAccessByEmail({
+      email: targetUser,
+      branch: branchCode,
+      notes,
     });
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error granting manual pass:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       email: body.email || null,
       displayName: body.displayName || null,
       photoURL: body.photoURL || null,
+      activeSessionId: body.activeSessionId !== undefined ? body.activeSessionId : undefined,
       // Do not allow setting role or activePasses directly via public POST
     };
 

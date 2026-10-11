@@ -26,9 +26,10 @@ import {
   RotateCcw,
   Bookmark,
   BookmarkCheck,
+  GraduationCap,
 } from 'lucide-react';
 
-import { matchesSubjectTopic, getPaperCategory, TestCategoryFilter } from '@/lib/catalog/filters';
+import { matchesSubjectTopic, getPaperCategory, TestCategoryFilter, COACHING_INSTITUTES } from '@/lib/catalog/filters';
 import { getSavedTestIds, toggleSaveTest } from '@/lib/savedTests';
 import { fastFetchJson } from '@/lib/fastFetch';
 
@@ -40,6 +41,7 @@ interface PaperDoc {
   provider: string;
   series: string;
   total_questions: number;
+  institute?: string;
 }
 
 interface OrderRecord {
@@ -91,6 +93,7 @@ function CatalogContent() {
   const [selectedBranch, setSelectedBranch] = useState(branchParam || 'CS');
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [selectedCategory, setSelectedCategory] = useState<TestCategoryFilter>('ALL');
+  const [selectedInstitute, setSelectedInstitute] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState(searchParam || '');
 
   const [papers, setPapers] = useState<PaperDoc[]>([]);
@@ -339,7 +342,7 @@ function CatalogContent() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedBranch, selectedSubject, selectedCategory, searchQuery]);
+  }, [selectedBranch, selectedSubject, selectedCategory, selectedInstitute, searchQuery]);
 
   const filteredPapers = papers.filter((p, idx) => {
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -352,7 +355,11 @@ function CatalogContent() {
       (selectedCategory === 'TOPIC_WISE' && category === 'TOPIC_WISE') ||
       (selectedCategory === 'PYQ' && category === 'PYQ');
 
-    return matchesSearch && matchesSubject && matchesCategory;
+    const matchesInstitute =
+      selectedInstitute === 'ALL' ||
+      (p.institute && p.institute.toLowerCase() === selectedInstitute.toLowerCase());
+
+    return matchesSearch && matchesSubject && matchesCategory && matchesInstitute;
   });
 
   const totalFilteredItems = filteredPapers.length;
@@ -410,7 +417,7 @@ function CatalogContent() {
       </div>
 
       {/* Test Category Filter Bar (Full Length vs Topic-Wise vs PYQ) */}
-      <div className="mb-6 bg-slate-100/70 dark:bg-slate-800/70 border border-[#dce3ec] dark:border-slate-700 p-2 rounded-2xl flex flex-wrap gap-2 items-center">
+      <div className="mb-4 bg-slate-100/70 dark:bg-slate-800/70 border border-[#dce3ec] dark:border-slate-700 p-2 rounded-2xl flex flex-wrap gap-2 items-center">
         <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-black text-[#14213d] dark:text-white uppercase tracking-wider">
           <Filter className="w-3.5 h-3.5 text-[#0f766e] dark:text-[#2dd4bf]" />
           <span>Test Format:</span>
@@ -431,6 +438,27 @@ function CatalogContent() {
             }`}
           >
             {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Institute / Coaching Classes Filter Bar */}
+      <div className="mb-6 bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-3 rounded-2xl flex flex-wrap gap-2 items-center shadow-xs">
+        <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-black text-[#14213d] dark:text-white uppercase tracking-wider">
+          <GraduationCap className="w-4 h-4 text-[#0f766e] dark:text-[#2dd4bf]" />
+          <span>Institute / Classes:</span>
+        </div>
+        {COACHING_INSTITUTES.map((inst) => (
+          <button
+            key={inst}
+            onClick={() => setSelectedInstitute(inst)}
+            className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all ${
+              selectedInstitute === inst
+                ? 'bg-[#14213d] dark:bg-[#0f766e] text-white shadow-xs'
+                : 'bg-slate-50 dark:bg-slate-800 text-[#526079] dark:text-slate-300 border border-[#dce3ec] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-[#14213d] dark:hover:text-white'
+            }`}
+          >
+            {inst === 'ALL' ? '🏢 All Institutes' : inst}
           </button>
         ))}
       </div>
@@ -539,8 +567,9 @@ function CatalogContent() {
                   <div className={!canAttempt ? 'filter blur-[2px] opacity-60 pointer-events-none select-none transition-all' : ''}>
                     <div>
                       <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge variant="emerald">{p.branch || selectedBranch}</Badge>
+                          <Badge variant="navy" size="sm">{p.institute || 'Coaching Test'}</Badge>
                           <Badge variant="slate" size="sm">{catLabel}</Badge>
                           <button
                             onClick={() => toggleSaveTest(p.paper_id)}
@@ -644,7 +673,7 @@ function CatalogContent() {
                         onClick={() => handleBuyBranchPass(selectedBranch)}
                         leftIcon={<Lock className="w-3.5 h-3.5" />}
                       >
-                        Unlock Test Series (₹1,499)
+                        Unlock Test Series (₹500)
                       </Button>
                     </div>
                   )}

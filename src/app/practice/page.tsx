@@ -22,9 +22,10 @@ import {
   Target,
   AlertTriangle,
   ArrowRight,
+  GraduationCap,
 } from 'lucide-react';
 
-import { matchesSubjectTopic, getPaperCategory, TestCategoryFilter } from '@/lib/catalog/filters';
+import { matchesSubjectTopic, getPaperCategory, TestCategoryFilter, COACHING_INSTITUTES } from '@/lib/catalog/filters';
 import { fastFetchJson } from '@/lib/fastFetch';
 
 interface PaperDoc {
@@ -33,6 +34,7 @@ interface PaperDoc {
   title: string;
   branch: string;
   total_questions: number;
+  institute?: string;
 }
 
 interface OrderRecord {
@@ -80,6 +82,7 @@ export default function PracticePage() {
   const [selectedBranch, setSelectedBranch] = useState('CS');
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [selectedCategory, setSelectedCategory] = useState<TestCategoryFilter>('ALL');
+  const [selectedInstitute, setSelectedInstitute] = useState('ALL');
 
   const [papers, setPapers] = useState<PaperDoc[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -153,7 +156,7 @@ export default function PracticePage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedBranch, selectedSubject, selectedCategory, searchQuery]);
+  }, [selectedBranch, selectedSubject, selectedCategory, selectedInstitute, searchQuery]);
 
   const filteredPapers = papers.filter((p, idx) => {
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -166,7 +169,11 @@ export default function PracticePage() {
       (selectedCategory === 'TOPIC_WISE' && category === 'TOPIC_WISE') ||
       (selectedCategory === 'PYQ' && category === 'PYQ');
 
-    return matchesSearch && matchesSubject && matchesCategory;
+    const matchesInstitute =
+      selectedInstitute === 'ALL' ||
+      (p.institute && p.institute.toLowerCase() === selectedInstitute.toLowerCase());
+
+    return matchesSearch && matchesSubject && matchesCategory && matchesInstitute;
   });
 
   const totalFilteredItems = filteredPapers.length;
@@ -309,6 +316,27 @@ export default function PracticePage() {
           ))}
         </div>
 
+        {/* Institute / Coaching Classes Filter Bar */}
+        <div className="mb-8 bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-3 rounded-2xl flex flex-wrap gap-2 items-center shadow-xs">
+          <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-black text-[#14213d] dark:text-slate-200 uppercase tracking-wider">
+            <GraduationCap className="w-4 h-4 text-[#0f766e] dark:text-[#2dd4bf]" />
+            <span>Institute / Classes:</span>
+          </div>
+          {COACHING_INSTITUTES.map((inst) => (
+            <button
+              key={inst}
+              onClick={() => setSelectedInstitute(inst)}
+              className={`px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all ${
+                selectedInstitute === inst
+                  ? 'bg-[#14213d] dark:bg-[#0f766e] text-white shadow-xs'
+                  : 'bg-slate-50 dark:bg-slate-800 text-[#526079] dark:text-slate-300 border border-[#dce3ec] dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-[#14213d] dark:hover:text-white'
+              }`}
+            >
+              {inst === 'ALL' ? '🏢 All Institutes' : inst}
+            </button>
+          ))}
+        </div>
+
         {/* Subject Test Count Cards Grid */}
         <div className="mb-8 space-y-3">
           <div className="flex items-center gap-2 text-xs font-extrabold text-[#526079] dark:text-slate-400">
@@ -402,8 +430,9 @@ export default function PracticePage() {
                   <Card key={paper.id} hoverEffect className="flex flex-col justify-between border-[#dce3ec] dark:border-slate-800">
                     <div>
                       <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge variant="emerald">{paper.branch || selectedBranch}</Badge>
+                          <Badge variant="navy" size="sm">{paper.institute || 'Coaching Test'}</Badge>
                           <Badge variant="slate" size="sm">{catLabel}</Badge>
                         </div>
                         {pastAttempt ? (

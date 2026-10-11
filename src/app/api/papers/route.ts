@@ -8,6 +8,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const branch = searchParams.get('branch') || undefined;
+    const institute = searchParams.get('institute') || undefined;
     const pageParam = searchParams.get('page');
     const pageSizeParam = searchParams.get('pageSize');
     const limitParam = searchParams.get('limit');
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
     const page = pageParam ? parseInt(pageParam, 10) : undefined;
     const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : undefined;
 
-    const result = await getPapers(branch, limit, page, pageSize);
+    const result = await getPapers(branch, limit, page, pageSize, institute);
     return NextResponse.json({
       success: true,
       total: result.total,

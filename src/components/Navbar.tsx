@@ -30,9 +30,6 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/admin-room')) {
-    return null;
-  }
   const { user, userProfile, loading, signInWithGoogle, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
@@ -228,14 +225,15 @@ export default function Navbar() {
                       </Link>
                       {(userProfile?.role === 'ADMIN' || userProfile?.role === 'EDITOR') && (
                         <Link
-                          href="/admin-room"
+                          href="/admin"
                           onClick={() => setDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-4 py-2.5 text-[#14213d] hover:bg-slate-50 transition-colors border-t border-slate-100"
                         >
                           <ShieldCheck className="w-4 h-4 text-[#0f766e]" />
-                          <span>Admin Console</span>
+                          <span>Admin Access Control</span>
                         </Link>
                       )}
+
                     </div>
 
                     <div className="border-t border-slate-100 pt-1">
@@ -352,11 +350,12 @@ export default function Navbar() {
               {userProfile?.role && userProfile.role !== 'LEARNER' && (
                 <div className="mt-6 pt-4 border-t border-slate-100">
                   <Link
-                    href="/admin-room"
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-extrabold text-[#14213d] bg-slate-100"
                   >
                     <ShieldCheck className="w-4 h-4 text-[#0f766e]" />
-                    <span>Admin Management Console</span>
+                    <span>Admin Access Control</span>
                   </Link>
                 </div>
               )}

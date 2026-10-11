@@ -119,8 +119,15 @@ export default function Footer() {
               </Link>
             </li>
           </ul>
-          <div className="pt-3 text-[11px] text-slate-400 dark:text-slate-500 font-mono">
-            Payments secured by Razorpay 256-bit SSL
+          <div className="pt-3 text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+            <a
+              href="https://web.telegram.org/a/#1623488785"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#229ED9] hover:underline flex items-center gap-1"
+            >
+              <span>Instant Test Series Enrollment via Telegram</span>
+            </a>
           </div>
         </div>
       </div>

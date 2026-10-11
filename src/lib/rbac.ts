@@ -6,6 +6,8 @@ export interface UserProfile {
   displayName: string | null;
   photoURL: string | null;
   role: UserRole;
+  activePasses?: string[];
+  activeSessionId?: string | null;
   createdAt: string;
   lastLoginAt: string;
 }

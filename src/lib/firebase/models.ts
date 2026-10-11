@@ -97,6 +97,7 @@ export interface UserModel {
   role: UserRole;
   status?: 'ACTIVE' | 'SUSPENDED';
   activePasses?: string[];
+  activeSessionId?: string | null;
   createdAt: string;
   lastLoginAt: string;
 }
@@ -222,15 +223,29 @@ export async function saveUserProfile(user: Partial<UserModel> & { uid: string }
   const now = new Date().toISOString();
   const existing = memoryUsers.get(user.uid) || (await getUserProfile(user.uid));
 
+  let preProvisioned: UserModel | undefined;
+  if (!existing && user.email) {
+    const searchEmail = user.email.toLowerCase();
+    preProvisioned = Array.from(memoryUsers.values()).find(
+      (u) => u.email && u.email.toLowerCase() === searchEmail
+    );
+  }
+
   const profileData: UserModel = {
     uid: user.uid,
-    email: user.email || (existing ? existing.email : null),
-    displayName: user.displayName || (existing ? existing.displayName : null),
-    photoURL: user.photoURL || (existing ? existing.photoURL : null),
-    role: user.role || (existing ? existing.role : 'LEARNER'),
-    status: user.status || (existing?.status ? existing.status : 'ACTIVE'),
-    activePasses: user.activePasses || (existing ? existing.activePasses : []),
-    createdAt: existing ? existing.createdAt : now,
+    email: user.email || (existing ? existing.email : preProvisioned?.email || null),
+    displayName: user.displayName || (existing ? existing.displayName : preProvisioned?.displayName || null),
+    photoURL: user.photoURL || (existing ? existing.photoURL : preProvisioned?.photoURL || null),
+    role: user.role || (existing ? existing.role : preProvisioned?.role || 'LEARNER'),
+    status: user.status || (existing?.status ? existing.status : preProvisioned?.status || 'ACTIVE'),
+    activePasses:
+      user.activePasses ||
+      (existing ? existing.activePasses : preProvisioned?.activePasses || []),
+    activeSessionId:
+      user.activeSessionId !== undefined
+        ? user.activeSessionId
+        : existing?.activeSessionId || preProvisioned?.activeSessionId || null,
+    createdAt: existing ? existing.createdAt : preProvisioned?.createdAt || now,
     lastLoginAt: now,
   };
 
@@ -326,6 +341,40 @@ export async function updateUserProfileAdmin(
   return updated;
 }
 
+/**
+ * Updates a user's active session ID for single-device enforcement.
+ */
+export async function updateUserActiveSession(
+  uid: string,
+  sessionId: string | null
+): Promise<UserModel | null> {
+  ensureLocalUsersLoaded();
+  let existing = memoryUsers.get(uid) || (await getUserProfile(uid));
+  if (!existing) return null;
+
+  const now = new Date().toISOString();
+  const updated: UserModel = {
+    ...existing,
+    activeSessionId: sessionId,
+    lastLoginAt: now,
+  };
+
+  memoryUsers.set(uid, updated);
+  saveLocalUsersDisk();
+
+  try {
+    const keyParam = API_KEY ? `?key=${API_KEY}` : '';
+    const fields = toFirestoreFields({ activeSessionId: sessionId, lastLoginAt: now });
+    fetch(`${BASE_URL}/users/${uid}${keyParam}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields }),
+    }).catch(() => {});
+  } catch (err) {}
+
+  return updated;
+}
+
 // ==========================================
 // 2. PAPER & QUESTION MODEL & CRUD
 // ==========================================
@@ -348,12 +397,30 @@ export interface PaperModel {
   branch: string;
   provider: string;
   series: string;
+  institute?: string;
   file_name?: string;
   rel_path?: string;
   total_questions: number;
   questions: QuestionModel[];
   created_at?: string;
   updated_at?: string;
+}
+
+/**
+ * Derives or normalizes the Coaching Institute / Class for a test paper.
+ */
+export function derivePaperInstitute(paper: { institute?: string; provider?: string; title?: string }): string {
+  if (paper.institute && paper.institute.trim()) return paper.institute.trim();
+  const text = `${paper.title || ''} ${paper.provider || ''}`.toLowerCase();
+  if (text.includes('made easy') || text.includes('madeeasy')) return 'MADE EASY';
+  if (text.includes('ace academy') || text.includes('ace')) return 'ACE Academy';
+  if (text.includes('go classes') || text.includes('goclasses')) return 'GO Classes';
+  if (text.includes('gate wallah') || text.includes('physics wallah') || text.includes('pw')) return 'GATE Wallah';
+  if (text.includes('unacademy')) return 'Unacademy';
+  if (text.includes('applied gate') || text.includes('gate applied')) return 'Applied GATE';
+  if (text.includes('pyq') || text.includes('official') || text.includes('iit')) return 'Official GATE (IIT)';
+  if (paper.provider && paper.provider !== 'GATEPrep' && paper.provider !== 'GATE Matrix') return paper.provider;
+  return 'GATE Matrix Core';
 }
 
 function findLocalPaperFile(paperId: string): string | null {
@@ -444,7 +511,8 @@ export async function getPapers(
   branch?: string,
   limitCount: number = 2000,
   page?: number,
-  pageSize?: number
+  pageSize?: number,
+  institute?: string
 ) {
   ensureLocalDatasetLoaded();
 
@@ -484,11 +552,17 @@ export async function getPapers(
     branch: p.branch,
     provider: p.provider,
     series: p.series,
+    institute: derivePaperInstitute(p),
     total_questions: p.total_questions,
   }));
 
   if (branch && branch !== 'All') {
     list = list.filter((p) => matchesBranch(p.branch, branch));
+  }
+
+  if (institute && institute !== 'All') {
+    const cleanInst = institute.trim().toLowerCase();
+    list = list.filter((p) => (p.institute || '').toLowerCase() === cleanInst);
   }
 
   const total = list.length;
@@ -661,6 +735,9 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
 
 export async function createPaper(paper: PaperModel): Promise<boolean> {
   paper.branch = normalizeBranchCode(paper.branch);
+  if (!paper.institute) {
+    paper.institute = derivePaperInstitute(paper);
+  }
   memoryPapers.set(paper.paper_id, paper);
   try {
     const keyParam = API_KEY ? `&key=${API_KEY}` : '';
@@ -813,6 +890,8 @@ export async function getUserAttempts(uid: string): Promise<AttemptModel[]> {
 export interface OrderModel {
   order_id: string;
   uid: string;
+  email?: string;
+  branch_code?: string;
   product_id: string;
   product_title: string;
   amount: number;
@@ -905,11 +984,14 @@ export async function updateOrderStatus(
   return true;
 }
 
-export async function getUserOrders(uid: string): Promise<OrderModel[]> {
+export async function getUserOrders(uid: string, email?: string): Promise<OrderModel[]> {
   ensureLocalOrdersLoaded();
   const allOrders = Array.from(memoryOrders.values());
+  const cleanEmail = email ? email.trim().toLowerCase() : null;
   const matchingOrders = allOrders.filter(
-    (o) => o.uid === uid && (o.status === 'GRANTED' || o.status === 'CAPTURED')
+    (o) =>
+      (o.uid === uid || (cleanEmail && o.email && o.email.toLowerCase() === cleanEmail)) &&
+      (o.status === 'GRANTED' || o.status === 'CAPTURED')
   );
   return matchingOrders;
 }
@@ -918,3 +1000,123 @@ export async function getAllOrders(): Promise<OrderModel[]> {
   ensureLocalOrdersLoaded();
   return Array.from(memoryOrders.values());
 }
+
+/**
+ * Admin: Grant test paper access for a particular branch by student email.
+ */
+export async function grantBranchAccessByEmail({
+  email,
+  branch,
+  notes,
+}: {
+  email: string;
+  branch: string;
+  notes?: string;
+}): Promise<{ success: boolean; message: string; order: OrderModel; user: UserModel | null }> {
+  ensureLocalUsersLoaded();
+  ensureLocalOrdersLoaded();
+
+  const cleanEmail = email.trim().toLowerCase();
+  const branchCode = branch.trim().toUpperCase();
+  const productId = `${branchCode.toLowerCase()}_pass`;
+  const productTitle = `GATE ${branchCode} All-Access Branch Pass (Admin Granted)`;
+
+  // 1. Find or create user profile
+  let targetUser = Array.from(memoryUsers.values()).find(
+    (u) => u.email && u.email.toLowerCase() === cleanEmail
+  );
+
+  let targetUid = targetUser ? targetUser.uid : `user_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+  if (!targetUser) {
+    const now = new Date().toISOString();
+    targetUser = {
+      uid: targetUid,
+      email: cleanEmail,
+      displayName: cleanEmail.split('@')[0],
+      photoURL: null,
+      role: 'LEARNER',
+      status: 'ACTIVE',
+      activePasses: [branchCode],
+      createdAt: now,
+      lastLoginAt: now,
+    };
+    memoryUsers.set(targetUid, targetUser);
+    saveLocalUsersDisk();
+  } else {
+    const currentPasses = targetUser.activePasses || [];
+    if (!currentPasses.includes(branchCode)) {
+      targetUser.activePasses = [...currentPasses, branchCode];
+      memoryUsers.set(targetUser.uid, targetUser);
+      saveLocalUsersDisk();
+    }
+  }
+
+  // 2. Create GRANTED order record
+  const orderId = `ord_admin_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  const newOrder: OrderModel = {
+    order_id: orderId,
+    uid: targetUser.uid,
+    email: cleanEmail,
+    branch_code: branchCode,
+    product_id: productId,
+    product_title: productTitle,
+    amount: 500,
+    currency: 'INR',
+    razorpay_payment_id: `admin_manual_${Date.now()}`,
+    status: 'GRANTED',
+    created_at: new Date().toISOString(),
+  };
+
+  memoryOrders.set(orderId, newOrder);
+  saveLocalOrdersDisk();
+
+  return {
+    success: true,
+    message: `Successfully granted GATE ${branchCode} test series access to ${cleanEmail}`,
+    order: newOrder,
+    user: targetUser,
+  };
+}
+
+/**
+ * Admin: Revoke branch access for a student email.
+ */
+export async function revokeBranchAccessByEmail({
+  email,
+  branch,
+}: {
+  email: string;
+  branch: string;
+}): Promise<{ success: boolean; message: string }> {
+  ensureLocalUsersLoaded();
+  ensureLocalOrdersLoaded();
+
+  const cleanEmail = email.trim().toLowerCase();
+  const branchCode = branch.trim().toUpperCase();
+  const productId = `${branchCode.toLowerCase()}_pass`;
+
+  const targetUser = Array.from(memoryUsers.values()).find(
+    (u) => u.email && u.email.toLowerCase() === cleanEmail
+  );
+  if (targetUser && targetUser.activePasses) {
+    targetUser.activePasses = targetUser.activePasses.filter((b) => b !== branchCode);
+    memoryUsers.set(targetUser.uid, targetUser);
+    saveLocalUsersDisk();
+  }
+
+  Array.from(memoryOrders.values()).forEach((o) => {
+    if (
+      (o.email?.toLowerCase() === cleanEmail || o.uid === targetUser?.uid) &&
+      (o.product_id === productId || o.branch_code === branchCode) &&
+      o.status === 'GRANTED'
+    ) {
+      o.status = 'REFUNDED';
+      memoryOrders.set(o.order_id, o);
+    }
+  });
+  saveLocalOrdersDisk();
+
+  return { success: true, message: `Revoked GATE ${branchCode} pass from ${cleanEmail}` };
+}
+

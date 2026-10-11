@@ -1,5 +1,16 @@
 export type TestCategoryFilter = 'ALL' | 'FULL_LENGTH' | 'TOPIC_WISE' | 'PYQ';
 
+export const COACHING_INSTITUTES = [
+  'ALL',
+  'MADE EASY',
+  'ACE Academy',
+  'GO Classes',
+  'GATE Wallah',
+  'Unacademy',
+  'Official GATE (IIT)',
+  'GATE Matrix Core',
+];
+
 export function getPaperCategory(paperTitle: string, index: number = 0): 'FULL_LENGTH' | 'TOPIC_WISE' | 'PYQ' {
   const t = (paperTitle || '').toLowerCase();
   if (

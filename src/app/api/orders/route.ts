@@ -4,17 +4,18 @@ import { getOfficialPriceINR, verifyRazorpaySignature } from '@/lib/commerce/ent
 
 export const dynamic = 'force-dynamic';
 
-// GET /api/orders?uid=XYZ
+// GET /api/orders?uid=XYZ&email=student@example.com
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const uid = searchParams.get('uid');
+    const email = searchParams.get('email');
 
-    if (!uid) {
-      return NextResponse.json({ success: false, error: 'User uid required' }, { status: 400 });
+    if (!uid && !email) {
+      return NextResponse.json({ success: false, error: 'User uid or email required' }, { status: 400 });
     }
 
-    const orders = await getUserOrders(uid);
+    const orders = await getUserOrders(uid || '', email || undefined);
     return NextResponse.json({ success: true, count: orders.length, orders });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

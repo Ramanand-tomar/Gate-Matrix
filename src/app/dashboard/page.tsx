@@ -473,7 +473,7 @@ function DashboardContent() {
             <Card className="border-[#dce3ec] dark:border-slate-800">
               <div className="mb-6">
                 <h2 className="text-xl font-black text-[#14213d] dark:text-white">Payment Transactions & Receipts</h2>
-                <p className="text-xs text-[#526079] dark:text-slate-400">Official payment receipts and Razorpay transactions.</p>
+                <p className="text-xs text-[#526079] dark:text-slate-400">Official payment receipts and order transaction history.</p>
               </div>
 
               {loadingData ? (

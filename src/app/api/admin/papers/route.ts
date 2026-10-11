@@ -16,6 +16,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const branch = searchParams.get('branch') || undefined;
+    const institute = searchParams.get('institute') || undefined;
     const paperId = searchParams.get('paper_id');
 
     if (paperId) {
@@ -26,13 +27,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, paper: singlePaper });
     }
 
-    const { papers, total } = await getPapers(branch, 5000);
+    const { papers, total } = await getPapers(branch, 5000, undefined, undefined, institute);
 
     const totalQuestionsCount = papers.reduce((sum, p) => sum + (p.total_questions || 0), 0);
     const branchCounts: Record<string, number> = {};
+    const instituteCounts: Record<string, number> = {};
     papers.forEach((p) => {
       const b = p.branch || 'GENERAL';
       branchCounts[b] = (branchCounts[b] || 0) + 1;
+      const inst = (p as any).institute || 'General';
+      instituteCounts[inst] = (instituteCounts[inst] || 0) + 1;
     });
 
     return NextResponse.json({
@@ -40,6 +44,7 @@ export async function GET(request: Request) {
       totalPapers: total,
       totalQuestionsCount,
       branchCounts,
+      instituteCounts,
       papers,
     });
   } catch (error: any) {
@@ -58,11 +63,12 @@ export async function POST(request: Request) {
   }
   try {
     const body = await request.json();
-    const { title, branch, series, provider, total_questions, questions } = body as {
+    const { title, branch, series, provider, institute, total_questions, questions } = body as {
       title: string;
       branch: string;
       series?: string;
       provider?: string;
+      institute?: string;
       total_questions?: number;
       questions?: QuestionModel[];
     };
@@ -95,8 +101,9 @@ export async function POST(request: Request) {
       paper_id: paperId,
       title: title.trim(),
       branch: cleanBranch,
-      provider: provider?.trim() || 'GATE Matrix CMS',
+      provider: provider?.trim() || institute?.trim() || 'GATE Matrix CMS',
       series: series?.trim() || 'Official 2026 Mock Series',
+      institute: institute?.trim() || 'GATE Matrix Core',
       total_questions: initialQuestions.length,
       questions: initialQuestions,
       created_at: new Date().toISOString(),
