@@ -41,12 +41,16 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Learner Profiles: User can read their profile, but cannot self-elevate role or activePasses
-    // Admins can read, create, update, and manage candidate entitlements
+    // Learner Profiles: Users can create/update their profile (name, email, photo, session),
+    // but CANNOT self-elevate role or grant themselves activePasses.
+    // Admins have full access to read and manage all candidate entitlements.
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if (isOwner(userId) && (!request.resource.data.keys().hasAny(['role', 'activePasses']) || request.resource.data.role == 'LEARNER')) || isAdmin();
-      allow update: if (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'activePasses'])) || isAdmin();
+      allow create: if isOwner(userId) || isAdmin();
+      allow update: if (isOwner(userId) && (
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['activePasses']) || (resource.data.activePasses == request.resource.data.activePasses)) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) || request.resource.data.role == 'LEARNER' || request.resource.data.role == resource.data.role)
+      )) || isAdmin();
       allow delete: if isAdmin();
     }
 

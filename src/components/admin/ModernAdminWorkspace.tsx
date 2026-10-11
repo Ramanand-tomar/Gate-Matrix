@@ -220,12 +220,29 @@ export default function ModernAdminWorkspace() {
       try {
         const usersSnap = await getDocs(collection(db, 'users'));
         realUsers = usersSnap.docs
-          .map((d) => ({
-            uid: d.id,
-            ...d.data(),
-          }))
-          // Exclude any remaining mock user emails
-          .filter((u: any) => u.email && !u.email.includes('@gatematrix.com') && !u.email.includes('aarav.sharma@') && !u.email.includes('priya.verma@') && !u.email.includes('vikram.singh@'));
+          .map((d) => {
+            const data = d.data();
+            return {
+              uid: d.id,
+              email: data.email || (data.displayName ? `${data.displayName.toLowerCase().replace(/\s+/g, '')}@candidate.app` : `candidate_${d.id.slice(0, 6)}@app.com`),
+              displayName: data.displayName || (data.email ? data.email.split('@')[0] : `Candidate ${d.id.slice(0, 6)}`),
+              role: data.role || 'LEARNER',
+              activePasses: data.activePasses || [],
+              createdAt: data.createdAt || data.lastLoginAt || new Date().toISOString(),
+              ...data,
+            };
+          })
+          // Only exclude the specific mock demo profiles
+          .filter((u: any) => {
+            const email = (u.email || '').toLowerCase();
+            return (
+              !email.includes('aarav.sharma@') &&
+              !email.includes('priya.verma@') &&
+              !email.includes('vikram.singh@') &&
+              !email.includes('ananya.sen@') &&
+              !email.includes('rajesh.kumar@')
+            );
+          });
       } catch (fsErr) {
         console.warn('Direct Firestore users fetch fallback:', fsErr);
       }

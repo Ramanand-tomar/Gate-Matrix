@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase/client';
-import { UserProfile } from '@/lib/rbac';
+import { UserProfile, UserRole } from '@/lib/rbac';
 import { Laptop, ShieldAlert, X, LogIn, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -68,16 +68,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         body: JSON.stringify({ uid, sessionId }),
       }).catch(() => {});
 
-      // 2. Sync to Firestore document (triggers real-time onSnapshot on other devices)
+      // 2. Sync session to Firestore document
       const userRef = doc(db, 'users', uid);
-      setDoc(
-        userRef,
-        {
-          activeSessionId: sessionId,
-          lastLoginAt: new Date().toISOString(),
-        },
-        { merge: true }
-      ).catch(() => {});
+      await updateDoc(userRef, {
+        activeSessionId: sessionId,
+        lastLoginAt: new Date().toISOString(),
+      }).catch(async () => {
+        // Document will be populated with full profile in onAuthStateChanged
+      });
     } catch (err) {
       console.warn('Could not broadcast session registration:', err);
     }
@@ -101,8 +99,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!currentLocalId) {
           currentLocalId = generateNewSessionId();
           localStorage.setItem('gate_device_session_id', currentLocalId);
-          // Broadcast newly assigned session ID
-          broadcastDeviceSession(currentUser.uid, currentLocalId);
         }
 
         localSessionIdRef.current = currentLocalId;
@@ -112,58 +108,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const userRef = doc(db, 'users', currentUser.uid);
           const snap = await getDoc(userRef);
 
+          let existingData: Partial<UserProfile> = {};
           if (snap.exists()) {
-            const data = snap.data() as UserProfile;
-
-            // Check if there are pre-provisioned passes under their email doc to merge
-            if ((!data.activePasses || data.activePasses.length === 0) && currentUser.email) {
-              try {
-                const cleanUid = `user_${currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}`;
-                const preSnap = await getDoc(doc(db, 'users', cleanUid));
-                if (preSnap.exists() && preSnap.data().activePasses?.length > 0) {
-                  const mergedPasses = preSnap.data().activePasses;
-                  data.activePasses = mergedPasses;
-                  await setDoc(userRef, { activePasses: mergedPasses }, { merge: true });
-                }
-              } catch (e) {}
-            }
-
-            setUserProfile(data);
-
-            // Check if server already has another session recorded
-            if (data.activeSessionId && data.activeSessionId !== currentLocalId) {
-              // Register this device's session or handle conflict
-              // If user just signed in, their currentLocalId takes precedence
-              broadcastDeviceSession(currentUser.uid, currentLocalId);
-            }
-          } else {
-            // Check if there were pre-granted passes by admin prior to first login
-            let preGrantedPasses: string[] = [];
-            if (currentUser.email) {
-              try {
-                const cleanUid = `user_${currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}`;
-                const preSnap = await getDoc(doc(db, 'users', cleanUid));
-                if (preSnap.exists() && Array.isArray(preSnap.data().activePasses)) {
-                  preGrantedPasses = preSnap.data().activePasses;
-                }
-              } catch (e) {}
-            }
-
-            // Create default profile with LEARNER role and active session ID
-            const newProfile: UserProfile = {
-              uid: currentUser.uid,
-              email: currentUser.email,
-              displayName: currentUser.displayName,
-              photoURL: currentUser.photoURL,
-              role: 'LEARNER',
-              activePasses: preGrantedPasses,
-              activeSessionId: currentLocalId,
-              createdAt: new Date().toISOString(),
-              lastLoginAt: new Date().toISOString(),
-            };
-            await setDoc(userRef, newProfile);
-            setUserProfile(newProfile);
+            existingData = snap.data() as UserProfile;
           }
+
+          // Check if there are pre-provisioned passes under their email doc to merge
+          let effectivePasses = existingData.activePasses || [];
+          if (effectivePasses.length === 0 && currentUser.email) {
+            try {
+              const cleanUid = `user_${currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}`;
+              const preSnap = await getDoc(doc(db, 'users', cleanUid));
+              if (preSnap.exists() && Array.isArray(preSnap.data().activePasses) && preSnap.data().activePasses.length > 0) {
+                effectivePasses = preSnap.data().activePasses;
+              }
+            } catch (e) {}
+          }
+
+          let userRole: UserRole = (existingData.role as UserRole) || 'LEARNER';
+          if (
+            currentUser.email &&
+            (currentUser.email === 'ramanandtomar1234@gmail.com' || currentUser.email === 'admin@gatematrix.com')
+          ) {
+            userRole = 'ADMIN';
+          }
+
+          // Always construct full user profile with email, displayName, role, uid
+          const fullProfile: UserProfile = {
+            uid: currentUser.uid,
+            email: currentUser.email || existingData.email || null,
+            displayName:
+              currentUser.displayName ||
+              existingData.displayName ||
+              (currentUser.email ? currentUser.email.split('@')[0] : 'Learner'),
+            photoURL: currentUser.photoURL || existingData.photoURL || null,
+            role: userRole,
+            activePasses: effectivePasses,
+            activeSessionId: currentLocalId,
+            createdAt: existingData.createdAt || new Date().toISOString(),
+            lastLoginAt: new Date().toISOString(),
+          };
+
+          // Always write and merge full profile into Firestore so admin sees real email & name
+          await setDoc(userRef, fullProfile, { merge: true });
+          setUserProfile(fullProfile);
+
+          // Broadcast session registration to server API
+          fetch('/api/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: currentUser.uid, sessionId: currentLocalId }),
+          }).catch(() => {});
 
           // -------------------------------------------------------------
           // Real-time Firestore listener for single-device enforcement
@@ -259,7 +254,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       const credential = await signInWithPopup(auth, googleProvider);
       if (credential?.user) {
-        await broadcastDeviceSession(credential.user.uid, newSessionId);
+        const u = credential.user;
+        const userRef = doc(db, 'users', u.uid);
+        const existingSnap = await getDoc(userRef).catch(() => null);
+        const existing = existingSnap?.exists() ? existingSnap.data() : {};
+        const profileToSave = {
+          uid: u.uid,
+          email: u.email || existing.email || null,
+          displayName: u.displayName || existing.displayName || (u.email ? u.email.split('@')[0] : 'Learner'),
+          photoURL: u.photoURL || existing.photoURL || null,
+          role: existing.role || (u.email === 'ramanandtomar1234@gmail.com' ? 'ADMIN' : 'LEARNER'),
+          activeSessionId: newSessionId,
+          lastLoginAt: new Date().toISOString(),
+          createdAt: existing.createdAt || new Date().toISOString(),
+          activePasses: existing.activePasses || [],
+        };
+        await setDoc(userRef, profileToSave, { merge: true }).catch(() => {});
       }
     } catch (error) {
       console.error('Google Auth Sign In Error:', error);
