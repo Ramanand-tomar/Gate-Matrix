@@ -516,21 +516,37 @@ function CatalogContent() {
           </div>
         </div>
       ) : (
-        <div className="bg-[#e7f4f0] border border-[#0f766e]/30 p-6 rounded-3xl mb-10 flex items-center justify-between gap-4 text-[#0f766e]">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-8 h-8 text-[#0f766e]" />
-            <div>
-              <h2 className="text-lg font-black text-[#14213d]">
-                GATE {selectedBranch} Branch Pass Active 🎉
-              </h2>
-              <p className="text-xs text-[#0f766e] font-bold mt-0.5">
-                You have full 365-day access to all tests and subject series in GATE {selectedBranch}. No further payments required.
-              </p>
+        <div className="relative overflow-hidden rounded-3xl mb-10 p-6 sm:p-7 border border-emerald-500/40 bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#0f172a] text-white shadow-2xl">
+          {/* Ambient background glow */}
+          <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-5">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/30 border border-emerald-400/50 flex items-center justify-center shrink-0 shadow-inner">
+                <CheckCircle2 className="w-7 h-7 text-emerald-300" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5 mb-1">
+                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm">
+                    GATE {selectedBranch} Branch Pass Active 🎉
+                  </h2>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-emerald-400/25 text-emerald-200 border border-emerald-400/40">
+                    Active Pass
+                  </span>
+                </div>
+                <p className="text-sm text-emerald-100 font-medium leading-relaxed max-w-2xl">
+                  Congratulations! You have full 365-day all-access to every full-length mock, coaching institute series, and subject test in <span className="font-bold text-white underline decoration-emerald-400 underline-offset-2">GATE {selectedBranch}</span>. Zero further payments required.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="px-4 py-2.5 rounded-2xl bg-emerald-950/70 border border-emerald-400/60 text-emerald-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-2.5 shadow-lg">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                Full Access Unlocked
+              </div>
             </div>
           </div>
-          <Badge variant="emerald" size="md">
-            Full Access Unlocked
-          </Badge>
         </div>
       )}
 
