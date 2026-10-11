@@ -28,7 +28,10 @@ interface CheckoutModalProps {
   onSuccess: (newOrder: any) => void;
 }
 
-export const TELEGRAM_BUY_URL = 'https://web.telegram.org/a/#1623488785';
+export const TELEGRAM_PHONE_NUMBER = '+917746877268';
+export const TELEGRAM_PHONE_DISPLAY = '+91 77468 77268';
+export const TELEGRAM_BUY_URL = `https://t.me/+917746877268`;
+export const TELEGRAM_WEB_URL = 'https://web.telegram.org/a/#1623488785';
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
@@ -61,6 +64,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
 Please share the payment UPI / QR code so I can complete payment and activate my test series access. Thank you!`;
 
+  const encodedMessage = encodeURIComponent(messageTemplate);
+  const telegramPrefilledUrl = `https://t.me/+917746877268?text=${encodedMessage}`;
+  const whatsappUrl = `https://wa.me/917746877268?text=${encodedMessage}`;
+
   const handleCopyTemplate = async () => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -74,19 +81,24 @@ Please share the payment UPI / QR code so I can complete payment and activate my
         document.body.removeChild(textArea);
       }
       setCopied(true);
-      setTimeout(() => setCopied(false), 3000);
+      setTimeout(() => setCopied(false), 4000);
     } catch (err) {
       console.error('Failed to copy template:', err);
     }
   };
 
   const handleOpenTelegram = () => {
-    window.open(TELEGRAM_BUY_URL, '_blank', 'noopener,noreferrer');
+    window.open(telegramPrefilledUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleCopyAndOpen = async () => {
     await handleCopyTemplate();
-    window.open(TELEGRAM_BUY_URL, '_blank', 'noopener,noreferrer');
+    window.open(telegramPrefilledUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenWhatsApp = async () => {
+    await handleCopyTemplate();
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -210,30 +222,46 @@ Please share the payment UPI / QR code so I can complete payment and activate my
               <ExternalLink className="w-3.5 h-3.5 opacity-80" />
             </Button>
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="secondary"
                 size="md"
-                className="flex-1 text-xs font-bold"
+                className="w-full text-xs font-bold text-emerald-400 hover:text-emerald-300 border-emerald-500/30 hover:border-emerald-500/50 bg-emerald-950/20"
+                onClick={handleOpenWhatsApp}
+              >
+                <MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                Message on WhatsApp
+              </Button>
+              <Button
+                variant="secondary"
+                size="md"
+                className="w-full text-xs font-bold"
                 onClick={handleCopyTemplate}
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
                 {copied ? 'Template Copied!' : 'Copy Template Only'}
               </Button>
-              <Button
-                variant="secondary"
-                size="md"
-                className="flex-1 text-xs font-bold"
-                onClick={handleOpenTelegram}
-              >
-                <ExternalLink className="w-3.5 h-3.5 mr-1" />
-                Open Telegram Directly
-              </Button>
             </div>
 
-            <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Verified Direct Seller: Official GATE Matrix Support</span>
+            {copied && (
+              <div className="p-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs text-emerald-300 animate-fade-in">
+                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Message template copied to clipboard! If Telegram does not auto-insert in your browser, press Paste (Ctrl+V).</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 px-1">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Support: <strong>+91 77468 77268</strong></span>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.open(TELEGRAM_WEB_URL, '_blank', 'noopener,noreferrer')}
+                className="text-slate-400 hover:text-white underline text-[10px]"
+              >
+                Open Telegram Web Directly
+              </button>
             </div>
           </div>
         </div>

@@ -121,12 +121,12 @@ export default function Footer() {
           </ul>
           <div className="pt-3 text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
             <a
-              href="https://web.telegram.org/a/#1623488785"
+              href="https://t.me/+917746877268"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#229ED9] hover:underline flex items-center gap-1"
             >
-              <span>Instant Test Series Enrollment via Telegram</span>
+              <span>Instant Test Series Enrollment: Telegram (+91 77468 77268)</span>
             </a>
           </div>
         </div>

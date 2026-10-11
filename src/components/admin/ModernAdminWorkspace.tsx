@@ -1375,12 +1375,12 @@ export default function ModernAdminWorkspace() {
                   <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                     <span className="font-bold text-slate-700 dark:text-slate-300">Telegram Purchase Link:</span>
                     <a
-                      href="https://web.telegram.org/a/#1623488785"
+                      href="https://t.me/+917746877268"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#229ED9] hover:underline font-bold flex items-center gap-1"
                     >
-                      <span>https://web.telegram.org/a/#1623488785</span>
+                      <span>https://t.me/+917746877268 (+91 77468 77268)</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
