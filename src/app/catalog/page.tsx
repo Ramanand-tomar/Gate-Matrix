@@ -548,8 +548,7 @@ function CatalogContent() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {paginatedPapers.map((p, idx) => {
-              const globalIdx = startIdx + idx;
-              const free = isPaperFree(p, globalIdx);
+              const free = isPaperFree(p);
               const canAttempt = free || userHasAccessToBranch;
               const pastAttempt = attemptMap[p.paper_id];
               const paperCat = getPaperCategory(p.title, idx);

@@ -87,13 +87,61 @@ export function checkUserEntitlement(
   return { hasAccess: false };
 }
 
+export const FREE_PYQ_IDS = new Set([
+  'gate_cs_2024_pyq', 'gate_cs_2023_pyq', 'gate_cs_2022_pyq',
+  'gate_da_2024_pyq', 'gate_da_2023_pyq', 'gate_da_2022_pyq',
+  'gate_ee_2024_pyq', 'gate_ee_2023_pyq', 'gate_ee_2022_pyq',
+  'gate_ec_2024_pyq', 'gate_ec_2023_pyq', 'gate_ec_2022_pyq',
+  'gate_me_2024_pyq', 'gate_me_2023_pyq', 'gate_me_2022_pyq',
+  'gate_ce_2024_pyq', 'gate_ce_2023_pyq', 'gate_ce_2022_pyq',
+]);
+
 /**
  * Helper: Checks if a given paper is a free starter/sample paper.
+ * STRICT ENFORCEMENT:
+ * - Only the designated 3 PYQ papers per branch are free for free users.
+ * - Coaching institute / classes test papers (MADE EASY, GO Classes, DVRUO, ACE Academy, GATE Wallah, Unacademy, etc.)
+ *   are NEVER free. They strictly require a Branch Pass.
+ * - Full-Length mocks, topic-wise tests, and non-PYQ tests are NEVER free.
  */
-export function isPaperFree(paper: { title?: string; paper_id?: string; is_free?: boolean }, index: number = 0): boolean {
+export function isPaperFree(
+  paper: { title?: string; paper_id?: string; is_free?: boolean; institute?: string; provider?: string },
+  _index: number = 0
+): boolean {
+  if (!paper) return false;
   if (paper.is_free) return true;
-  // Strictly only the first 3 papers (index 0, 1, 2) in the starting grid are free starter tests
-  return index < 3;
+  if (paper.paper_id && FREE_PYQ_IDS.has(paper.paper_id)) return true;
+
+  const title = (paper.title || '').toLowerCase();
+  const provider = (paper.provider || '').toLowerCase();
+  const institute = (paper.institute || '').toLowerCase();
+
+  // Coaching institute / class tests are NEVER free under any circumstances
+  const isCoaching =
+    institute.includes('made easy') ||
+    institute.includes('ace academy') ||
+    institute.includes('go classes') ||
+    institute.includes('dvruo') ||
+    institute.includes('gate wallah') ||
+    institute.includes('unacademy') ||
+    provider.includes('dvruo') ||
+    provider.includes('made easy') ||
+    provider.includes('ace') ||
+    provider.includes('classes');
+
+  if (isCoaching) {
+    return false;
+  }
+
+  // Only official PYQ papers with explicit PYQ identification can be free (max 3 per branch)
+  if (
+    (title.includes('pyq') || title.includes('previous year') || title.includes('actual exam paper')) &&
+    (title.includes('2024') || title.includes('2023') || title.includes('2022'))
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -138,12 +186,12 @@ export function getUserPurchasedBranches(orders: any[]): string[] {
  */
 export function canUserAccessPaper(
   orders: any[],
-  paper: { branch?: string; paper_id?: string; title?: string; is_free?: boolean },
-  index: number = 0
+  paper: { branch?: string; paper_id?: string; title?: string; is_free?: boolean; institute?: string; provider?: string },
+  _index: number = 0
 ): { hasAccess: boolean; reason: 'FREE_SAMPLE' | 'BRANCH_PASS_ACTIVE' | 'BRANCH_PASS_REQUIRED'; requiredBranch: string } {
   const paperBranch = (paper?.branch || 'CS').toUpperCase();
 
-  if (isPaperFree(paper, index)) {
+  if (isPaperFree(paper)) {
     return { hasAccess: true, reason: 'FREE_SAMPLE', requiredBranch: paperBranch };
   }
 

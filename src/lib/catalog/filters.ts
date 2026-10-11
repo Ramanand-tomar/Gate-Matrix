@@ -16,34 +16,35 @@ export function getPaperCategory(paperTitle: string, index: number = 0): 'FULL_L
   if (
     t.includes('pyq') ||
     t.includes('previous year') ||
-    t.includes('gate 202') ||
-    t.includes('gate 201') ||
-    t.includes('gate 200')
+    t.includes('actual exam paper') ||
+    t.includes('official pyq')
   ) {
     return 'PYQ';
+  }
+  if (
+    t.includes('subject') ||
+    t.includes('topic') ||
+    t.includes('quiz') ||
+    t.includes('chapter') ||
+    t.includes('unit') ||
+    t.includes('part syllabus') ||
+    t.includes('weekly quiz') ||
+    t.includes('monthly quiz')
+  ) {
+    return 'TOPIC_WISE';
   }
   if (
     t.includes('full syllabus') ||
     t.includes('full length') ||
     t.includes('grand mock') ||
-    t.includes('advance level test-1') ||
-    t.includes('full mock')
+    t.includes('advance level') ||
+    t.includes('basic level') ||
+    t.includes('mock level') ||
+    t.includes('full mock') ||
+    t.includes('demo test') ||
+    t.includes('mixed subjects')
   ) {
     return 'FULL_LENGTH';
-  }
-  if (
-    t.includes('subject') ||
-    t.includes('topic') ||
-    t.includes('chapter') ||
-    t.includes('unit') ||
-    t.includes('dvruo') ||
-    t.includes('co and architecture') ||
-    t.includes('networks') ||
-    t.includes('dbms') ||
-    t.includes('os') ||
-    t.includes('algo')
-  ) {
-    return 'TOPIC_WISE';
   }
   return index % 2 === 0 ? 'TOPIC_WISE' : 'FULL_LENGTH';
 }

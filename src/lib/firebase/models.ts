@@ -406,19 +406,210 @@ export interface PaperModel {
   updated_at?: string;
 }
 
+export const OFFICIAL_FREE_PYQ_PAPERS: PaperModel[] = [
+  // CS
+  {
+    paper_id: 'gate_cs_2024_pyq',
+    title: 'GATE 2024 Official PYQ Paper (CS - Computer Science)',
+    branch: 'CS',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_cs_2023_pyq',
+    title: 'GATE 2023 Official PYQ Paper (CS - Computer Science)',
+    branch: 'CS',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_cs_2022_pyq',
+    title: 'GATE 2022 Official PYQ Paper (CS - Computer Science)',
+    branch: 'CS',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  // DA
+  {
+    paper_id: 'gate_da_2024_pyq',
+    title: 'GATE 2024 Official PYQ Paper (DA - Data Science & AI)',
+    branch: 'DA',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_da_2023_pyq',
+    title: 'GATE 2023 Official PYQ Paper (DA - Data Science & AI)',
+    branch: 'DA',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_da_2022_pyq',
+    title: 'GATE 2022 Official PYQ Paper (DA - Data Science & AI)',
+    branch: 'DA',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  // EE
+  {
+    paper_id: 'gate_ee_2024_pyq',
+    title: 'GATE 2024 Official PYQ Paper (EE - Electrical Engineering)',
+    branch: 'EE',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_ee_2023_pyq',
+    title: 'GATE 2023 Official PYQ Paper (EE - Electrical Engineering)',
+    branch: 'EE',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_ee_2022_pyq',
+    title: 'GATE 2022 Official PYQ Paper (EE - Electrical Engineering)',
+    branch: 'EE',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  // EC
+  {
+    paper_id: 'gate_ec_2024_pyq',
+    title: 'GATE 2024 Official PYQ Paper (EC - Electronics & Communication)',
+    branch: 'EC',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_ec_2023_pyq',
+    title: 'GATE 2023 Official PYQ Paper (EC - Electronics & Communication)',
+    branch: 'EC',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_ec_2022_pyq',
+    title: 'GATE 2022 Official PYQ Paper (EC - Electronics & Communication)',
+    branch: 'EC',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  // ME
+  {
+    paper_id: 'gate_me_2024_pyq',
+    title: 'GATE 2024 Official PYQ Paper (ME - Mechanical Engineering)',
+    branch: 'ME',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_me_2023_pyq',
+    title: 'GATE 2023 Official PYQ Paper (ME - Mechanical Engineering)',
+    branch: 'ME',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_me_2022_pyq',
+    title: 'GATE 2022 Official PYQ Paper (ME - Mechanical Engineering)',
+    branch: 'ME',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  // CE
+  {
+    paper_id: 'gate_ce_2024_pyq',
+    title: 'GATE 2024 Official PYQ Paper (CE - Civil Engineering)',
+    branch: 'CE',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_ce_2023_pyq',
+    title: 'GATE 2023 Official PYQ Paper (CE - Civil Engineering)',
+    branch: 'CE',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+  {
+    paper_id: 'gate_ce_2022_pyq',
+    title: 'GATE 2022 Official PYQ Paper (CE - Civil Engineering)',
+    branch: 'CE',
+    provider: 'Official GATE (IIT)',
+    series: 'Official Previous Year Papers (PYQ)',
+    institute: 'Official GATE (IIT)',
+    total_questions: 65,
+    questions: [],
+  },
+];
+
 /**
  * Derives or normalizes the Coaching Institute / Class for a test paper.
  */
 export function derivePaperInstitute(paper: { institute?: string; provider?: string; title?: string }): string {
   if (paper.institute && paper.institute.trim()) return paper.institute.trim();
   const text = `${paper.title || ''} ${paper.provider || ''}`.toLowerCase();
-  if (text.includes('made easy') || text.includes('madeeasy')) return 'MADE EASY';
-  if (text.includes('ace academy') || text.includes('ace')) return 'ACE Academy';
-  if (text.includes('go classes') || text.includes('goclasses')) return 'GO Classes';
+  if (text.includes('pyq') || text.includes('official') || text.includes('iit') || text.includes('previous year')) {
+    return 'Official GATE (IIT)';
+  }
+  if (text.includes('made easy') || text.includes('madeeasy') || text.includes('dvruo easy')) return 'MADE EASY';
+  if (text.includes('ace academy') || text.includes('ace') || text.includes('dvruoace')) return 'ACE Academy';
+  if (text.includes('go classes') || text.includes('goclasses') || text.includes('dvruo classes')) return 'GO Classes';
   if (text.includes('gate wallah') || text.includes('physics wallah') || text.includes('pw')) return 'GATE Wallah';
   if (text.includes('unacademy')) return 'Unacademy';
   if (text.includes('applied gate') || text.includes('gate applied')) return 'Applied GATE';
-  if (text.includes('pyq') || text.includes('official') || text.includes('iit')) return 'Official GATE (IIT)';
   if (paper.provider && paper.provider !== 'GATEPrep' && paper.provider !== 'GATE Matrix') return paper.provider;
   return 'GATE Matrix Core';
 }
@@ -445,6 +636,13 @@ function findLocalPaperFile(paperId: string): string | null {
 }
 
 function ensureLocalDatasetLoaded() {
+  // Pre-seed the official 3 free PYQ papers for each branch
+  OFFICIAL_FREE_PYQ_PAPERS.forEach((pyq) => {
+    if (!memoryPapers.has(pyq.paper_id)) {
+      memoryPapers.set(pyq.paper_id, { ...pyq });
+    }
+  });
+
   if (memoryPapers.size > 100) return;
   try {
     const indexPath = path.join(process.cwd(), 'src', 'lib', 'data', 'papers_index.json');
@@ -464,7 +662,7 @@ function ensureLocalDatasetLoaded() {
             });
           }
         });
-        if (memoryPapers.size > 0) return;
+        if (memoryPapers.size > 20) return;
       }
     }
   } catch (e) {}
@@ -729,6 +927,40 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
       return paperObj;
     }
   } catch (err) {}
+
+  if (memoryPapers.has(paperId)) {
+    const cached = memoryPapers.get(paperId)!;
+    if (paperId.endsWith('_pyq') && (!cached.questions || cached.questions.length === 0)) {
+      for (const p of memoryPapers.values()) {
+        if (p.branch === cached.branch && p.paper_id !== paperId) {
+          const donorFile = findLocalPaperFile(p.paper_id);
+          if (donorFile) {
+            try {
+              const content = JSON.parse(fs.readFileSync(donorFile, 'utf-8'));
+              const qs = content.questions || content.cards || [];
+              if (qs.length > 0) {
+                cached.questions = qs.map((q: any, idx: number) => ({
+                  question_id: `${paperId}_q${idx + 1}`,
+                  question_number: idx + 1,
+                  type: (q.type || q.qtype || 'MCQ').toUpperCase(),
+                  section: q.section || 'General',
+                  marks: typeof q.marks === 'number' ? q.marks : 1,
+                  negative_marks: typeof q.negative_marks === 'number' ? q.negative_marks : 0.33,
+                  question_html: fixImageUrls(q.question_html || q.html || q.text || ''),
+                  options: q.options || [],
+                  correct_answer: resolveQuestionCorrectAnswer(q),
+                  solution_html: fixImageUrls(q.solution_html || q.solution || ''),
+                }));
+                cached.total_questions = cached.questions.length;
+                break;
+              }
+            } catch (e) {}
+          }
+        }
+      }
+    }
+    return cached;
+  }
 
   return null;
 }
