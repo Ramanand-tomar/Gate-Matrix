@@ -27,7 +27,6 @@ import {
   Layers,
   ChevronDown,
   BarChart3,
-  Star,
   Users,
   Check,
   Play,
@@ -201,30 +200,6 @@ export default function Home() {
       subtitle: 'Targeted Score Elevation',
       desc: 'Execute topic-focused repeat drills to eliminate accuracy bottlenecks and secure top All India Ranks.',
       icon: TrendingUp,
-    },
-  ];
-
-  const testimonials = [
-    {
-      name: 'Rohan Sharma',
-      rank: 'AIR 12 — GATE CS',
-      score: 'Score: 89.4 / 100',
-      college: 'IIT Bombay Admitted',
-      comment: 'GATE Matrix’s exact replica of the IIT CBT keypad and instant topic accuracy diagnostics made the real exam feel like just another practice session.',
-    },
-    {
-      name: 'Ananya Verma',
-      rank: 'AIR 04 — GATE DA',
-      score: 'Score: 92.1 / 100',
-      college: 'IISc Bangalore Admitted',
-      comment: 'The KaTeX mathematical step-by-step solutions and Data Science mock quality are unmatched. It completely eliminated my NAT keypad input errors.',
-    },
-    {
-      name: 'Priya Sundaram',
-      rank: 'AIR 28 — GATE EE',
-      score: 'Score: 84.6 / 100',
-      college: 'IIT Madras Admitted',
-      comment: 'Tracking my negative marking impact per topic helped me raise my accuracy from 64% to 88% in just 6 weeks of dedicated practice.',
     },
   ];
 
@@ -795,46 +770,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 8. TOP RANKER TESTIMONIALS */}
-      <section className="py-20 px-4 sm:px-6 bg-slate-900 text-white relative">
-        <div className="max-w-7xl mx-auto space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-[#8be0ce] text-xs font-extrabold uppercase tracking-widest block">
-              Proven Results
-            </span>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
-              Trusted by Top GATE Rankers
-            </h2>
-            <p className="text-gray-400 text-xs sm:text-sm">
-              Hear from aspirants who achieved top All India Ranks using GATE Matrix.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t, idx) => (
-              <div key={idx} className="bg-[#14213d] border border-white/15 p-6 rounded-3xl space-y-4 flex flex-col justify-between">
-                <div className="space-y-3">
-                  <div className="flex gap-1 text-amber-400">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-300 italic leading-relaxed">
-                    “{t.comment}”
-                  </p>
-                </div>
-                <div className="pt-4 border-t border-white/10">
-                  <h4 className="font-extrabold text-white text-sm">{t.name}</h4>
-                  <div className="text-xs text-[#8be0ce] font-bold">{t.rank}</div>
-                  <div className="text-[11px] text-gray-400">{t.college}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 9. FREQUENTLY ASKED QUESTIONS */}
+      {/* 8. FREQUENTLY ASKED QUESTIONS */}
       <section className="py-20 px-4 sm:px-6 max-w-4xl mx-auto w-full space-y-8">
         <div className="text-center space-y-2">
           <span className="text-[#0f766e] dark:text-[#2dd4bf] text-xs font-extrabold uppercase tracking-widest block">
