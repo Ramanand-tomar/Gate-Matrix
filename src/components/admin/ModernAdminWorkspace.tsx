@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { db } from '@/lib/firebase/client';
+import { collection, getDocs, doc, setDoc, updateDoc, arrayUnion, arrayRemove, query, where } from 'firebase/firestore';
 import { MathRenderer } from '@/components/MathRenderer';
 import {
   ShieldCheck,
@@ -211,20 +213,79 @@ export default function ModernAdminWorkspace() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
+      // 1. Fetch real registered users and orders directly from Firestore
+      let realUsers: any[] = [];
+      let realOrders: any[] = [];
+
+      try {
+        const usersSnap = await getDocs(collection(db, 'users'));
+        realUsers = usersSnap.docs
+          .map((d) => ({
+            uid: d.id,
+            ...d.data(),
+          }))
+          // Exclude any remaining mock user emails
+          .filter((u: any) => u.email && !u.email.includes('@gatematrix.com') && !u.email.includes('aarav.sharma@') && !u.email.includes('priya.verma@') && !u.email.includes('vikram.singh@'));
+      } catch (fsErr) {
+        console.warn('Direct Firestore users fetch fallback:', fsErr);
+      }
+
+      try {
+        const ordersSnap = await getDocs(collection(db, 'orders'));
+        realOrders = ordersSnap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
+      } catch (fsErr) {
+        console.warn('Direct Firestore orders fetch fallback:', fsErr);
+      }
+
       const [usersRes, ordersRes, papersRes] = await Promise.all([
         fetch('/api/admin/users', { headers: ADMIN_API_HEADERS }),
         fetch('/api/admin/orders', { headers: ADMIN_API_HEADERS }),
         fetch('/api/admin/papers', { headers: ADMIN_API_HEADERS }),
       ]);
 
-      if (usersRes.ok) {
+      if (realUsers.length > 0) {
+        // Build user map prioritizing live Firestore documents
+        const userMap = new Map<string, any>();
+        realUsers.forEach((u) => userMap.set(u.email ? u.email.toLowerCase() : u.uid, u));
+
+        if (usersRes.ok) {
+          const u = await usersRes.json();
+          if (u.success && Array.isArray(u.users)) {
+            u.users.forEach((user: any) => {
+              const key = user.email ? user.email.toLowerCase() : user.uid;
+              if (!userMap.has(key)) {
+                userMap.set(key, user);
+              }
+            });
+          }
+        }
+        setUsers(Array.from(userMap.values()));
+      } else if (usersRes.ok) {
         const u = await usersRes.json();
         if (u.success && u.users) setUsers(u.users);
       }
-      if (ordersRes.ok) {
+
+      if (realOrders.length > 0) {
+        const orderMap = new Map<string, any>();
+        realOrders.forEach((o) => orderMap.set(o.order_id || o.id, o));
+        if (ordersRes.ok) {
+          const o = await ordersRes.json();
+          if (o.success && Array.isArray(o.orders)) {
+            o.orders.forEach((ord: any) => {
+              const key = ord.order_id || ord.id;
+              if (!orderMap.has(key)) orderMap.set(key, ord);
+            });
+          }
+        }
+        setOrders(Array.from(orderMap.values()));
+      } else if (ordersRes.ok) {
         const o = await ordersRes.json();
         if (o.success && o.orders) setOrders(o.orders);
       }
+
       if (papersRes.ok) {
         const p = await papersRes.json();
         if (p.success && p.papers) setPapers(p.papers);
@@ -250,7 +311,8 @@ export default function ModernAdminWorkspace() {
   // --- GRANT PASS BY EMAIL ACTION ---
   const handleGrantAccessSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!grantEmail.trim()) {
+    const candidateEmail = grantEmail.trim().toLowerCase();
+    if (!candidateEmail) {
       setGlobalNotice({ type: 'error', text: 'Please provide a valid candidate email.' });
       return;
     }
@@ -258,11 +320,83 @@ export default function ModernAdminWorkspace() {
     setGrantSubmitting(true);
     setGlobalNotice(null);
     try {
+      // 1. Directly update Firestore so candidate gets immediate access in real-time
+      let targetUid = '';
+      try {
+        const existingInState = users.find(
+          (u) => u.email && u.email.toLowerCase() === candidateEmail
+        );
+        targetUid = existingInState?.uid || '';
+
+        if (!targetUid) {
+          const qSnap = await getDocs(
+            query(collection(db, 'users'), where('email', '==', candidateEmail))
+          );
+          if (!qSnap.empty) {
+            targetUid = qSnap.docs[0].id;
+          }
+        }
+
+        if (targetUid) {
+          const userRef = doc(db, 'users', targetUid);
+          await setDoc(
+            userRef,
+            {
+              activePasses: arrayUnion(grantBranch),
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        } else {
+          // Pre-provision user document
+          const cleanUid = `user_${candidateEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+          targetUid = cleanUid;
+          const userRef = doc(db, 'users', cleanUid);
+          await setDoc(
+            userRef,
+            {
+              uid: cleanUid,
+              email: candidateEmail,
+              displayName: candidateEmail.split('@')[0],
+              role: 'LEARNER',
+              status: 'ACTIVE',
+              activePasses: [grantBranch],
+              createdAt: new Date().toISOString(),
+              lastLoginAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+        }
+
+        // Create an official order document in Firestore
+        const orderId = `ord_admin_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+        await setDoc(doc(db, 'orders', orderId), {
+          order_id: orderId,
+          id: orderId,
+          uid: targetUid,
+          userId: targetUid,
+          email: candidateEmail,
+          branch_code: grantBranch,
+          product_id: `${grantBranch.toLowerCase()}_pass`,
+          product_title: `GATE ${grantBranch} All-Access Branch Pass (Admin Granted)`,
+          amount: 500,
+          currency: 'INR',
+          razorpay_payment_id: `admin_manual_${Date.now()}`,
+          status: 'GRANTED',
+          paymentStatus: 'PAID',
+          created_at: new Date().toISOString(),
+        });
+      } catch (fsErr) {
+        console.warn('Direct Firestore grant write warning:', fsErr);
+      }
+
+      // 2. Call admin backend route to update memory and local storage cache
       const res = await fetch('/api/admin/orders', {
         method: 'POST',
         headers: ADMIN_API_HEADERS,
         body: JSON.stringify({
-          email: grantEmail.trim(),
+          email: candidateEmail,
+          uid: targetUid || undefined,
           branch: grantBranch,
           action: 'GRANT',
         }),
@@ -271,10 +405,10 @@ export default function ModernAdminWorkspace() {
       if (data.success) {
         setGlobalNotice({
           type: 'success',
-          text: `Success: GATE ${grantBranch} test access granted to ${grantEmail.trim()}!`,
+          text: `Success: GATE ${grantBranch} test access granted to ${candidateEmail}!`,
         });
         setGrantEmail('');
-        fetchAllData();
+        await fetchAllData();
       } else {
         setGlobalNotice({ type: 'error', text: data.error || 'Failed to grant access.' });
       }
@@ -288,17 +422,40 @@ export default function ModernAdminWorkspace() {
   // --- REVOKE PASS ACTION ---
   const handleRevokePass = async (email: string, branch: string) => {
     if (!confirm(`Revoke GATE ${branch} access for ${email}?`)) return;
+    const cleanEmail = email.trim().toLowerCase();
 
     try {
+      try {
+        const existingInState = users.find(
+          (u) => u.email && u.email.toLowerCase() === cleanEmail
+        );
+        let targetUid = existingInState?.uid;
+        if (!targetUid) {
+          const qSnap = await getDocs(
+            query(collection(db, 'users'), where('email', '==', cleanEmail))
+          );
+          if (!qSnap.empty) targetUid = qSnap.docs[0].id;
+        }
+
+        if (targetUid) {
+          const userRef = doc(db, 'users', targetUid);
+          await updateDoc(userRef, {
+            activePasses: arrayRemove(branch),
+          });
+        }
+      } catch (fsErr) {
+        console.warn('Direct Firestore revoke error:', fsErr);
+      }
+
       const res = await fetch('/api/admin/orders', {
         method: 'POST',
         headers: ADMIN_API_HEADERS,
-        body: JSON.stringify({ email, branch, action: 'REVOKE' }),
+        body: JSON.stringify({ email: cleanEmail, branch, action: 'REVOKE' }),
       });
       const data = await res.json();
       if (data.success) {
-        setGlobalNotice({ type: 'success', text: `Revoked GATE ${branch} access from ${email}.` });
-        fetchAllData();
+        setGlobalNotice({ type: 'success', text: `Revoked GATE ${branch} access from ${cleanEmail}.` });
+        await fetchAllData();
       } else {
         alert(data.error || 'Failed to revoke.');
       }

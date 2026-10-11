@@ -114,6 +114,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           if (snap.exists()) {
             const data = snap.data() as UserProfile;
+
+            // Check if there are pre-provisioned passes under their email doc to merge
+            if ((!data.activePasses || data.activePasses.length === 0) && currentUser.email) {
+              try {
+                const cleanUid = `user_${currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const preSnap = await getDoc(doc(db, 'users', cleanUid));
+                if (preSnap.exists() && preSnap.data().activePasses?.length > 0) {
+                  const mergedPasses = preSnap.data().activePasses;
+                  data.activePasses = mergedPasses;
+                  await setDoc(userRef, { activePasses: mergedPasses }, { merge: true });
+                }
+              } catch (e) {}
+            }
+
             setUserProfile(data);
 
             // Check if server already has another session recorded
@@ -123,6 +137,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               broadcastDeviceSession(currentUser.uid, currentLocalId);
             }
           } else {
+            // Check if there were pre-granted passes by admin prior to first login
+            let preGrantedPasses: string[] = [];
+            if (currentUser.email) {
+              try {
+                const cleanUid = `user_${currentUser.email.toLowerCase().replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const preSnap = await getDoc(doc(db, 'users', cleanUid));
+                if (preSnap.exists() && Array.isArray(preSnap.data().activePasses)) {
+                  preGrantedPasses = preSnap.data().activePasses;
+                }
+              } catch (e) {}
+            }
+
             // Create default profile with LEARNER role and active session ID
             const newProfile: UserProfile = {
               uid: currentUser.uid,
@@ -130,6 +156,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               displayName: currentUser.displayName,
               photoURL: currentUser.photoURL,
               role: 'LEARNER',
+              activePasses: preGrantedPasses,
               activeSessionId: currentLocalId,
               createdAt: new Date().toISOString(),
               lastLoginAt: new Date().toISOString(),

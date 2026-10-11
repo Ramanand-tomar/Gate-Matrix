@@ -89,7 +89,7 @@ function CatalogContent() {
   const branchParam = searchParams.get('branch');
   const searchParam = searchParams.get('search');
 
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [selectedBranch, setSelectedBranch] = useState(branchParam || 'CS');
   const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [selectedCategory, setSelectedCategory] = useState<TestCategoryFilter>('ALL');
@@ -135,10 +135,11 @@ function CatalogContent() {
       setLoading(true);
       try {
         const uid = user ? user.uid : 'aspirant_learner_101';
+        const emailParam = user?.email ? `&email=${encodeURIComponent(user.email)}` : '';
 
         const [paperData, orderData, attemptData] = await Promise.all([
           fastFetchJson(`/api/papers?branch=${selectedBranch}`),
-          fastFetchJson(`/api/orders?uid=${uid}`),
+          fastFetchJson(`/api/orders?uid=${uid}${emailParam}`),
           fastFetchJson(`/api/attempts?uid=${uid}`),
         ]);
 
@@ -168,9 +169,9 @@ function CatalogContent() {
     return () => {
       isMounted = false;
     };
-  }, [selectedBranch, user]);
+  }, [selectedBranch, user, userProfile]);
 
-  const userHasAccessToBranch = hasUserBranchAccess(orders, selectedBranch);
+  const userHasAccessToBranch = hasUserBranchAccess(orders, selectedBranch, userProfile);
 
   const attemptMap: Record<string, AttemptRecord> = {};
   attempts.forEach((att) => {

@@ -146,10 +146,32 @@ export function isPaperFree(
 
 /**
  * Helper: Evaluates whether candidate has an active one-time Branch Pass for a given branch.
+ * Checks both orders records and user profile activePasses / role.
  */
-export function hasUserBranchAccess(orders: any[], branchCode: string): boolean {
-  if (!orders || !Array.isArray(orders) || !branchCode) return false;
+export function hasUserBranchAccess(
+  orders: any[],
+  branchCode: string,
+  userProfile?: { activePasses?: string[]; role?: string } | null
+): boolean {
+  if (!branchCode) return false;
   const upperBranch = branchCode.toUpperCase();
+
+  // If user is ADMIN or INSTRUCTOR, grant platform-wide access
+  if (userProfile?.role === 'ADMIN' || userProfile?.role === 'INSTRUCTOR') {
+    return true;
+  }
+
+  // Check direct activePasses in user profile
+  if (userProfile?.activePasses && Array.isArray(userProfile.activePasses)) {
+    const hasPass = userProfile.activePasses.some((p) => {
+      const upperP = (p || '').toUpperCase();
+      return upperP === upperBranch || upperP === 'ALL' || upperP.includes(upperBranch);
+    });
+    if (hasPass) return true;
+  }
+
+  // Check orders
+  if (!orders || !Array.isArray(orders)) return false;
   const targetPassId = `${branchCode.toLowerCase()}_pass`;
 
   return orders.some((ord) => {
@@ -162,10 +184,13 @@ export function hasUserBranchAccess(orders: any[], branchCode: string): boolean 
 
     const matchesProd =
       ordProdId === targetPassId ||
+      ordProdId === 'all_pass' ||
       ordBranch === upperBranch ||
+      ordBranch === 'ALL' ||
       ordTitle.includes(`${upperBranch} BRANCH`) ||
       ordTitle.includes(`${upperBranch} ALL-ACCESS`) ||
-      ordTitle.includes(`${upperBranch} PASS`);
+      ordTitle.includes(`${upperBranch} PASS`) ||
+      ordTitle.includes('ALL-ACCESS');
 
     return matchesProd;
   });
@@ -174,9 +199,12 @@ export function hasUserBranchAccess(orders: any[], branchCode: string): boolean 
 /**
  * Returns array of branch codes for which user owns active passes.
  */
-export function getUserPurchasedBranches(orders: any[]): string[] {
+export function getUserPurchasedBranches(
+  orders: any[],
+  userProfile?: { activePasses?: string[]; role?: string } | null
+): string[] {
   const allBranches = ['CS', 'DA', 'EE', 'EC', 'ME', 'CE'];
-  return allBranches.filter((b) => hasUserBranchAccess(orders, b));
+  return allBranches.filter((b) => hasUserBranchAccess(orders, b, userProfile));
 }
 
 /**
@@ -187,7 +215,8 @@ export function getUserPurchasedBranches(orders: any[]): string[] {
 export function canUserAccessPaper(
   orders: any[],
   paper: { branch?: string; paper_id?: string; title?: string; is_free?: boolean; institute?: string; provider?: string },
-  _index: number = 0
+  _index: number = 0,
+  userProfile?: { activePasses?: string[]; role?: string } | null
 ): { hasAccess: boolean; reason: 'FREE_SAMPLE' | 'BRANCH_PASS_ACTIVE' | 'BRANCH_PASS_REQUIRED'; requiredBranch: string } {
   const paperBranch = (paper?.branch || 'CS').toUpperCase();
 
@@ -195,7 +224,7 @@ export function canUserAccessPaper(
     return { hasAccess: true, reason: 'FREE_SAMPLE', requiredBranch: paperBranch };
   }
 
-  if (hasUserBranchAccess(orders, paperBranch)) {
+  if (hasUserBranchAccess(orders, paperBranch, userProfile)) {
     return { hasAccess: true, reason: 'BRANCH_PASS_ACTIVE', requiredBranch: paperBranch };
   }
 

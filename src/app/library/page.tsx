@@ -61,7 +61,7 @@ interface OrderRecord {
 }
 
 export default function LibraryPage() {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<'SERIES' | 'PASSES' | 'SAVED' | 'COMPLETED'>('SERIES');
 
   const [papers, setPapers] = useState<PaperDoc[]>([]);
@@ -96,7 +96,7 @@ export default function LibraryPage() {
         const [paperData, attemptData, orderData] = await Promise.all([
           fastFetchJson('/api/papers'),
           fastFetchJson(`/api/attempts?uid=${uid}`),
-          fastFetchJson(`/api/orders?uid=${uid}`),
+          fastFetchJson(`/api/orders?uid=${uid}${user?.email ? `&email=${encodeURIComponent(user.email)}` : ''}`),
         ]);
 
         if (isMounted) {
@@ -356,7 +356,7 @@ export default function LibraryPage() {
                 { code: 'ME', name: 'Mechanical Engineering' },
                 { code: 'CE', name: 'Civil Engineering' },
               ].map((branch) => {
-                const isOwned = hasUserBranchAccess(effectiveOrders, branch.code);
+                const isOwned = hasUserBranchAccess(effectiveOrders, branch.code, userProfile);
                 return (
                   <Card
                     key={branch.code}

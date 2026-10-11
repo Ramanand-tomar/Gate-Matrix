@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     if (branchCode === 'ALL') {
       const allBranches = ['CS', 'DA', 'EE', 'EC', 'ME', 'CE'];
       for (const b of allBranches) {
-        await grantBranchAccessByEmail({ email: targetUser, branch: b, notes });
+        await grantBranchAccessByEmail({ email: targetUser, uid, branch: b, notes });
       }
       return NextResponse.json({
         success: true,
@@ -106,6 +106,7 @@ export async function POST(request: Request) {
     // Single branch grant (e.g. CS, EC, DA)
     const result = await grantBranchAccessByEmail({
       email: targetUser,
+      uid,
       branch: branchCode,
       notes,
     });

@@ -10,11 +10,18 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'ramanandtomar1234@gmail.com' ||
+        request.auth.token.email == 'admin@gatematrix.com'
+      );
+    }
 
     // Papers Collection (Public Metadata & Exam Paper Retrieval)
     match /papers/{paperId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
     // DENY ALL DIRECT CLIENT ACCESS TO ANSWER KEYS (Server Scored Only)
@@ -25,39 +32,41 @@ service cloud.firestore {
     // Question Versions (Learner facing - Read Only)
     match /questionVersions/{qvid} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
     // Test Versions (Public Catalog Metadata - Read Only)
     match /testVersions/{testId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
     }
 
     // Learner Profiles: User can read their profile, but cannot self-elevate role or activePasses
+    // Admins can read, create, update, and manage candidate entitlements
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && (!request.resource.data.keys().hasAny(['role', 'activePasses']) || request.resource.data.role == 'LEARNER');
-      allow update: if isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'activePasses']);
-      allow delete: if false;
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if (isOwner(userId) && (!request.resource.data.keys().hasAny(['role', 'activePasses']) || request.resource.data.role == 'LEARNER')) || isAdmin();
+      allow update: if (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'activePasses'])) || isAdmin();
+      allow delete: if isAdmin();
     }
 
     // Attempts: Read own attempts; direct client update/delete is forbidden to preserve immutable audit trail
     match /attempts/{attemptId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow update, delete: if isAdmin();
     }
 
-    // Orders & Grants: Server-only writes
+    // Orders & Grants: Learner can read own orders by userId or email; Admin can manage all
     match /orders/{orderId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow write: if false;
+      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.uid == request.auth.uid || resource.data.email == request.auth.token.email)) || isAdmin();
+      allow write: if isAdmin();
     }
 
     match /grants/{grantId} {
-      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow write: if false;
+      allow read: if (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.email == request.auth.token.email)) || isAdmin();
+      allow write: if isAdmin();
     }
   }
 }
+

@@ -70,7 +70,7 @@ interface EvaluationSummary {
 function ExamEngineContent() {
   const searchParams = useSearchParams();
   const paperId = searchParams.get('paperId');
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   const fallbackQuestions: QuestionItem[] = [
     {
@@ -159,7 +159,8 @@ function ExamEngineContent() {
           const saved = localStorage.getItem('gate_user_orders');
           if (saved) userOrders = JSON.parse(saved);
           if (user) {
-            const ordRes = await fetch(`/api/orders?uid=${user.uid}`);
+            const emailParam = user.email ? `&email=${encodeURIComponent(user.email)}` : '';
+            const ordRes = await fetch(`/api/orders?uid=${user.uid}${emailParam}`);
             const ordData = await ordRes.json();
             if (ordData.success && ordData.orders) {
               userOrders = [...ordData.orders, ...userOrders];
@@ -186,7 +187,7 @@ function ExamEngineContent() {
             if (paper.branch) setPaperBranch(paper.branch);
 
             // Enforce branch-based entitlement access
-            const access = canUserAccessPaper(userOrders, paper);
+            const access = canUserAccessPaper(userOrders, paper, 0, userProfile);
             if (!access.hasAccess) {
               setLockInfo({
                 requiredBranch: access.requiredBranch,
@@ -269,7 +270,7 @@ function ExamEngineContent() {
     }
     loadPaperData();
     return () => clearInterval(progressTimer);
-  }, [paperId]);
+  }, [paperId, user, userProfile]);
 
   // Exam Countdown Timer (Only ticks when phase === 'EXAM')
   useEffect(() => {
@@ -950,9 +951,9 @@ function ExamEngineContent() {
             <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 text-left space-y-2 max-w-md mx-auto text-xs">
               <div className="flex justify-between items-center text-slate-300 font-medium">
                 <span>Your Active Branch Passes:</span>
-                {getUserPurchasedBranches(orders).length > 0 ? (
+                {getUserPurchasedBranches(orders, userProfile).length > 0 ? (
                   <div className="flex gap-1.5 flex-wrap">
-                    {getUserPurchasedBranches(orders).map((b) => (
+                    {getUserPurchasedBranches(orders, userProfile).map((b) => (
                       <Badge key={b} variant="emerald" className="font-mono text-[10px]">
                         {b} ACTIVE
                       </Badge>

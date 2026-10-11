@@ -111,81 +111,6 @@ function ensureLocalUsersLoaded() {
       data.forEach((usr) => memoryUsers.set(usr.uid, usr));
     }
   } catch (err) {}
-
-  // Seed default candidates roster if empty
-  if (memoryUsers.size === 0) {
-    const defaultUsers: UserModel[] = [
-      {
-        uid: 'aspirant_learner_101',
-        email: 'aarav.sharma@gmail.com',
-        displayName: 'Aarav Sharma',
-        photoURL: null,
-        role: 'LEARNER',
-        status: 'ACTIVE',
-        activePasses: ['CS'],
-        createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-        lastLoginAt: new Date().toISOString(),
-      },
-      {
-        uid: 'learner_da_202',
-        email: 'priya.verma@gateprep.in',
-        displayName: 'Priya Verma',
-        photoURL: null,
-        role: 'LEARNER',
-        status: 'ACTIVE',
-        activePasses: ['DA'],
-        createdAt: new Date(Date.now() - 25 * 86400000).toISOString(),
-        lastLoginAt: new Date(Date.now() - 3600000).toISOString(),
-      },
-      {
-        uid: 'instructor_ee_303',
-        email: 'rajesh.kumar@iitb.ac.in',
-        displayName: 'Dr. Rajesh Kumar',
-        photoURL: null,
-        role: 'INSTRUCTOR',
-        status: 'ACTIVE',
-        activePasses: ['EE', 'EC'],
-        createdAt: new Date(Date.now() - 60 * 86400000).toISOString(),
-        lastLoginAt: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        uid: 'editor_gate_404',
-        email: 'ananya.sen@gatematrix.com',
-        displayName: 'Ananya Sen',
-        photoURL: null,
-        role: 'EDITOR',
-        status: 'ACTIVE',
-        activePasses: ['CS', 'DA'],
-        createdAt: new Date(Date.now() - 90 * 86400000).toISOString(),
-        lastLoginAt: new Date().toISOString(),
-      },
-      {
-        uid: 'admin_master_505',
-        email: 'admin@gatematrix.com',
-        displayName: 'GATE Matrix Admin',
-        photoURL: null,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        activePasses: ['CS', 'DA', 'EE', 'EC', 'ME', 'CE'],
-        createdAt: new Date(Date.now() - 120 * 86400000).toISOString(),
-        lastLoginAt: new Date().toISOString(),
-      },
-      {
-        uid: 'learner_suspended_606',
-        email: 'vikram.singh@yahoo.com',
-        displayName: 'Vikram Singh',
-        photoURL: null,
-        role: 'LEARNER',
-        status: 'SUSPENDED',
-        activePasses: [],
-        createdAt: new Date(Date.now() - 15 * 86400000).toISOString(),
-        lastLoginAt: new Date(Date.now() - 10 * 86400000).toISOString(),
-      },
-    ];
-
-    defaultUsers.forEach((u) => memoryUsers.set(u.uid, u));
-    saveLocalUsersDisk();
-  }
 }
 
 function saveLocalUsersDisk() {
@@ -1217,6 +1142,7 @@ export async function updateOrderStatus(
 }
 
 export async function getUserOrders(uid: string, email?: string): Promise<OrderModel[]> {
+  ensureLocalUsersLoaded();
   ensureLocalOrdersLoaded();
   const allOrders = Array.from(memoryOrders.values());
   const cleanEmail = email ? email.trim().toLowerCase() : null;
@@ -1225,6 +1151,39 @@ export async function getUserOrders(uid: string, email?: string): Promise<OrderM
       (o.uid === uid || (cleanEmail && o.email && o.email.toLowerCase() === cleanEmail)) &&
       (o.status === 'GRANTED' || o.status === 'CAPTURED')
   );
+
+  // Check user profile in memory to synthesize granted orders from activePasses
+  let targetUser = memoryUsers.get(uid);
+  if (!targetUser && cleanEmail) {
+    targetUser = Array.from(memoryUsers.values()).find(
+      (u) => u.email && u.email.toLowerCase() === cleanEmail
+    );
+  }
+
+  if (targetUser?.activePasses && targetUser.activePasses.length > 0) {
+    targetUser.activePasses.forEach((b) => {
+      const bUpper = b.toUpperCase();
+      const targetPassId = `${bUpper.toLowerCase()}_pass`;
+      const alreadyHas = matchingOrders.some(
+        (o) => o.branch_code === bUpper || o.product_id === targetPassId
+      );
+      if (!alreadyHas) {
+        matchingOrders.push({
+          order_id: `ord_pass_${targetUser!.uid}_${bUpper}`,
+          uid: targetUser!.uid,
+          email: targetUser!.email || cleanEmail || undefined,
+          branch_code: bUpper,
+          product_id: targetPassId,
+          product_title: `GATE ${bUpper} All-Access Branch Pass`,
+          amount: 500,
+          currency: 'INR',
+          status: 'GRANTED',
+          created_at: targetUser!.createdAt || new Date().toISOString(),
+        });
+      }
+    });
+  }
+
   return matchingOrders;
 }
 
@@ -1238,10 +1197,12 @@ export async function getAllOrders(): Promise<OrderModel[]> {
  */
 export async function grantBranchAccessByEmail({
   email,
+  uid,
   branch,
   notes,
 }: {
   email: string;
+  uid?: string;
   branch: string;
   notes?: string;
 }): Promise<{ success: boolean; message: string; order: OrderModel; user: UserModel | null }> {
@@ -1254,11 +1215,58 @@ export async function grantBranchAccessByEmail({
   const productTitle = `GATE ${branchCode} All-Access Branch Pass (Admin Granted)`;
 
   // 1. Find or create user profile
-  let targetUser = Array.from(memoryUsers.values()).find(
-    (u) => u.email && u.email.toLowerCase() === cleanEmail
-  );
+  let targetUser: UserModel | null | undefined = null;
 
-  let targetUid = targetUser ? targetUser.uid : `user_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  if (uid && memoryUsers.has(uid)) {
+    targetUser = memoryUsers.get(uid);
+  }
+
+  if (!targetUser) {
+    targetUser = Array.from(memoryUsers.values()).find(
+      (u) => u.email && u.email.toLowerCase() === cleanEmail
+    );
+  }
+
+  if (!targetUser && uid) {
+    targetUser = await getUserProfile(uid);
+  }
+
+  // Fallback: Query Firestore REST for user with this email
+  if (!targetUser) {
+    try {
+      const keyParam = API_KEY ? `?key=${API_KEY}` : '';
+      const runQueryRes = await fetch(`${BASE_URL}:runQuery${keyParam}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: 'users' }],
+            where: {
+              fieldFilter: {
+                field: { fieldPath: 'email' },
+                op: 'EQUAL',
+                value: { stringValue: cleanEmail },
+              },
+            },
+            limit: 1,
+          },
+        }),
+      });
+      if (runQueryRes.ok) {
+        const queryData = await runQueryRes.json();
+        if (Array.isArray(queryData) && queryData[0]?.document) {
+          const docData = queryData[0].document;
+          const parsed = parseFirestoreFields(docData.fields) as UserModel;
+          const docId = docData.name.split('/').pop()!;
+          parsed.uid = parsed.uid || docId;
+          targetUser = parsed;
+          memoryUsers.set(parsed.uid, parsed);
+        }
+      }
+    } catch (e) {}
+  }
+
+  let targetUid = targetUser ? targetUser.uid : (uid || `user_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`);
 
   if (!targetUser) {
     const now = new Date().toISOString();
@@ -1302,6 +1310,28 @@ export async function grantBranchAccessByEmail({
 
   memoryOrders.set(orderId, newOrder);
   saveLocalOrdersDisk();
+
+  // 3. Sync to Firestore REST API as well
+  try {
+    const keyParam = API_KEY ? `?key=${API_KEY}` : '';
+    const userFields = toFirestoreFields({
+      activePasses: targetUser.activePasses,
+      role: targetUser.role,
+      status: targetUser.status,
+    });
+    fetch(`${BASE_URL}/users/${targetUser.uid}${keyParam}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: userFields }),
+    }).catch(() => {});
+
+    const orderFields = toFirestoreFields(newOrder);
+    fetch(`${BASE_URL}/orders?documentId=${orderId}${keyParam}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: orderFields }),
+    }).catch(() => {});
+  } catch (err) {}
 
   return {
     success: true,
