@@ -11,27 +11,30 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'light',
+  theme: 'dark',
   toggleTheme: () => {},
   setTheme: () => {},
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [theme, setThemeState] = useState<Theme>('dark');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     try {
       const stored = localStorage.getItem('gate_theme') as Theme | null;
-      if (stored === 'dark') {
-        setThemeState('dark');
-        document.documentElement.classList.add('dark');
-      } else {
+      if (stored === 'light') {
         setThemeState('light');
         document.documentElement.classList.remove('dark');
+      } else {
+        setThemeState('dark');
+        document.documentElement.classList.add('dark');
       }
-    } catch (e) {}
+    } catch (e) {
+      setThemeState('dark');
+      document.documentElement.classList.add('dark');
+    }
   }, []);
 
   const setTheme = (newTheme: Theme) => {
