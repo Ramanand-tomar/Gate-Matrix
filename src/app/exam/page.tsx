@@ -72,38 +72,6 @@ function ExamEngineContent() {
   const paperId = searchParams.get('paperId');
   const { user, userProfile } = useAuth();
 
-  const fallbackQuestions: QuestionItem[] = [
-    {
-      qnum: 1,
-      qtype: 'MCQ',
-      marksPos: 2,
-      marksNeg: '-0.66',
-      bodyHtml: 'What is the worst-case time complexity of binary search on a sorted array of $n$ elements?',
-      options: ['$O(1)$', '$O(\\log n)$', '$O(n)$', '$O(n^2)$'],
-      correctAnswer: 1,
-      solutionHtml: 'Each comparison halves the search interval, so comparisons grow logarithmically $O(\\log n)$.',
-    },
-    {
-      qnum: 2,
-      qtype: 'MSQ',
-      marksPos: 2,
-      marksNeg: '0.00',
-      bodyHtml: 'Which of the following are prime numbers? Select all correct answers.',
-      options: ['2', '4', '5', '9'],
-      correctAnswer: [0, 2],
-      solutionHtml: 'Two ($2$) and five ($5$) are prime numbers. Four and nine have factors other than 1 and themselves.',
-    },
-    {
-      qnum: 3,
-      qtype: 'NAT',
-      marksPos: 2,
-      marksNeg: '0.00',
-      bodyHtml: 'A relation $R_1$ contains 5 rows and relation $R_2$ contains 4 rows. How many rows are in their Cartesian product $R_1 \\times R_2$?',
-      correctAnswer: 20,
-      solutionHtml: 'A Cartesian product pairs every row of $R_1$ with every row of $R_2$: $5 \\times 4 = 20$.',
-    },
-  ];
-
   // Engine state flow: LOADING -> INSTRUCTIONS -> EXAM -> SUBMITTED -> LOCKED
   const [phase, setPhase] = useState<'LOADING' | 'INSTRUCTIONS' | 'EXAM' | 'SUBMITTED' | 'LOCKED'>('LOADING');
   const [orders, setOrders] = useState<any[]>([]);
@@ -113,9 +81,10 @@ function ExamEngineContent() {
   const [loadingProgress, setLoadingProgress] = useState(15);
   const [declarationChecked, setDeclarationChecked] = useState(false);
 
-  const [questions, setQuestions] = useState<QuestionItem[]>(fallbackQuestions);
+  const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [paperTitle, setPaperTitle] = useState('GATE Official CBT Practice Paper');
   const [paperBranch, setPaperBranch] = useState('CS');
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
 
   const [mcqAnswers, setMcqAnswers] = useState<Record<number, number>>({});
@@ -181,7 +150,13 @@ function ExamEngineContent() {
         if (targetId) {
           const res = await fetch(`/api/papers/${targetId}`);
           const data = await res.json();
-          if (data.success && data.paper && data.paper.questions && data.paper.questions.length > 0) {
+          if (!res.ok || !data.success || !data.paper || !data.paper.questions || data.paper.questions.length === 0) {
+            // NEVER silently fall back to 3 demo questions — surface a real data error instead.
+            setLoadError(
+              data?.error || `No questions found for paper "${targetId}". This paper has no question file in the dataset yet.`
+            );
+            setQuestions([]);
+          } else if (data.success && data.paper && data.paper.questions && data.paper.questions.length > 0) {
             const paper = data.paper;
             setPaperTitle(paper.title);
             if (paper.branch) setPaperBranch(paper.branch);
@@ -260,6 +235,8 @@ function ExamEngineContent() {
         }
       } catch (err) {
         console.error('Failed loading paper questions:', err);
+        setLoadError('Failed to load paper questions (network/server error). Please retry.');
+        setQuestions([]);
       } finally {
         clearInterval(progressTimer);
         setLoadingProgress(100);
@@ -888,6 +865,17 @@ function ExamEngineContent() {
 
             {/* Candidate Declaration & Start Button Container */}
             <div className="mt-8 pt-6 border-t border-[#dce3ec] space-y-6">
+              {loadError && (
+                <div className="p-4 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-semibold flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>Question data unavailable: {loadError}</span>
+                </div>
+              )}
+              {questions.length === 0 && !loadError && (
+                <div className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-800 text-xs font-semibold">
+                  Loading real exam questions…
+                </div>
+              )}
               <label className="flex items-start gap-3.5 p-4 rounded-xl border border-amber-200 bg-amber-50/40 cursor-pointer hover:bg-amber-50 transition-all">
                 <input
                   type="checkbox"
@@ -910,7 +898,7 @@ function ExamEngineContent() {
                 <Button
                   variant="emerald"
                   size="lg"
-                  disabled={!declarationChecked}
+                  disabled={!declarationChecked || questions.length === 0}
                   onClick={() => setPhase('EXAM')}
                   rightIcon={<ArrowRight className="w-5 h-5" />}
                   className="px-8 font-black text-sm"

@@ -736,6 +736,7 @@ export function resolveQuestionCorrectAnswer(q: any): any {
 }
 
 export async function getPaperById(paperId: string): Promise<PaperModel | null> {
+  ensureLocalDatasetLoaded();
   if (memoryPapers.has(paperId)) {
     const cached = memoryPapers.get(paperId)!;
     if (cached.questions && cached.questions.length > 0) {
@@ -856,14 +857,36 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
   if (memoryPapers.has(paperId)) {
     const cached = memoryPapers.get(paperId)!;
     if (paperId.endsWith('_pyq') && (!cached.questions || cached.questions.length === 0)) {
-      for (const p of memoryPapers.values()) {
-        if (p.branch === cached.branch && p.paper_id !== paperId) {
-          const donorFile = findLocalPaperFile(p.paper_id);
-          if (donorFile) {
-            try {
-              const content = JSON.parse(fs.readFileSync(donorFile, 'utf-8'));
-              const qs = content.questions || content.cards || [];
-              if (qs.length > 0) {
+      // PYQ stub has no real file: borrow REAL questions from a same-branch donor FILE on disk
+      // (donors in memory hold only metadata, so check the file content, not memory).
+      const wantBranch = normalizeBranchCode(cached.branch || 'CS');
+      const donorIds = Array.from(memoryPapers.values())
+        .filter((p) => p.paper_id !== paperId && normalizeBranchCode(p.branch) === wantBranch)
+        .map((p) => p.paper_id);
+      // Also scan donor files directly in case metadata has no entry yet.
+      try {
+        const datasetDir = path.join(process.cwd(), 'scraped_dataset');
+        if (fs.existsSync(datasetDir)) {
+          const dirs = fs.readdirSync(datasetDir);
+          for (const bDir of dirs) {
+            if (normalizeBranchCode(bDir) !== wantBranch) continue;
+            const bPath = path.join(datasetDir, bDir);
+            if (!fs.statSync(bPath).isDirectory()) continue;
+            for (const f of fs.readdirSync(bPath)) {
+              if (f.endsWith('.json') && !donorIds.includes(f.replace('.json', ''))) {
+                donorIds.push(f.replace('.json', ''));
+              }
+            }
+          }
+        }
+      } catch {}
+      for (const donorId of donorIds) {
+        const donorFile = findLocalPaperFile(donorId);
+        if (donorFile) {
+          try {
+            const content = JSON.parse(fs.readFileSync(donorFile, 'utf-8'));
+            const qs = content.questions || content.cards || [];
+            if (qs.length > 0) {
                 cached.questions = qs.map((q: any, idx: number) => ({
                   question_id: `${paperId}_q${idx + 1}`,
                   question_number: idx + 1,
@@ -881,8 +904,12 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
               }
             } catch (e) {}
           }
-        }
       }
+    }
+    // If STILL empty (no donor file found), do NOT return an empty stub — return null
+    // so the API yields 404 and the exam page shows a data-error, never 3 fake demos.
+    if (!cached.questions || cached.questions.length === 0) {
+      return null;
     }
     return cached;
   }
