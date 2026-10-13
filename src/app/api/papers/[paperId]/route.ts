@@ -1,5 +1,25 @@
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 import { getPaperById, updatePaper, deletePaper, resolveQuestionCorrectAnswer } from '@/lib/firebase/models';
+
+// Git-tracked static fallback: works on Vercel where scraped_dataset/ is absent.
+// Generated from donors: public/data/papers/<paperId>.json (18 PYQ papers, 65 Qs each).
+function loadStaticPaper(paperId: string): any | null {
+  const candidates = [
+    path.join(process.cwd(), 'public', 'data', 'papers', `${paperId}.json`),
+    path.join(process.cwd(), 'src', 'lib', 'data', 'papers', `${paperId}.json`),
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const doc = JSON.parse(fs.readFileSync(p, 'utf-8'));
+        if (doc && (doc.questions || []).length > 0) return doc;
+      }
+    } catch {}
+  }
+  return null;
+}
 
 // GET /api/papers/[paperId]
 export async function GET(
@@ -8,7 +28,12 @@ export async function GET(
 ) {
   try {
     const { paperId } = await params;
-    const paper = await getPaperById(paperId);
+    let paper = await getPaperById(paperId);
+
+    if (!paper || !paper.questions || paper.questions.length === 0) {
+      const staticPaper = loadStaticPaper(paperId);
+      if (staticPaper) paper = staticPaper;
+    }
 
     if (!paper) {
       return NextResponse.json({ success: false, error: 'Paper not found in Firestore' }, { status: 404 });

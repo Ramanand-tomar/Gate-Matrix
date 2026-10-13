@@ -148,31 +148,53 @@ function ExamEngineContent() {
         }
 
         if (targetId) {
-          const res = await fetch(`/api/papers/${targetId}`);
-          const data = await res.json();
-          if (!res.ok || !data.success || !data.paper || !data.paper.questions || data.paper.questions.length === 0) {
+          // 1) Try live API (Firestore on Vercel, local dataset in dev)
+          let loaded: QuestionItem[] | null = null;
+          try {
+            const res = await fetch(`/api/papers/${targetId}`);
+            const data = await res.json();
+            if (res.ok && data.success && data.paper && data.paper.questions && data.paper.questions.length > 0) {
+              loaded = data.paper.questions;
+              setPaperTitle(data.paper.title || 'GATE Official CBT Practice Paper');
+              setPaperBranch((data.paper.branch || 'CS').toUpperCase());
+            }
+          } catch (e) {
+            console.warn('API paper fetch failed, trying static bundle:', e);
+          }
+          // 2) Git-tracked static bundle fallback (works on Vercel): /data/papers/<id>.json
+          if (!loaded) {
+            try {
+              const res2 = await fetch(`/data/papers/${targetId}.json`);
+              if (res2.ok) {
+                const doc = await res2.json();
+                if (doc && doc.questions && doc.questions.length > 0) {
+                  loaded = doc.questions;
+                  setPaperTitle(doc.title || 'GATE Official CBT Practice Paper');
+                  setPaperBranch((doc.branch || 'CS').toUpperCase());
+                }
+              }
+            } catch (e) {
+              console.warn('Static paper fetch failed:', e);
+            }
+          }
+          if (!loaded || loaded.length === 0) {
             // NEVER silently fall back to 3 demo questions — surface a real data error instead.
             setLoadError(
-              data?.error || `No questions found for paper "${targetId}". This paper has no question file in the dataset yet.`
+              `No questions found for paper "${targetId}". This paper has no question file in the dataset yet.`
             );
             setQuestions([]);
-          } else if (data.success && data.paper && data.paper.questions && data.paper.questions.length > 0) {
-            const paper = data.paper;
-            setPaperTitle(paper.title);
-            if (paper.branch) setPaperBranch(paper.branch);
-
-            // Enforce branch-based entitlement access
-            const access = canUserAccessPaper(userOrders, paper, 0, userProfile);
+          } else {
+            const access = canUserAccessPaper(userOrders, { paper_id: targetId, title: paperTitle, branch: paperBranch }, 0, userProfile);
             if (!access.hasAccess) {
               setLockInfo({
                 requiredBranch: access.requiredBranch,
-                paperTitle: paper.title,
+                paperTitle,
               });
               setPhase('LOCKED');
               return;
             }
 
-            const mappedQs: QuestionItem[] = data.paper.questions.map((q: any, idx: number) => {
+            const mappedQs: QuestionItem[] = loaded.map((q: any, idx: number) => {
               let optionsArr: string[] | undefined = undefined;
               if (q.options) {
                 if (Array.isArray(q.options)) {
