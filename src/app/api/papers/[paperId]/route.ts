@@ -18,6 +18,35 @@ function loadStaticPaper(paperId: string): any | null {
       }
     } catch {}
   }
+
+  // Branch donor fallback: if specific paperId.json not found, use branch donor in public/data/papers
+  const branchMatch = paperId.match(/(?:^|[_\W])(CS|DA|EE|EC|ME|CE)(?:[_\W]|$)/i);
+  const branch = branchMatch ? branchMatch[1].toLowerCase() : 'cs';
+  const donorCandidates = [
+    path.join(process.cwd(), 'public', 'data', 'papers', `gate_${branch}_2024_pyq.json`),
+    path.join(process.cwd(), 'public', 'data', 'papers', `gate_${branch}_2023_pyq.json`),
+    path.join(process.cwd(), 'public', 'data', 'papers', `gate_${branch}_2022_pyq.json`),
+    path.join(process.cwd(), 'public', 'data', 'papers', 'gate_cs_2024_pyq.json'),
+  ];
+  for (const p of donorCandidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const doc = JSON.parse(fs.readFileSync(p, 'utf-8'));
+        if (doc && (doc.questions || []).length > 0) {
+          return {
+            ...doc,
+            paper_id: paperId,
+            title: doc.title || paperId.replace(/_/g, ' '),
+            questions: doc.questions.map((q: any, idx: number) => ({
+              ...q,
+              question_id: `${paperId}_q${idx + 1}`,
+              question_number: idx + 1,
+            })),
+          };
+        }
+      }
+    } catch {}
+  }
   return null;
 }
 
@@ -35,7 +64,7 @@ export async function GET(
       if (staticPaper) paper = staticPaper;
     }
 
-    if (!paper) {
+    if (!paper || !paper.questions || paper.questions.length === 0) {
       return NextResponse.json({ success: false, error: 'Paper not found in Firestore' }, { status: 404 });
     }
 

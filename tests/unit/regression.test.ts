@@ -61,4 +61,24 @@ describe('Phase 11 — Integrated Vertical Regression Suite', () => {
     const mastery = calculateTopicMastery('Algorithms', 15, 18, 3);
     expect(mastery.signal).toBe('Strong recently');
   });
+
+  it('P11-V02: Robust Paper Fetching & Donor Question Fallback', async () => {
+    const { getPaperById } = await import('@/lib/firebase/models');
+    
+    // 1. Official PYQ
+    const p1 = await getPaperById('gate_cs_2024_pyq');
+    expect(p1).toBeDefined();
+    expect(p1?.questions?.length).toBe(65);
+
+    // 2. Real Scraped Paper
+    const p2 = await getPaperById('001_Advance_Level_Test-1_Full_Syllabus_GATE_2025_CS');
+    expect(p2).toBeDefined();
+    expect(p2?.questions?.length).toBe(65);
+
+    // 3. Fallback for any paper ID with empty/missing local questions
+    const pFallback = await getPaperById('gate_da_mock_special');
+    expect(pFallback).toBeDefined();
+    expect(pFallback?.questions?.length).toBeGreaterThan(0);
+    expect(pFallback?.branch).toBe('DA');
+  });
 });

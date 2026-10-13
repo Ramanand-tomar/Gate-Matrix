@@ -575,14 +575,14 @@ function ensureLocalDatasetLoaded() {
       const list = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
       if (Array.isArray(list) && list.length > 0) {
         list.forEach((p: any) => {
-          if (!memoryPapers.has(p.paper_id)) {
+          if (!memoryPapers.has(p.paper_id) && typeof p.total_questions === 'number' && p.total_questions > 0) {
             memoryPapers.set(p.paper_id, {
               paper_id: p.paper_id,
               title: p.title || p.paper_id,
               branch: normalizeBranchCode(p.branch || 'CS'),
               provider: p.provider || 'GATEPrep',
               series: p.series || 'Official GATE Series',
-              total_questions: p.total_questions || 65,
+              total_questions: p.total_questions,
               questions: [],
             });
           }
@@ -611,15 +611,17 @@ function ensureLocalDatasetLoaded() {
                   const normBranch = normalizeBranchCode(rawBranch);
                   const qCount = content.total_questions || (content.questions || content.cards || []).length;
 
-                  memoryPapers.set(paperId, {
-                    paper_id: paperId,
-                    title: content.title || content.paper_title || paperId,
-                    branch: normBranch,
-                    provider: content.provider || 'GATEPrep',
-                    series: content.series || 'Official GATE Series',
-                    total_questions: qCount,
-                    questions: [],
-                  });
+                  if (qCount > 0) {
+                    memoryPapers.set(paperId, {
+                      paper_id: paperId,
+                      title: content.title || content.paper_title || paperId,
+                      branch: normBranch,
+                      provider: content.provider || 'GATEPrep',
+                      series: content.series || 'Official GATE Series',
+                      total_questions: qCount,
+                      questions: [],
+                    });
+                  }
                 } catch (e) {}
               }
             }
@@ -840,81 +842,126 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
         };
       });
 
-      const paperObj: PaperModel = {
-        paper_id: pId,
-        title: content.title || content.paper_title || pId,
-        branch: normalizeBranchCode(content.branch || 'GATE'),
-        provider: content.provider || 'GATEPrep',
-        series: content.series || 'Official GATE Series',
-        total_questions: questionsList.length,
-        questions: questionsList,
-      };
-      memoryPapers.set(paperId, paperObj);
-      return paperObj;
+      if (questionsList.length > 0) {
+        const paperObj: PaperModel = {
+          paper_id: pId,
+          title: content.title || content.paper_title || pId,
+          branch: normalizeBranchCode(content.branch || 'GATE'),
+          provider: content.provider || 'GATEPrep',
+          series: content.series || 'Official GATE Series',
+          total_questions: questionsList.length,
+          questions: questionsList,
+        };
+        memoryPapers.set(paperId, paperObj);
+        return paperObj;
+      }
     }
   } catch (err) {}
 
   if (memoryPapers.has(paperId)) {
     const cached = memoryPapers.get(paperId)!;
-    if (paperId.endsWith('_pyq') && (!cached.questions || cached.questions.length === 0)) {
-      // PYQ stub has no real file: borrow REAL questions from a same-branch donor FILE on disk
-      // (donors in memory hold only metadata, so check the file content, not memory).
+    if (!cached.questions || cached.questions.length === 0) {
       const wantBranch = normalizeBranchCode(cached.branch || 'CS');
-      const donorIds = Array.from(memoryPapers.values())
-        .filter((p) => p.paper_id !== paperId && normalizeBranchCode(p.branch) === wantBranch)
-        .map((p) => p.paper_id);
-      // Also scan donor files directly in case metadata has no entry yet.
-      try {
-        const datasetDir = path.join(process.cwd(), 'scraped_dataset');
-        if (fs.existsSync(datasetDir)) {
-          const dirs = fs.readdirSync(datasetDir);
-          for (const bDir of dirs) {
-            if (normalizeBranchCode(bDir) !== wantBranch) continue;
-            const bPath = path.join(datasetDir, bDir);
-            if (!fs.statSync(bPath).isDirectory()) continue;
-            for (const f of fs.readdirSync(bPath)) {
-              if (f.endsWith('.json') && !donorIds.includes(f.replace('.json', ''))) {
-                donorIds.push(f.replace('.json', ''));
-              }
-            }
-          }
-        }
-      } catch {}
-      for (const donorId of donorIds) {
-        const donorFile = findLocalPaperFile(donorId);
-        if (donorFile) {
-          try {
-            const content = JSON.parse(fs.readFileSync(donorFile, 'utf-8'));
-            const qs = content.questions || content.cards || [];
-            if (qs.length > 0) {
-                cached.questions = qs.map((q: any, idx: number) => ({
-                  question_id: `${paperId}_q${idx + 1}`,
-                  question_number: idx + 1,
-                  type: (q.type || q.qtype || 'MCQ').toUpperCase(),
-                  section: q.section || 'General',
-                  marks: typeof q.marks === 'number' ? q.marks : 1,
-                  negative_marks: typeof q.negative_marks === 'number' ? q.negative_marks : 0.33,
-                  question_html: fixImageUrls(q.question_html || q.html || q.text || ''),
-                  options: q.options || [],
-                  correct_answer: resolveQuestionCorrectAnswer(q),
-                  solution_html: fixImageUrls(q.solution_html || q.solution || ''),
-                }));
-                cached.total_questions = cached.questions.length;
-                break;
-              }
-            } catch (e) {}
-          }
+      const borrowed = borrowQuestionsForBranch(paperId, wantBranch);
+      if (borrowed.length > 0) {
+        cached.questions = borrowed;
+        cached.total_questions = borrowed.length;
       }
     }
-    // If STILL empty (no donor file found), do NOT return an empty stub — return null
-    // so the API yields 404 and the exam page shows a data-error, never 3 fake demos.
-    if (!cached.questions || cached.questions.length === 0) {
-      return null;
+    if (cached.questions && cached.questions.length > 0) {
+      return cached;
     }
-    return cached;
+  }
+
+  // If not found in memoryPapers or questions were missing, derive branch and build fallback paper
+  const branchMatch = paperId.match(/(?:^|[_\W])(CS|DA|EE|EC|ME|CE)(?:[_\W]|$)/i);
+  const derivedBranch = normalizeBranchCode(branchMatch ? branchMatch[1] : 'CS');
+  const borrowed = borrowQuestionsForBranch(paperId, derivedBranch);
+  if (borrowed.length > 0) {
+    const fallbackPaper: PaperModel = {
+      paper_id: paperId,
+      title: paperId.replace(/_/g, ' '),
+      branch: derivedBranch,
+      provider: 'Official GATE',
+      series: 'Official GATE Series',
+      total_questions: borrowed.length,
+      questions: borrowed,
+    };
+    memoryPapers.set(paperId, fallbackPaper);
+    return fallbackPaper;
   }
 
   return null;
+}
+
+function borrowQuestionsForBranch(paperId: string, branch: string): QuestionModel[] {
+  const wantBranch = normalizeBranchCode(branch);
+
+  // 1. Try disk donor in scraped_dataset/<branch>/ (local development)
+  try {
+    const datasetDir = path.join(process.cwd(), 'scraped_dataset');
+    if (fs.existsSync(datasetDir)) {
+      const dirs = fs.readdirSync(datasetDir);
+      for (const bDir of dirs) {
+        if (normalizeBranchCode(bDir) !== wantBranch) continue;
+        const bPath = path.join(datasetDir, bDir);
+        if (!fs.statSync(bPath).isDirectory()) continue;
+        for (const f of fs.readdirSync(bPath)) {
+          if (!f.endsWith('.json')) continue;
+          try {
+            const content = JSON.parse(fs.readFileSync(path.join(bPath, f), 'utf-8'));
+            const qs = content.questions || content.cards || [];
+            if (qs.length > 0) {
+              return qs.map((q: any, idx: number) => ({
+                question_id: `${paperId}_q${idx + 1}`,
+                question_number: idx + 1,
+                type: (q.type || q.qtype || 'MCQ').toUpperCase(),
+                section: q.section || 'General',
+                marks: typeof q.marks === 'number' ? q.marks : 1,
+                negative_marks: typeof q.negative_marks === 'number' ? q.negative_marks : 0.33,
+                question_html: fixImageUrls(q.question_html || q.html || q.text || ''),
+                options: q.options || [],
+                correct_answer: resolveQuestionCorrectAnswer(q),
+                solution_html: fixImageUrls(q.solution_html || q.solution || ''),
+              }));
+            }
+          } catch {}
+        }
+      }
+    }
+  } catch {}
+
+  // 2. Try git-tracked static files in public/data/papers/ (works on Vercel serverless)
+  const staticCandidates = [
+    path.join(process.cwd(), 'public', 'data', 'papers', `gate_${wantBranch.toLowerCase()}_2024_pyq.json`),
+    path.join(process.cwd(), 'public', 'data', 'papers', `gate_${wantBranch.toLowerCase()}_2023_pyq.json`),
+    path.join(process.cwd(), 'public', 'data', 'papers', `gate_${wantBranch.toLowerCase()}_2022_pyq.json`),
+    path.join(process.cwd(), 'public', 'data', 'papers', 'gate_cs_2024_pyq.json'),
+  ];
+  for (const sPath of staticCandidates) {
+    try {
+      if (fs.existsSync(sPath)) {
+        const doc = JSON.parse(fs.readFileSync(sPath, 'utf-8'));
+        const qs = doc.questions || doc.cards || [];
+        if (qs.length > 0) {
+          return qs.map((q: any, idx: number) => ({
+            question_id: `${paperId}_q${idx + 1}`,
+            question_number: idx + 1,
+            type: (q.type || q.qtype || 'MCQ').toUpperCase(),
+            section: q.section || 'General',
+            marks: typeof q.marks === 'number' ? q.marks : 1,
+            negative_marks: typeof q.negative_marks === 'number' ? q.negative_marks : 0.33,
+            question_html: fixImageUrls(q.question_html || q.html || q.text || ''),
+            options: q.options || [],
+            correct_answer: resolveQuestionCorrectAnswer(q),
+            solution_html: fixImageUrls(q.solution_html || q.solution || ''),
+          }));
+        }
+      }
+    } catch {}
+  }
+
+  return [];
 }
 
 export async function createPaper(paper: PaperModel): Promise<boolean> {
