@@ -80,5 +80,11 @@ describe('Phase 11 — Integrated Vertical Regression Suite', () => {
     expect(pFallback).toBeDefined();
     expect(pFallback?.questions?.length).toBeGreaterThan(0);
     expect(pFallback?.branch).toBe('DA');
+
+    // 4. Theory of Computation subject-wise test (must have its genuine 33 questions, not 65 PYQ questions)
+    const pToc = await getPaperById('025_Subjectwise_Test-1_Part_Syllabus_GATE_2025_CS_Theory_of_Computation');
+    expect(pToc).toBeDefined();
+    expect(pToc?.questions?.length).toBe(33);
+    expect(pToc?.title).toContain('Theory of Computation');
   });
 });

@@ -747,13 +747,30 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
   }
 
   try {
-    const keyParam = API_KEY ? `?key=${API_KEY}` : '';
-    const res = await fetch(`${BASE_URL}/papers/${paperId}${keyParam}`, { signal: AbortSignal.timeout(1500) });
-    if (res.ok) {
+    const encodedId = encodeURIComponent(paperId);
+    let res: Response | null = null;
+
+    // 1) First try public REST without key to bypass referrer restrictions
+    try {
+      res = await fetch(`${BASE_URL}/papers/${encodedId}`, { signal: AbortSignal.timeout(12000) });
+    } catch {}
+
+    // 2) If not ok, retry with clean API key
+    if (!res || !res.ok) {
+      try {
+        const cleanKey = (API_KEY || '').trim().replace(/^['"]|['"]$/g, '');
+        const keyParam = cleanKey ? `?key=${cleanKey}` : '';
+        res = await fetch(`${BASE_URL}/papers/${encodedId}${keyParam}`, { signal: AbortSignal.timeout(12000) });
+      } catch {}
+    }
+
+    if (res && res.ok) {
       const data = await res.json();
       const paper = parseFirestoreFields(data.fields) as PaperModel;
       if (paper && paper.questions && paper.questions.length > 0) {
-        paper.branch = normalizeBranchCode(paper.branch);
+        paper.branch = normalizeBranchCode(paper.branch || 'CS');
+        paper.paper_id = paper.paper_id || paperId;
+        paper.title = paper.title || paperId.replace(/_/g, ' ');
 
         // Enrich questions with original local scraped dataset HTML & answers if missing
         const localPath = findLocalPaperFile(paperId);
@@ -764,33 +781,57 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
             paper.questions = paper.questions.map((q: any, idx: number) => {
               const localQ = localQs[idx];
               if (localQ) {
-                if (localQ.question_html) {
-                  q.question_html = localQ.question_html;
-                }
-                if (localQ.solution_html) {
-                  q.solution_html = localQ.solution_html;
-                }
-                if (localQ.options) {
-                  q.options = localQ.options;
-                }
+                if (localQ.question_html) q.question_html = localQ.question_html;
+                if (localQ.solution_html) q.solution_html = localQ.solution_html;
+                if (localQ.options) q.options = localQ.options;
                 q.correct_answer = resolveQuestionCorrectAnswer(localQ) || resolveQuestionCorrectAnswer(q);
               } else {
                 q.correct_answer = resolveQuestionCorrectAnswer(q);
               }
-              if (q.question_html) q.question_html = fixImageUrls(q.question_html);
-              if (q.solution_html) q.solution_html = fixImageUrls(q.solution_html);
               return q;
             });
           } catch (e) {}
-        } else {
-          paper.questions = paper.questions.map((q: any) => {
-            q.correct_answer = resolveQuestionCorrectAnswer(q);
-            if (q.question_html) q.question_html = fixImageUrls(q.question_html);
-            if (q.solution_html) q.solution_html = fixImageUrls(q.solution_html);
-            return q;
-          });
         }
 
+        // Normalize questions for CBT learner simulation
+        paper.questions = paper.questions.map((q: any, idx: number) => {
+          let posMarks = 1;
+          let negMarks = 0;
+          if (typeof q.marks === 'number') {
+            posMarks = q.marks;
+          } else if (typeof q.marks === 'string') {
+            posMarks = parseFloat(q.marks) || 1;
+          } else if (typeof q.marks === 'object' && q.marks !== null) {
+            posMarks = parseFloat(q.marks.positive || q.marks.num || '1') || 1;
+            if ('negative' in q.marks) {
+              negMarks = parseFloat(q.marks.negative) || 0;
+            }
+          }
+          if (q.negative_marks !== undefined && q.negative_marks !== null) {
+            if (typeof q.negative_marks === 'number') {
+              negMarks = q.negative_marks;
+            } else if (typeof q.negative_marks === 'string') {
+              negMarks = parseFloat(q.negative_marks) || 0;
+            }
+          }
+
+          const qNum = parseInt(q.qnum || q.question_number || (idx + 1), 10) || (idx + 1);
+
+          return {
+            question_id: q.question_id || `${paperId}_q${qNum}`,
+            question_number: qNum,
+            type: (q.type || q.qtype || 'MCQ').toUpperCase(),
+            section: q.section || 'General',
+            marks: posMarks,
+            negative_marks: negMarks,
+            question_html: fixImageUrls(q.question_html || q.html || q.text || ''),
+            options: q.options || [],
+            correct_answer: resolveQuestionCorrectAnswer(q),
+            solution_html: fixImageUrls(q.solution_html || q.solution || ''),
+          };
+        });
+
+        paper.total_questions = paper.questions.length;
         memoryPapers.set(paperId, paper);
         return paper;
       }
@@ -932,7 +973,20 @@ function borrowQuestionsForBranch(paperId: string, branch: string): QuestionMode
   } catch {}
 
   // 2. Try git-tracked static files in public/data/papers/ (works on Vercel serverless)
+  const donorYears = ['2024', '2023', '2022'];
+  let chosenYear = '2024';
+  if (paperId.includes('2022')) chosenYear = '2022';
+  else if (paperId.includes('2023')) chosenYear = '2023';
+  else if (paperId.includes('2025')) chosenYear = '2023';
+  else if (paperId.includes('2026')) chosenYear = '2022';
+  else {
+    let hash = 0;
+    for (let i = 0; i < paperId.length; i++) hash = (hash * 31 + paperId.charCodeAt(i)) >>> 0;
+    chosenYear = donorYears[hash % donorYears.length];
+  }
+
   const staticCandidates = [
+    path.join(process.cwd(), 'public', 'data', 'papers', `gate_${wantBranch.toLowerCase()}_${chosenYear}_pyq.json`),
     path.join(process.cwd(), 'public', 'data', 'papers', `gate_${wantBranch.toLowerCase()}_2024_pyq.json`),
     path.join(process.cwd(), 'public', 'data', 'papers', `gate_${wantBranch.toLowerCase()}_2023_pyq.json`),
     path.join(process.cwd(), 'public', 'data', 'papers', `gate_${wantBranch.toLowerCase()}_2022_pyq.json`),

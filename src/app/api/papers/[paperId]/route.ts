@@ -22,7 +22,20 @@ function loadStaticPaper(paperId: string): any | null {
   // Branch donor fallback: if specific paperId.json not found, use branch donor in public/data/papers
   const branchMatch = paperId.match(/(?:^|[_\W])(CS|DA|EE|EC|ME|CE)(?:[_\W]|$)/i);
   const branch = branchMatch ? branchMatch[1].toLowerCase() : 'cs';
+  const donorYears = ['2024', '2023', '2022'];
+  let chosenYear = '2024';
+  if (paperId.includes('2022')) chosenYear = '2022';
+  else if (paperId.includes('2023')) chosenYear = '2023';
+  else if (paperId.includes('2025')) chosenYear = '2023';
+  else if (paperId.includes('2026')) chosenYear = '2022';
+  else {
+    let hash = 0;
+    for (let i = 0; i < paperId.length; i++) hash = (hash * 31 + paperId.charCodeAt(i)) >>> 0;
+    chosenYear = donorYears[hash % donorYears.length];
+  }
+
   const donorCandidates = [
+    path.join(process.cwd(), 'public', 'data', 'papers', `gate_${branch}_${chosenYear}_pyq.json`),
     path.join(process.cwd(), 'public', 'data', 'papers', `gate_${branch}_2024_pyq.json`),
     path.join(process.cwd(), 'public', 'data', 'papers', `gate_${branch}_2023_pyq.json`),
     path.join(process.cwd(), 'public', 'data', 'papers', `gate_${branch}_2022_pyq.json`),
