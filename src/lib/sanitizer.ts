@@ -44,6 +44,7 @@ export function fixImageUrls(html: string): string {
   );
 
   // 3. Fix broken [IMAGE] inside <img src="[IMAGE]"> with an inline indicator badge
+  // (only when no real image file exists — genuine /data/papers/img/* URLs pass through untouched)
   result = result.replace(
     /<img\s+[^>]*src=["']\[IMAGE\]["'][^>]*\/?>/gi,
     '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-50 text-amber-800 border border-amber-200">🖼️ [Image Formula]</span>'
