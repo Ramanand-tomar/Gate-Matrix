@@ -15,6 +15,7 @@
     "data:import:dry-run": "node scripts/data/dry-run-import.js"
   },
   "dependencies": {
+    "cloudinary": "^2.11.0",
     "clsx": "^2.1.1",
     "firebase": "^11.0.0",
     "firebase-admin": "^13.0.0",

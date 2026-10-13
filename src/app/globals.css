@@ -48,8 +48,15 @@ body {
 }
 
 /* In Dark Mode, invert white-background math formula images to dark canvas */
-html.dark .math-renderer img {
-  filter: invert(0.92) hue-rotate(180deg) brightness(1.15) contrast(1.05);
+html.dark .math-renderer img,
+.dark .math-renderer img,
+html.dark .prose img,
+.dark .prose img,
+.dark img[src*="/data/papers/img/"],
+.dark img[src^="data:image/"],
+html.dark img[src*="/data/papers/img/"],
+html.dark img[src^="data:image/"] {
+  filter: invert(0.92) hue-rotate(180deg) brightness(1.15) contrast(1.05) !important;
   background-color: transparent !important;
   border-radius: 4px;
 }
@@ -247,8 +254,9 @@ html.dark .katex {
   color: #f8fafc !important;
 }
 
-html.dark .math-renderer img {
-  filter: brightness(0.95) contrast(1.1);
+html.dark .math-renderer img,
+html.dark img.dark\:invert {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(1.1);
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
   padding: 1px 3px;

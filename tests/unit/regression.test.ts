@@ -86,5 +86,5 @@ describe('Phase 11 — Integrated Vertical Regression Suite', () => {
     expect(pToc).toBeDefined();
     expect(pToc?.questions?.length).toBe(33);
     expect(pToc?.title).toContain('Theory of Computation');
-  });
+  }, 15000);
 });

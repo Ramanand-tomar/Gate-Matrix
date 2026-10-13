@@ -781,8 +781,30 @@ export async function getPaperById(paperId: string): Promise<PaperModel | null> 
             paper.questions = paper.questions.map((q: any, idx: number) => {
               const localQ = localQs[idx];
               if (localQ) {
-                if (localQ.question_html) q.question_html = localQ.question_html;
-                if (localQ.solution_html) q.solution_html = localQ.solution_html;
+                if (localQ.question_html) {
+                  let qh = localQ.question_html;
+                  const qImgs = localQ.question_images || [];
+                  let qi = 0;
+                  qh = qh.replace(/<img\s+[^>]*src=["']\[IMAGE\]["'][^>]*\/?>/gi, () => {
+                    if (qi < qImgs.length && qImgs[qi] && qImgs[qi] !== '[IMAGE]') {
+                      return `<img src="${qImgs[qi++]}" class="inline-block max-h-16 align-middle my-1" />`;
+                    }
+                    return '<img src="[IMAGE]" />';
+                  });
+                  q.question_html = qh;
+                }
+                if (localQ.solution_html) {
+                  let sh = localQ.solution_html;
+                  const sImgs = localQ.solution_images || [];
+                  let si = 0;
+                  sh = sh.replace(/<img\s+[^>]*src=["']\[IMAGE\]["'][^>]*\/?>/gi, () => {
+                    if (si < sImgs.length && sImgs[si] && sImgs[si] !== '[IMAGE]') {
+                      return `<img src="${sImgs[si++]}" class="inline-block max-h-48 align-middle my-2" />`;
+                    }
+                    return '<img src="[IMAGE]" />';
+                  });
+                  q.solution_html = sh;
+                }
                 if (localQ.options) q.options = localQ.options;
                 q.correct_answer = resolveQuestionCorrectAnswer(localQ) || resolveQuestionCorrectAnswer(q);
               } else {

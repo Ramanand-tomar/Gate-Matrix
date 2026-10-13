@@ -72,14 +72,23 @@ function resolveAnswer(q) {
   return null;
 }
 
-function stripBase64Images(html) {
+const crypto = require('crypto');
+const CLOUDINARY_CDN = 'https://res.cloudinary.com/djbuumzmi/image/upload/gate_matrix/papers/img/';
+
+function convertImagesToCloudinary(html, branch = 'cs') {
   if (!html || typeof html !== 'string') return html || '';
-  // Replace giant data:image base64 blobs with placeholder (keeps text + structure).
-  // Full images stay in local dataset; Firestore copy stays under 1MiB.
-  return html.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '[IMAGE]');
+  let res = html.replace(/data:image\/(png|jpe?g|gif);base64,([A-Za-z0-9+/=]+)/g, (m, ext, b64) => {
+    const hash = crypto.createHash('md5').update(b64).digest('hex').slice(0, 12).toLowerCase();
+    const fname = `${(branch || 'cs').toLowerCase()}_${hash}.${ext === 'jpeg' ? 'jpg' : ext}`;
+    return `${CLOUDINARY_CDN}${fname}`;
+  });
+  res = res.replace(/(?:https?:\/\/[^\s"'<>]*)?\/data\/papers\/img\/([a-zA-Z0-9_\-\.]+\.(?:png|jpe?g|gif|webp))/g, (m, fname) => {
+    return `${CLOUDINARY_CDN}${fname}`;
+  });
+  return res;
 }
 
-function normalizeQuestion(q, idx, paperId) {
+function normalizeQuestion(q, idx, paperId, branch = 'cs') {
   let pos = 1, neg = 0;
   if (typeof q.marks === 'number') pos = q.marks;
   else if (typeof q.marks === 'string') pos = parseFloat(q.marks) || 1;
@@ -93,18 +102,18 @@ function normalizeQuestion(q, idx, paperId) {
   const t = String(q.type || q.qtype || 'MCQ').toUpperCase();
   const type = t.includes('NAT') ? 'NAT' : t.includes('MSQ') ? 'MSQ' : 'MCQ';
   let options = q.options || {};
-  // Normalize options: strip base64 images from option html/text
+  // Normalize options: convert images to Cloudinary CDN URLs
   if (Array.isArray(options)) {
-    options = options.map((o) => (typeof o === 'string' ? stripBase64Images(o) : o));
+    options = options.map((o) => (typeof o === 'string' ? convertImagesToCloudinary(o, branch) : o));
   } else if (options && typeof options === 'object') {
     const out = {};
     for (const entry of Object.entries(options)) {
       const v = entry[1];
-      if (typeof v === 'string') out[entry[0]] = stripBase64Images(v);
+      if (typeof v === 'string') out[entry[0]] = convertImagesToCloudinary(v, branch);
       else if (v && typeof v === 'object') {
         const c = { ...v };
-        if (c.html) c.html = stripBase64Images(c.html);
-        if (c.text) c.text = stripBase64Images(c.text);
+        if (c.html) c.html = convertImagesToCloudinary(c.html, branch);
+        if (c.text) c.text = convertImagesToCloudinary(c.text, branch);
         out[entry[0]] = c;
       } else out[entry[0]] = v;
     }
@@ -117,10 +126,10 @@ function normalizeQuestion(q, idx, paperId) {
     section: q.section || 'General',
     marks: pos,
     negative_marks: neg,
-    question_html: stripBase64Images(q.question_html || q.bodyHtml || q.text || 'Question content'),
+    question_html: convertImagesToCloudinary(q.question_html || q.bodyHtml || q.text || 'Question content', branch),
     options,
     correct_answer: resolveAnswer(q),
-    solution_html: stripBase64Images(q.solution_html || q.solutionHtml || q.solution || q.explanation || ''),
+    solution_html: convertImagesToCloudinary(q.solution_html || q.solutionHtml || q.solution || q.explanation || '', branch),
   };
 }
 
@@ -167,7 +176,7 @@ async function main() {
   let written = 0, skipped = 0, failed = 0;
   const processOne = async (paperId, content, branch, title, provider, series) => {
     const rawQs = content.questions || content.cards || [];
-    const questions = rawQs.map((q, i) => normalizeQuestion(q, i, paperId));
+    const questions = rawQs.map((q, i) => normalizeQuestion(q, i, paperId, branch));
     const doc = {
       paper_id: paperId, title, branch: normalizeBranchCode(branch),
       provider: provider || 'GATEPrep', series: series || 'Official GATE Series',

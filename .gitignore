@@ -26,6 +26,7 @@ serviceAccountKey.json
 scraped_dataset/
 downloads/
 raw_dataset/
+public/data/papers/img/
 
 # PRD and raw preview files
 GATE-Project-PRD*

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { getPaperById, updatePaper, deletePaper, resolveQuestionCorrectAnswer } from '@/lib/firebase/models';
+import { getPaperById, updatePaper, deletePaper, resolveQuestionCorrectAnswer, normalizeBranchCode } from '@/lib/firebase/models';
+import { cleanOptionContent } from '@/lib/sanitizer';
 
 // Git-tracked static fallback: works on Vercel where scraped_dataset/ is absent.
 // Generated from donors: public/data/papers/<paperId>.json (18 PYQ papers, 65 Qs each).
@@ -70,37 +71,79 @@ export async function GET(
 ) {
   try {
     const { paperId } = await params;
-    let paper = await getPaperById(paperId);
+    // 1. Prefer static paper if available (contains resolved /data/papers/img assets and clean options)
+    let paper = loadStaticPaper(paperId);
 
+    // 2. Fallback to Firestore if static paper not found
     if (!paper || !paper.questions || paper.questions.length === 0) {
-      const staticPaper = loadStaticPaper(paperId);
-      if (staticPaper) paper = staticPaper;
+      paper = await getPaperById(paperId);
     }
 
     if (!paper || !paper.questions || paper.questions.length === 0) {
       return NextResponse.json({ success: false, error: 'Paper not found in Firestore' }, { status: 404 });
     }
 
-    // Sanitize questions for learner DTO
-    const questions = (paper.questions || []).map((q: any, idx: number) => ({
-      question_id: q.question_id || `q_${idx + 1}`,
-      question_number: q.question_number || (idx + 1),
-      type: q.type || q.qtype || 'MCQ',
-      section: q.section || 'General',
-      marks: q.marks || 1,
-      negative_marks: q.negative_marks || 0,
-      question_html: q.question_html || 'Question content',
-      options: q.options || {},
-      correct_answer: resolveQuestionCorrectAnswer(q),
-      solution_html: q.solution_html || q.solution || '',
-    }));
+    // Sanitize questions for learner DTO & resolve inline question/solution images
+    const questions = (paper.questions || []).map((q: any, idx: number) => {
+      let qHtml = q.question_html || 'Question content';
+      const qImgs = q.question_images || [];
+      let qImgIdx = 0;
+      qHtml = qHtml.replace(/<img\s+[^>]*src=["']\[IMAGE\]["'][^>]*\/?>/gi, () => {
+        if (qImgIdx < qImgs.length && qImgs[qImgIdx] && qImgs[qImgIdx] !== '[IMAGE]') {
+          return `<img src="${qImgs[qImgIdx++]}" class="inline-block max-h-16 align-middle my-1" />`;
+        }
+        return '<img src="[IMAGE]" />';
+      });
+
+      let sHtml = q.solution_html || q.solution || '';
+      const sImgs = q.solution_images || [];
+      let sImgIdx = 0;
+      sHtml = sHtml.replace(/<img\s+[^>]*src=["']\[IMAGE\]["'][^>]*\/?>/gi, () => {
+        if (sImgIdx < sImgs.length && sImgs[sImgIdx] && sImgs[sImgIdx] !== '[IMAGE]') {
+          return `<img src="${sImgs[sImgIdx++]}" class="inline-block max-h-48 align-middle my-2" />`;
+        }
+        return '<img src="[IMAGE]" />';
+      });
+
+      // Clean option labels so "D." doesn't precede Option A
+      let cleanedOpts: any = q.options || {};
+      if (typeof cleanedOpts === 'object' && cleanedOpts !== null && !Array.isArray(cleanedOpts)) {
+        const out: any = {};
+        for (const [k, v] of Object.entries(cleanedOpts)) {
+          if (v && typeof v === 'object') {
+            out[k] = {
+              ...v,
+              html: cleanOptionContent((v as any).html || (v as any).text || ''),
+            };
+          } else if (typeof v === 'string') {
+            out[k] = cleanOptionContent(v);
+          } else {
+            out[k] = v;
+          }
+        }
+        cleanedOpts = out;
+      }
+
+      return {
+        question_id: q.question_id || `q_${idx + 1}`,
+        question_number: q.question_number || (idx + 1),
+        type: q.type || q.qtype || 'MCQ',
+        section: q.section || 'General',
+        marks: q.marks || 1,
+        negative_marks: q.negative_marks || 0,
+        question_html: qHtml,
+        options: cleanedOpts,
+        correct_answer: resolveQuestionCorrectAnswer(q),
+        solution_html: sHtml,
+      };
+    });
 
     return NextResponse.json({
       success: true,
       paper: {
         paper_id: paper.paper_id,
         title: paper.title,
-        branch: paper.branch,
+        branch: normalizeBranchCode(paper.branch || 'CS'),
         total_questions: questions.length,
         questions,
       },

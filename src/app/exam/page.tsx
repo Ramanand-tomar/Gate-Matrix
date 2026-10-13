@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { MathRenderer } from '@/components/MathRenderer';
+import { cleanOptionContent } from '@/lib/sanitizer';
 import { useAuth } from '@/context/AuthContext';
 import Footer from '@/components/Footer';
 import { Card } from '@/components/ui/Card';
@@ -28,7 +29,7 @@ import {
   Award,
   Lock,
 } from 'lucide-react';
-import { canUserAccessPaper, getUserPurchasedBranches } from '@/lib/commerce/entitlements';
+import { canUserAccessPaper, getUserPurchasedBranches, normalizeBranchCode } from '@/lib/commerce/entitlements';
 import { CheckoutModal } from '@/components/commerce/CheckoutModal';
 
 interface QuestionItem {
@@ -147,6 +148,9 @@ function ExamEngineContent() {
           }
         }
 
+        let currentTitle = 'GATE Official CBT Practice Paper';
+        let currentBranch = 'CS';
+
         if (targetId) {
           // 1) Try live API (Firestore on Vercel, local dataset in dev)
           let loaded: QuestionItem[] | null = null;
@@ -155,8 +159,10 @@ function ExamEngineContent() {
             const data = await res.json();
             if (res.ok && data.success && data.paper && data.paper.questions && data.paper.questions.length > 0) {
               loaded = data.paper.questions;
-              setPaperTitle(data.paper.title || 'GATE Official CBT Practice Paper');
-              setPaperBranch((data.paper.branch || 'CS').toUpperCase());
+              currentTitle = data.paper.title || currentTitle;
+              currentBranch = normalizeBranchCode(data.paper.branch || currentBranch);
+              setPaperTitle(currentTitle);
+              setPaperBranch(currentBranch);
             }
           } catch (e) {
             console.warn('API paper fetch failed, trying static bundle:', e);
@@ -169,8 +175,10 @@ function ExamEngineContent() {
                 const doc = await res2.json();
                 if (doc && doc.questions && doc.questions.length > 0) {
                   loaded = doc.questions;
-                  setPaperTitle(doc.title || 'GATE Official CBT Practice Paper');
-                  setPaperBranch((doc.branch || 'CS').toUpperCase());
+                  currentTitle = doc.title || currentTitle;
+                  currentBranch = normalizeBranchCode(doc.branch || currentBranch);
+                  setPaperTitle(currentTitle);
+                  setPaperBranch(currentBranch);
                 }
               }
             } catch (e) {
@@ -184,11 +192,11 @@ function ExamEngineContent() {
             );
             setQuestions([]);
           } else {
-            const access = canUserAccessPaper(userOrders, { paper_id: targetId, title: paperTitle, branch: paperBranch }, 0, userProfile);
+            const access = canUserAccessPaper(userOrders, { paper_id: targetId, title: currentTitle, branch: currentBranch }, 0, userProfile);
             if (!access.hasAccess) {
               setLockInfo({
                 requiredBranch: access.requiredBranch,
-                paperTitle,
+                paperTitle: currentTitle,
               });
               setPhase('LOCKED');
               return;
@@ -198,15 +206,17 @@ function ExamEngineContent() {
               let optionsArr: string[] | undefined = undefined;
               if (q.options) {
                 if (Array.isArray(q.options)) {
-                  optionsArr = q.options.map((opt: any) =>
-                    typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt)
-                  );
+                  optionsArr = q.options.map((opt: any) => {
+                    const raw = typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt);
+                    return cleanOptionContent(raw);
+                  });
                 } else if (typeof q.options === 'object' && q.options !== null) {
                   const optKeys = ['A', 'B', 'C', 'D'].filter((k) => k in q.options);
                   const sortedKeys = optKeys.length > 0 ? optKeys : Object.keys(q.options).sort();
                   optionsArr = sortedKeys.map((k) => {
                     const opt = q.options[k];
-                    return typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt);
+                    const raw = typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt);
+                    return cleanOptionContent(raw);
                   });
                 }
               }
@@ -266,7 +276,7 @@ function ExamEngineContent() {
         clearInterval(progressTimer);
         setLoadingProgress(100);
         setTimeout(() => {
-          setPhase('INSTRUCTIONS');
+          setPhase((prev) => (prev === 'LOCKED' ? 'LOCKED' : 'INSTRUCTIONS'));
         }, 400);
       }
     }
@@ -1113,7 +1123,7 @@ function ExamEngineContent() {
                               Option {String.fromCharCode(65 + optIdx)}:
                             </div>
                             <div className="text-sm text-[#14213d] dark:text-slate-200 flex-1">
-                              <MathRenderer content={optHtml} />
+                              <MathRenderer content={cleanOptionContent(optHtml)} />
                             </div>
                           </label>
                         );

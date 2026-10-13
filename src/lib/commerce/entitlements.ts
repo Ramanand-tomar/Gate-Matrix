@@ -144,6 +144,17 @@ export function isPaperFree(
   return false;
 }
 
+export function normalizeBranchCode(branchRaw: string): string {
+  const upper = (branchRaw || '').toUpperCase().trim();
+  if (upper === 'CS' || upper.includes('COMPUTER') || upper.includes('CS_')) return 'CS';
+  if (upper === 'DA' || upper.includes('DATA SCIENCE') || upper.includes('AI') || upper.includes('DA_')) return 'DA';
+  if (upper === 'EE' || upper.includes('ELECTRICAL') || upper.includes('EE_')) return 'EE';
+  if (upper === 'EC' || upper.includes('ELECTRONICS') || upper.includes('EC_')) return 'EC';
+  if (upper === 'ME' || upper.includes('MECHANICAL') || upper.includes('ME_')) return 'ME';
+  if (upper === 'CE' || upper.includes('CIVIL') || upper.includes('CE_')) return 'CE';
+  return upper;
+}
+
 /**
  * Helper: Evaluates whether candidate has an active one-time Branch Pass for a given branch.
  * Checks both orders records and user profile activePasses / role.
@@ -154,7 +165,7 @@ export function hasUserBranchAccess(
   userProfile?: { activePasses?: string[]; role?: string } | null
 ): boolean {
   if (!branchCode) return false;
-  const upperBranch = branchCode.toUpperCase();
+  const upperBranch = normalizeBranchCode(branchCode);
 
   // If user is ADMIN or INSTRUCTOR, grant platform-wide access
   if (userProfile?.role === 'ADMIN' || userProfile?.role === 'INSTRUCTOR') {
@@ -178,9 +189,9 @@ export function hasUserBranchAccess(
     const isGranted = ord.status === 'GRANTED' || ord.status === 'CAPTURED';
     if (!isGranted) return false;
 
-    const ordProdId = (ord.product_id || '').toLowerCase();
-    const ordTitle = (ord.product_title || '').toUpperCase();
-    const ordBranch = (ord.branch_code || '').toUpperCase();
+    const ordProdId = (ord.product_id || ord.productId || '').toLowerCase();
+    const ordTitle = (ord.product_title || ord.productTitle || '').toUpperCase();
+    const ordBranch = (ord.branch_code || ord.branchCode || '').toUpperCase();
 
     const matchesProd =
       ordProdId === targetPassId ||
@@ -218,7 +229,7 @@ export function canUserAccessPaper(
   _index: number = 0,
   userProfile?: { activePasses?: string[]; role?: string } | null
 ): { hasAccess: boolean; reason: 'FREE_SAMPLE' | 'BRANCH_PASS_ACTIVE' | 'BRANCH_PASS_REQUIRED'; requiredBranch: string } {
-  const paperBranch = (paper?.branch || 'CS').toUpperCase();
+  const paperBranch = normalizeBranchCode(paper?.branch || 'CS');
 
   if (isPaperFree(paper)) {
     return { hasAccess: true, reason: 'FREE_SAMPLE', requiredBranch: paperBranch };

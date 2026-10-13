@@ -37,4 +37,13 @@ describe('Phase 02 — Safe HTML & Math Sanitizer Tests', () => {
     expect(clean).toContain('katex');
     expect(clean).toContain('mord');
   });
+
+  it('P02-V09: Resolves paper formula images to Cloudinary CDN and equips dark-mode inversion classes', () => {
+    const rawHtml = `<p>Formula: <img src="/data/papers/img/cs_23d2f00fd510.png" alt="formula" /></p>`;
+    const clean = sanitizeHtml(rawHtml);
+
+    expect(clean).toContain('https://res.cloudinary.com/djbuumzmi/image/upload/gate_matrix/papers/img/cs_23d2f00fd510.png');
+    expect(clean).toContain('dark:invert');
+    expect(clean).toContain('dark:hue-rotate-180');
+  });
 });
