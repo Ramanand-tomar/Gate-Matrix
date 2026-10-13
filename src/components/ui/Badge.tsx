@@ -21,13 +21,13 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const variantStyles = {
-    emerald: 'bg-[#e7f4f0] text-[#0f766e] border border-[#0f766e]/20',
-    navy: 'bg-[#14213d] text-white',
-    amber: 'bg-amber-100 text-amber-900 border border-amber-300',
-    rose: 'bg-rose-100 text-rose-800 border border-rose-200',
-    slate: 'bg-slate-100 text-slate-700 border border-slate-200',
-    purple: 'bg-purple-100 text-purple-800 border border-purple-200',
-    cyan: 'bg-sky-100 text-sky-800 border border-sky-200',
+    emerald: 'bg-[#e7f4f0] dark:bg-emerald-950/60 text-[#0f766e] dark:text-emerald-300 border border-[#0f766e]/20 dark:border-emerald-800/60',
+    navy: 'bg-[#14213d] dark:bg-slate-800 text-white dark:text-slate-200 border border-transparent dark:border-slate-700',
+    amber: 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60',
+    rose: 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60',
+    slate: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700',
+    purple: 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60',
+    cyan: 'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800/60',
   };
 
   return (

@@ -201,10 +201,13 @@ function ExamEngineContent() {
                   optionsArr = q.options.map((opt: any) =>
                     typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt)
                   );
-                } else if (typeof q.options === 'object') {
-                  optionsArr = Object.values(q.options).map((opt: any) =>
-                    typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt)
-                  );
+                } else if (typeof q.options === 'object' && q.options !== null) {
+                  const optKeys = ['A', 'B', 'C', 'D'].filter((k) => k in q.options);
+                  const sortedKeys = optKeys.length > 0 ? optKeys : Object.keys(q.options).sort();
+                  optionsArr = sortedKeys.map((k) => {
+                    const opt = q.options[k];
+                    return typeof opt === 'string' ? opt : opt?.html || opt?.text || String(opt);
+                  });
                 }
               }
 
@@ -761,38 +764,38 @@ function ExamEngineContent() {
             </div>
           </div>
 
-          <Card className="p-8 bg-white border-[#dce3ec] shadow-md">
+          <Card className="p-8 bg-white dark:bg-slate-900 border-[#dce3ec] dark:border-slate-800 shadow-md">
             {isFullLength ? (
               /* Official IIT GATE CBT Exam Instructions (Full Length) */
-              <div className="space-y-6 text-sm text-[#14213d] leading-relaxed">
-                <div className="border-b border-[#dce3ec] pb-4">
-                  <h2 className="text-lg font-black text-[#14213d] flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-[#0f766e]" />
+              <div className="space-y-6 text-sm text-[#14213d] dark:text-slate-100 leading-relaxed">
+                <div className="border-b border-[#dce3ec] dark:border-slate-800 pb-4">
+                  <h2 className="text-lg font-black text-[#14213d] dark:text-white flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-[#0f766e] dark:text-[#2dd4bf]" />
                     Please read the following instructions carefully:
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-[#dce3ec] text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-[#dce3ec] dark:border-slate-700 text-xs">
                   <div>
-                    <span className="text-slate-500 font-bold block">Total Time Allowed:</span>
-                    <strong className="text-[#14213d] text-base">180 Minutes (3 Hours)</strong>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold block">Total Time Allowed:</span>
+                    <strong className="text-[#14213d] dark:text-white text-base">180 Minutes (3 Hours)</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 font-bold block">Total Questions:</span>
-                    <strong className="text-[#14213d] text-base">{questions.length} Questions</strong>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold block">Total Questions:</span>
+                    <strong className="text-[#14213d] dark:text-white text-base">{questions.length} Questions</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 font-bold block">Virtual Calculator:</span>
-                    <strong className="text-emerald-700 text-base">Enabled On Header Toolbar</strong>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold block">Virtual Calculator:</span>
+                    <strong className="text-emerald-700 dark:text-emerald-400 text-base">Enabled On Header Toolbar</strong>
                   </div>
                 </div>
 
                 {/* Section A: General Exam Rules */}
                 <div className="space-y-2">
-                  <h3 className="font-extrabold text-[#14213d] uppercase tracking-wider text-xs text-[#0f766e]">
+                  <h3 className="font-extrabold uppercase tracking-wider text-xs text-[#0f766e] dark:text-[#2dd4bf]">
                     1. General Instructions & Session Timer:
                   </h3>
-                  <ul className="list-disc pl-5 space-y-1 text-xs text-[#526079]">
+                  <ul className="list-disc pl-5 space-y-1 text-xs text-[#526079] dark:text-slate-300">
                     <li>The clock will be set at the server. The countdown timer in the top right corner of screen will display the remaining time available for you to complete the examination.</li>
                     <li>When the timer reaches zero, the examination will end by itself. You will not be required to end or submit your examination manually.</li>
                   </ul>
@@ -800,27 +803,27 @@ function ExamEngineContent() {
 
                 {/* Section B: Palette Status Legend */}
                 <div className="space-y-3">
-                  <h3 className="font-extrabold text-[#14213d] uppercase tracking-wider text-xs text-[#0f766e]">
+                  <h3 className="font-extrabold uppercase tracking-wider text-xs text-[#0f766e] dark:text-[#2dd4bf]">
                     2. Question Palette Symbols & Status Guide:
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">
-                      <div className="w-8 h-8 rounded-lg bg-white border border-[#dce3ec] flex items-center justify-center font-bold text-slate-600">1</div>
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
+                      <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 border border-[#dce3ec] dark:border-slate-600 flex items-center justify-center font-bold text-slate-600 dark:text-slate-200">1</div>
                       <span>You have not visited the question yet.</span>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-200 bg-amber-50/50">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/30">
                       <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center font-bold">2</div>
                       <span>You have visited but NOT answered the question.</span>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/30">
                       <div className="w-8 h-8 rounded-lg bg-[#0f766e] text-white flex items-center justify-center font-bold">3</div>
                       <span>You have ANSWERED the question.</span>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-200 bg-purple-50/50">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/30">
                       <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold">4</div>
                       <span>Marked for Review (NOT evaluated unless answered).</span>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-indigo-200 bg-indigo-50/50">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/30">
                       <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center font-bold relative">
                         5
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 absolute top-0 right-0 border border-white"></span>
@@ -832,20 +835,20 @@ function ExamEngineContent() {
 
                 {/* Section C: Marking Scheme */}
                 <div className="space-y-2">
-                  <h3 className="font-extrabold uppercase tracking-wider text-xs text-[#0f766e]">
+                  <h3 className="font-extrabold uppercase tracking-wider text-xs text-[#0f766e] dark:text-[#2dd4bf]">
                     3. GATE Question Types & Marking Scheme:
                   </h3>
-                  <div className="space-y-2 text-xs text-[#526079]">
-                    <div className="p-3 bg-slate-50 rounded-xl border border-[#dce3ec]">
-                      <strong className="text-[#14213d] block mb-0.5">MCQ (Multiple Choice Questions):</strong>
+                  <div className="space-y-2 text-xs text-[#526079] dark:text-slate-300">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-[#dce3ec] dark:border-slate-700">
+                      <strong className="text-[#14213d] dark:text-white block mb-0.5">MCQ (Multiple Choice Questions):</strong>
                       Contains 4 options with 1 correct option. 1-mark questions deduct <strong>1/3 mark (-0.33)</strong> for wrong answers; 2-mark questions deduct <strong>2/3 mark (-0.66)</strong>.
                     </div>
-                    <div className="p-3 bg-slate-50 rounded-xl border border-[#dce3ec]">
-                      <strong className="text-[#14213d] block mb-0.5">MSQ (Multiple Select Questions):</strong>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-[#dce3ec] dark:border-slate-700">
+                      <strong className="text-[#14213d] dark:text-white block mb-0.5">MSQ (Multiple Select Questions):</strong>
                       Contains 1 or more correct options. <strong>No negative marking</strong> and <strong>No partial credit</strong>.
                     </div>
-                    <div className="p-3 bg-slate-50 rounded-xl border border-[#dce3ec]">
-                      <strong className="text-[#14213d] block mb-0.5">NAT (Numerical Answer Type):</strong>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-[#dce3ec] dark:border-slate-700">
+                      <strong className="text-[#14213d] dark:text-white block mb-0.5">NAT (Numerical Answer Type):</strong>
                       Enter numerical response using the virtual numeric keypad. <strong>No negative marking</strong>.
                     </div>
                   </div>
@@ -853,30 +856,30 @@ function ExamEngineContent() {
               </div>
             ) : (
               /* Topic / Subject Practice Test Instructions */
-              <div className="space-y-6 text-sm text-[#14213d] leading-relaxed">
-                <div className="border-b border-[#dce3ec] pb-4">
-                  <h2 className="text-lg font-black text-[#14213d] flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-[#0f766e]" />
+              <div className="space-y-6 text-sm text-[#14213d] dark:text-slate-100 leading-relaxed">
+                <div className="border-b border-[#dce3ec] dark:border-slate-800 pb-4">
+                  <h2 className="text-lg font-black text-[#14213d] dark:text-white flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-[#0f766e] dark:text-[#2dd4bf]" />
                     General Topic Practice Test Instructions:
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-[#dce3ec] text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-[#dce3ec] dark:border-slate-700 text-xs">
                   <div>
-                    <span className="text-slate-500 font-bold block">Test Format:</span>
-                    <strong className="text-[#14213d] text-base">Topic Wise Practice Test</strong>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold block">Test Format:</span>
+                    <strong className="text-[#14213d] dark:text-white text-base">Topic Wise Practice Test</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 font-bold block">Total Questions:</span>
-                    <strong className="text-[#14213d] text-base">{questions.length} Questions</strong>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold block">Total Questions:</span>
+                    <strong className="text-[#14213d] dark:text-white text-base">{questions.length} Questions</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 font-bold block">Recommended Time:</span>
-                    <strong className="text-[#0f766e] text-base">{questions.length * 2} Minutes</strong>
+                    <span className="text-slate-500 dark:text-slate-400 font-bold block">Recommended Time:</span>
+                    <strong className="text-[#0f766e] dark:text-[#2dd4bf] text-base">{questions.length * 2} Minutes</strong>
                   </div>
                 </div>
 
-                <div className="space-y-3 text-xs text-[#526079]">
+                <div className="space-y-3 text-xs text-[#526079] dark:text-slate-300">
                   <p>• This topic test is curated to test your subject fundamentals, mathematical speed, and concept application in <strong>{paperTitle}</strong>.</p>
                   <p>• Make sure to attempt all questions carefully. Standard GATE positive and negative marking applies.</p>
                   <p>• Use the built-in <strong>Virtual Scientific Calculator</strong> on the header toolbar for solving NAT numerical questions.</p>
@@ -886,26 +889,26 @@ function ExamEngineContent() {
             )}
 
             {/* Candidate Declaration & Start Button Container */}
-            <div className="mt-8 pt-6 border-t border-[#dce3ec] space-y-6">
+            <div className="mt-8 pt-6 border-t border-[#dce3ec] dark:border-slate-800 space-y-6">
               {loadError && (
-                <div className="p-4 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-semibold flex items-start gap-2">
+                <div className="p-4 rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                   <span>Question data unavailable: {loadError}</span>
                 </div>
               )}
               {questions.length === 0 && !loadError && (
-                <div className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-amber-800 text-xs font-semibold">
+                <div className="p-4 rounded-xl border border-amber-300 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 text-xs font-semibold">
                   Loading real exam questions…
                 </div>
               )}
-              <label className="flex items-start gap-3.5 p-4 rounded-xl border border-amber-200 bg-amber-50/40 cursor-pointer hover:bg-amber-50 transition-all">
+              <label className="flex items-start gap-3.5 p-4 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/30 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-all">
                 <input
                   type="checkbox"
                   checked={declarationChecked}
                   onChange={(e) => setDeclarationChecked(e.target.checked)}
                   className="accent-[#0f766e] w-5 h-5 mt-0.5"
                 />
-                <span className="text-xs text-[#14213d] leading-relaxed font-semibold">
+                <span className="text-xs text-[#14213d] dark:text-slate-200 leading-relaxed font-semibold">
                   I have read and understood all the instructions. All computer hardware allotted to me is in proper working condition. I declare that I am not in possession of any prohibited material and agree to abide by the GATE CBT examination guidelines.
                 </span>
               </label>
@@ -1047,28 +1050,28 @@ function ExamEngineContent() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Main Question & Answer Selection Area */}
             <div className="lg:col-span-8">
-              <Card padding="lg" className="h-full flex flex-col justify-between border-[#dce3ec] shadow-sm bg-white">
+              <Card padding="lg" className="h-full flex flex-col justify-between border-[#dce3ec] dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
                 <div>
                   {/* Question Header Status */}
-                  <div className="flex justify-between items-center pb-4 border-b border-[#dce3ec] mb-6">
+                  <div className="flex justify-between items-center pb-4 border-b border-[#dce3ec] dark:border-slate-800 mb-6">
                     <div className="flex items-center gap-2">
                       <Badge variant="navy" className="text-xs px-3 py-1 font-extrabold">Question {currentIdx + 1}</Badge>
                       <Badge variant="emerald" className="text-xs px-2.5 py-1">{currentQ.qtype}</Badge>
                     </div>
-                    <span className="text-xs font-extrabold text-slate-600 bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
-                      Marks: <span className="text-emerald-700">+{currentQ.marksPos}.00</span> | Penalty: <span className="text-rose-600">{currentQ.marksNeg}</span>
+                    <span className="text-xs font-extrabold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                      Marks: <span className="text-emerald-700 dark:text-emerald-400">+{currentQ.marksPos}.00</span> | Penalty: <span className="text-rose-600 dark:text-rose-400">{currentQ.marksNeg}</span>
                     </span>
                   </div>
 
                   {/* Question Content Body with KaTeX & Inline Image Support */}
-                  <div className="text-base text-[#14213d] mb-8 leading-relaxed font-normal bg-slate-50/50 p-5 rounded-2xl border border-slate-100">
+                  <div className="text-base text-[#14213d] dark:text-slate-100 mb-8 leading-relaxed font-normal bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
                     <MathRenderer content={currentQ.bodyHtml} stripSolutions={true} />
                   </div>
 
                   {/* Answer Inputs (MCQ / MSQ / NAT) */}
                   {currentQ.qtype === 'NAT' || !currentQ.options ? (
-                    <div className="mb-8 p-5 bg-emerald-50/30 rounded-2xl border border-emerald-100">
-                      <label className="block text-xs text-[#14213d] mb-2 font-bold uppercase tracking-wider">
+                    <div className="mb-8 p-5 bg-emerald-50/30 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/40">
+                      <label className="block text-xs text-[#14213d] dark:text-slate-200 mb-2 font-bold uppercase tracking-wider">
                         Enter Numerical Response (Use keyboard or on-screen calculator):
                       </label>
                       <input
@@ -1077,7 +1080,7 @@ function ExamEngineContent() {
                         value={natAnswers[currentIdx] || ''}
                         onChange={(e) => handleNatChange(e.target.value)}
                         placeholder="e.g. 20.5"
-                        className="border border-[#dce3ec] rounded-xl px-4 py-3 text-lg font-bold w-64 focus:outline-none focus:border-[#0f766e] bg-white text-[#14213d] shadow-2xs font-mono"
+                        className="border border-[#dce3ec] dark:border-slate-700 rounded-xl px-4 py-3 text-lg font-bold w-64 focus:outline-none focus:border-[#0f766e] bg-white dark:bg-slate-800 text-[#14213d] dark:text-white shadow-2xs font-mono"
                       />
                     </div>
                   ) : (
@@ -1096,8 +1099,8 @@ function ExamEngineContent() {
                             }
                             className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
                               isChecked
-                                ? 'border-[#0f766e] bg-[#e7f4f0] shadow-xs ring-1 ring-[#0f766e]'
-                                : 'border-[#dce3ec] bg-white hover:border-slate-300 hover:bg-slate-50/80'
+                                ? 'border-[#0f766e] dark:border-[#2dd4bf] bg-[#e7f4f0] dark:bg-teal-950/40 shadow-xs ring-1 ring-[#0f766e] dark:ring-[#2dd4bf]'
+                                : 'border-[#dce3ec] dark:border-slate-800 bg-white dark:bg-slate-900/90 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
                             }`}
                           >
                             <input
@@ -1106,10 +1109,10 @@ function ExamEngineContent() {
                               onChange={() => {}}
                               className="accent-[#0f766e] w-4 h-4 mt-1"
                             />
-                            <div className="flex items-center gap-2 font-bold text-xs text-[#0f766e] uppercase tracking-wider min-w-[70px] mt-0.5">
+                            <div className="flex items-center gap-2 font-bold text-xs text-[#0f766e] dark:text-[#2dd4bf] uppercase tracking-wider min-w-[70px] mt-0.5">
                               Option {String.fromCharCode(65 + optIdx)}:
                             </div>
-                            <div className="text-sm text-[#14213d] flex-1">
+                            <div className="text-sm text-[#14213d] dark:text-slate-200 flex-1">
                               <MathRenderer content={optHtml} />
                             </div>
                           </label>
@@ -1120,7 +1123,7 @@ function ExamEngineContent() {
                 </div>
 
                 {/* Bottom Control Bar */}
-                <div className="pt-6 border-t border-[#dce3ec] flex flex-wrap justify-between items-center gap-3">
+                <div className="pt-6 border-t border-[#dce3ec] dark:border-slate-800 flex flex-wrap justify-between items-center gap-3">
                   <div className="flex gap-2">
                     <Button variant="secondary" size="sm" onClick={clearResponse}>
                       Clear Response
@@ -1160,11 +1163,11 @@ function ExamEngineContent() {
 
             {/* Sidebar Question Palette */}
             <div className="lg:col-span-4">
-              <Card padding="md" className="h-full flex flex-col justify-between border-[#dce3ec] bg-white shadow-sm">
+              <Card padding="md" className="h-full flex flex-col justify-between border-[#dce3ec] dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                 <div>
-                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#dce3ec]">
-                    <span className="font-black text-sm text-[#14213d]">Question Palette</span>
-                    <span className="text-xs text-slate-500 font-bold">{questions.length} Total</span>
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#dce3ec] dark:border-slate-800">
+                    <span className="font-black text-sm text-[#14213d] dark:text-white">Question Palette</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{questions.length} Total</span>
                   </div>
 
                   {/* Question Grid Buttons */}
@@ -1174,18 +1177,18 @@ function ExamEngineContent() {
                       const isAns = isAnswered(idx);
                       const isFlg = flagged[idx];
 
-                      let btnBg = 'bg-white text-[#14213d] border-[#dce3ec] hover:bg-slate-100';
+                      let btnBg = 'bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700';
                       if (isFlg && isAns) btnBg = 'bg-purple-700 text-white border-purple-700 ring-2 ring-emerald-400';
                       else if (isFlg) btnBg = 'bg-purple-600 text-white border-purple-600';
-                      else if (isAns) btnBg = 'bg-[#0f766e] text-white border-[#0f766e]';
-                      else btnBg = 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100';
+                      else if (isAns) btnBg = 'bg-[#0f766e] dark:bg-[#0d9488] text-white border-[#0f766e] dark:border-[#0d9488]';
+                      else btnBg = 'bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700';
 
                       return (
                         <button
                           key={idx}
                           onClick={() => setCurrentIdx(idx)}
                           className={`h-9 rounded-xl text-xs font-black border transition-all ${btnBg} ${
-                            isCur ? 'ring-2 ring-offset-2 ring-[#14213d] scale-105' : ''
+                            isCur ? 'ring-2 ring-offset-2 ring-[#0f766e] dark:ring-[#2dd4bf] dark:ring-offset-slate-900 scale-105' : ''
                           }`}
                         >
                           {idx + 1}
@@ -1195,27 +1198,27 @@ function ExamEngineContent() {
                   </div>
 
                   {/* Palette Legends */}
-                  <div className="text-[11px] text-[#526079] space-y-2 mb-6 border-t border-slate-100 pt-4 font-medium">
+                  <div className="text-[11px] text-[#526079] dark:text-slate-400 space-y-2 mb-6 border-t border-slate-100 dark:border-slate-800 pt-4 font-medium">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded bg-[#0f766e]"></span>
                         <span>Answered</span>
                       </div>
-                      <span className="font-bold text-[#14213d]">{attemptedCountTotal}</span>
+                      <span className="font-bold text-[#14213d] dark:text-white">{attemptedCountTotal}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded bg-purple-600"></span>
                         <span>Marked for Review</span>
                       </div>
-                      <span className="font-bold text-[#14213d]">{flaggedCountTotal}</span>
+                      <span className="font-bold text-[#14213d] dark:text-white">{flaggedCountTotal}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded bg-amber-500"></span>
                         <span>Not Answered</span>
                       </div>
-                      <span className="font-bold text-[#14213d]">{questions.length - attemptedCountTotal}</span>
+                      <span className="font-bold text-[#14213d] dark:text-white">{questions.length - attemptedCountTotal}</span>
                     </div>
                   </div>
                 </div>
@@ -1450,14 +1453,14 @@ function ExamEngineContent() {
                       key={res.qnum}
                       className={`border rounded-2xl p-6 transition-all ${
                         !res.isAttempted
-                          ? 'border-[#dce3ec] bg-white'
+                          ? 'border-[#dce3ec] dark:border-slate-800 bg-white dark:bg-slate-900'
                           : res.isCorrect
-                          ? 'border-emerald-200 bg-emerald-50/20'
-                          : 'border-rose-200 bg-rose-50/20'
+                          ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/20 dark:bg-emerald-950/20'
+                          : 'border-rose-200 dark:border-rose-900/60 bg-rose-50/20 dark:bg-rose-950/20'
                       }`}
                     >
                       {/* Card Header Tag */}
-                      <div className="flex justify-between items-center mb-4 border-b border-[#dce3ec]/60 pb-3">
+                      <div className="flex justify-between items-center mb-4 border-b border-[#dce3ec]/60 dark:border-slate-800 pb-3">
                         <div className="flex items-center gap-2">
                           <Badge variant="navy">Q{res.qnum}</Badge>
                           <Badge variant="emerald">{res.qtype}</Badge>
@@ -1474,7 +1477,7 @@ function ExamEngineContent() {
                       </div>
 
                       {/* Question Text */}
-                      <div className="text-base text-[#14213d] mb-6 leading-relaxed">
+                      <div className="text-base text-[#14213d] dark:text-slate-100 mb-6 leading-relaxed">
                         <MathRenderer content={q.bodyHtml} />
                       </div>
 
@@ -1483,10 +1486,10 @@ function ExamEngineContent() {
                         <div
                           className={`p-4 rounded-xl border ${
                             !res.isAttempted
-                              ? 'bg-slate-50 border-slate-200 text-slate-600'
+                              ? 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                               : res.isCorrect
-                              ? 'bg-emerald-100/50 border-emerald-300 text-emerald-950'
-                              : 'bg-rose-100/50 border-rose-300 text-rose-950'
+                              ? 'bg-emerald-100/50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200'
+                              : 'bg-rose-100/50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-200'
                           }`}
                         >
                           <span className="font-extrabold block mb-1 uppercase tracking-wider text-[10px]">
@@ -1495,21 +1498,21 @@ function ExamEngineContent() {
                           <span className="font-bold text-sm">{res.userAnsText}</span>
                         </div>
 
-                        <div className="p-4 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-950">
-                          <span className="font-extrabold block mb-1 uppercase tracking-wider text-[10px] text-emerald-800">
+                        <div className="p-4 rounded-xl border bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200">
+                          <span className="font-extrabold block mb-1 uppercase tracking-wider text-[10px] text-emerald-800 dark:text-emerald-400">
                             Official Correct Answer:
                           </span>
-                          <span className="font-bold text-sm text-emerald-900">{res.correctAnsText}</span>
+                          <span className="font-bold text-sm text-emerald-900 dark:text-emerald-200">{res.correctAnsText}</span>
                         </div>
                       </div>
 
                       {/* Step-by-Step KaTeX Explanation */}
                       {q.solutionHtml && (
-                        <div className="bg-slate-50 border border-[#dce3ec] p-5 rounded-2xl text-xs">
-                          <strong className="block text-xs font-extrabold text-[#0f766e] uppercase tracking-wider mb-2">
+                        <div className="bg-slate-50 dark:bg-slate-800/60 border border-[#dce3ec] dark:border-slate-700 p-5 rounded-2xl text-xs">
+                          <strong className="block text-xs font-extrabold text-[#0f766e] dark:text-[#2dd4bf] uppercase tracking-wider mb-2">
                             💡 Step-by-Step Mathematical Explanation:
                           </strong>
-                          <div className="text-[#14213d] leading-relaxed">
+                          <div className="text-[#14213d] dark:text-slate-200 leading-relaxed">
                             <MathRenderer content={q.solutionHtml} />
                           </div>
                         </div>
@@ -1526,27 +1529,27 @@ function ExamEngineContent() {
 
       {/* Confirmation Dialog before Final Submission */}
       {confirmModalOpen && (
-        <div className="fixed inset-0 bg-[#14213d]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <Card className="max-w-md w-full animate-fadeIn bg-white border-[#dce3ec]" padding="lg">
-            <h3 className="text-xl font-black text-[#14213d] mb-2">Submit your exam?</h3>
-            <p className="text-xs text-[#526079] mb-6">
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <Card className="max-w-md w-full animate-fadeIn bg-white dark:bg-slate-900 border-[#dce3ec] dark:border-slate-800" padding="lg">
+            <h3 className="text-xl font-black text-[#14213d] dark:text-white mb-2">Submit your exam?</h3>
+            <p className="text-xs text-[#526079] dark:text-slate-400 mb-6">
               Please review your question attempt summary before confirming final submission.
             </p>
 
-            <div className="bg-slate-50 border border-[#dce3ec] p-4 rounded-xl mb-6 space-y-2 text-xs">
+            <div className="bg-slate-50 dark:bg-slate-800/60 border border-[#dce3ec] dark:border-slate-700 p-4 rounded-xl mb-6 space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-[#526079]">Total Questions:</span>
-                <span className="font-bold text-[#14213d]">{questions.length}</span>
+                <span className="text-[#526079] dark:text-slate-400">Total Questions:</span>
+                <span className="font-bold text-[#14213d] dark:text-white">{questions.length}</span>
               </div>
-              <div className="flex justify-between text-emerald-700">
+              <div className="flex justify-between text-emerald-700 dark:text-emerald-400">
                 <span>Attempted:</span>
                 <span className="font-black">{attemptedCountTotal}</span>
               </div>
-              <div className="flex justify-between text-amber-700">
+              <div className="flex justify-between text-amber-700 dark:text-amber-400">
                 <span>Unattempted:</span>
                 <span className="font-bold">{questions.length - attemptedCountTotal}</span>
               </div>
-              <div className="flex justify-between text-purple-700">
+              <div className="flex justify-between text-purple-700 dark:text-purple-400">
                 <span>Marked for Review:</span>
                 <span className="font-bold">{flaggedCountTotal}</span>
               </div>

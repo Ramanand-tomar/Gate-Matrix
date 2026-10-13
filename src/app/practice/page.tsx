@@ -265,17 +265,17 @@ export default function PracticePage() {
 
         {/* Branch Lock Alert Banner */}
         {!userHasAccessToBranch && (
-          <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in">
+          <div className="p-5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 text-amber-900 dark:text-amber-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/40 shrink-0">
+              <div className="p-2.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-500/40 shrink-0">
                 <Lock className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-white">
+                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
                   GATE {selectedBranch} Practice Pass Required
                 </h3>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  You are viewing practice papers for <strong className="text-amber-300">{selectedBranch}</strong>. Unlock the {selectedBranch} Branch Pass for ₹1,499 to access all questions & detailed solutions.
+                <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5">
+                  You are viewing practice papers for <strong className="text-amber-700 dark:text-amber-300">{selectedBranch}</strong>. Unlock the {selectedBranch} Branch Pass for ₹1,499 to access all questions & detailed solutions.
                 </p>
               </div>
             </div>

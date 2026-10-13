@@ -47,13 +47,13 @@ export function fixImageUrls(html: string): string {
   // (only when no real image file exists — genuine /data/papers/img/* URLs pass through untouched)
   result = result.replace(
     /<img\s+[^>]*src=["']\[IMAGE\]["'][^>]*\/?>/gi,
-    '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-50 text-amber-800 border border-amber-200">🖼️ [Image Formula]</span>'
+    '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">🖼️ [Image Formula]</span>'
   );
 
   // 4. Replace standalone [IMAGE] text placeholders
   result = result.replace(
     /\[IMAGE\]/gi,
-    '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-50 text-amber-800 border border-amber-200">🖼️ [Image Formula]</span>'
+    '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">🖼️ [Image Formula]</span>'
   );
 
   return result;

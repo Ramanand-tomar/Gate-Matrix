@@ -47,6 +47,13 @@ body {
   margin: 2px 4px;
 }
 
+/* In Dark Mode, invert white-background math formula images to dark canvas */
+html.dark .math-renderer img {
+  filter: invert(0.92) hue-rotate(180deg) brightness(1.15) contrast(1.05);
+  background-color: transparent !important;
+  border-radius: 4px;
+}
+
 .math-renderer p {
   margin-bottom: 0.5rem;
   line-height: 1.6;

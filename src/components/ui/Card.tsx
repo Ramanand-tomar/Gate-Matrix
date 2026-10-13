@@ -24,8 +24,8 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={`bg-white border border-[#dce3ec] rounded-2xl shadow-sm ${
-        hoverEffect ? 'hover:shadow-md hover:border-slate-300 transition-all duration-200' : ''
+      className={`bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-2xl shadow-sm ${
+        hoverEffect ? 'hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200' : ''
       } ${paddingStyles[padding]} ${className}`}
     >
       {children}
@@ -82,23 +82,23 @@ export const StatCard: React.FC<StatCardProps> = ({
   }
 
   return (
-    <div className={`bg-white border border-[#dce3ec] rounded-2xl p-5 shadow-sm ${className}`}>
+    <div className={`bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-2xl p-5 shadow-sm ${className}`}>
       <div className="flex justify-between items-start mb-2">
-        <span className="text-xs font-bold text-[#526079] uppercase tracking-wider">{label}</span>
-        {icon && <div className="text-[#0f766e]">{icon}</div>}
+        <span className="text-xs font-bold text-[#526079] dark:text-slate-400 uppercase tracking-wider">{label}</span>
+        {icon && <div className="text-[#0f766e] dark:text-[#2dd4bf]">{icon}</div>}
       </div>
-      <div className="text-3xl font-black text-[#14213d] tracking-tight">{value}</div>
+      <div className="text-3xl font-black text-[#14213d] dark:text-white tracking-tight">{value}</div>
       <div className="flex items-center gap-2 mt-1">
         {trend && (
           <span
             className={`text-xs font-extrabold px-1.5 py-0.5 rounded ${
-              trend.isPositive ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+              trend.isPositive ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
             }`}
           >
             {trend.value}
           </span>
         )}
-        {subtext && <span className="text-xs text-[#526079] font-medium">{subtext}</span>}
+        {subtext && <span className="text-xs text-[#526079] dark:text-slate-400 font-medium">{subtext}</span>}
       </div>
     </div>
   );
