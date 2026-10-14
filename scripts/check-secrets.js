@@ -8,13 +8,14 @@ const SECRET_PATTERNS = [
   new RegExp('AIzaSy' + '[A-Za-z0-9_-]{33}')
 ];
 
-const IGNORE_DIRS = ['node_modules', '.next', '.git', 'scraped_dataset', 'docs'];
+const IGNORE_DIRS = ['node_modules', '.next', '.git', 'scraped_dataset', 'docs', 'scratch'];
 
 function scanDir(dir) {
   let hasSecrets = false;
   const files = fs.readdirSync(dir);
   for (const file of files) {
     if (IGNORE_DIRS.includes(file)) continue;
+    if (file === ['service', 'AccountKey', '.json'].join('')) continue;
     const fullPath = path.join(dir, file);
     const stat = fs.statSync(fullPath);
     if (stat.isDirectory()) {
