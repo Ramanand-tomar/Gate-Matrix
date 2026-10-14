@@ -530,9 +530,9 @@ export function derivePaperInstitute(paper: { institute?: string; provider?: str
     return 'Official GATE (IIT)';
   }
   if (text.includes('made easy') || text.includes('madeeasy') || text.includes('dvruo easy')) return 'MADE EASY';
-  if (text.includes('ace academy') || text.includes('ace') || text.includes('dvruoace')) return 'ACE Academy';
+  if (text.includes('ace academy') || text.includes('dvruoace') || /(?:^|[_\s\W])ace(?:[_\s\W]|$)/i.test(text)) return 'ACE Academy';
   if (text.includes('go classes') || text.includes('goclasses') || text.includes('dvruo classes')) return 'GO Classes';
-  if (text.includes('gate wallah') || text.includes('physics wallah') || text.includes('pw')) return 'GATE Wallah';
+  if (text.includes('gate wallah') || text.includes('physics wallah') || text.includes('pw') || text.includes('dvruo zeal') || text.includes('zeal')) return 'GATE Wallah';
   if (text.includes('unacademy')) return 'Unacademy';
   if (text.includes('applied gate') || text.includes('gate applied')) return 'Applied GATE';
   if (paper.provider && paper.provider !== 'GATEPrep' && paper.provider !== 'GATE Matrix') return paper.provider;
