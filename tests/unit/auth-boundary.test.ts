@@ -7,7 +7,7 @@ describe('Phase 04 — Auth & Security Access Boundary Tests', () => {
     const rulesPath = path.join(process.cwd(), 'firestore.rules');
     expect(fs.existsSync(rulesPath)).toBe(true);
 
-    const rulesContent = fs.readFileSync(rulesPath, 'utf-8');
+    const rulesContent = fs.readFileSync(rulesPath, 'utf-8').replace(/\r\n/g, '\n');
 
     // Verify rules explicitly protect client write access to /papers/{paperId} and all access to /answerKeys/{qvid}
     expect(rulesContent).toMatch(/match \/papers\/\{paperId\} \{\s+allow read: if true;\s+allow write: if (false|isAdmin\(\));/);

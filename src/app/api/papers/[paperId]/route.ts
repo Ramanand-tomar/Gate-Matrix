@@ -1,26 +1,46 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { getPaperById, updatePaper, deletePaper, resolveQuestionCorrectAnswer, normalizeBranchCode } from '@/lib/firebase/models';
-import { cleanOptionContent } from '@/lib/sanitizer';
+import {
+  getPaperById,
+  updatePaper,
+  deletePaper,
+  resolveQuestionCorrectAnswer,
+  normalizeBranchCode,
+  findLocalPaperFile,
+} from '@/lib/firebase/models';
+import { cleanOptionContent, fixImageUrls } from '@/lib/sanitizer';
 
-// Git-tracked static fallback: works on Vercel where scraped_dataset/ is absent.
-// Generated from donors: public/data/papers/<paperId>.json (18 PYQ papers, 65 Qs each).
+// Load static or authentic local scraped paper
 function loadStaticPaper(paperId: string): any | null {
+  const localCandidate = findLocalPaperFile(paperId);
   const candidates = [
     path.join(process.cwd(), 'public', 'data', 'papers', `${paperId}.json`),
     path.join(process.cwd(), 'src', 'lib', 'data', 'papers', `${paperId}.json`),
+    ...(localCandidate ? [localCandidate] : []),
   ];
   for (const p of candidates) {
     try {
       if (fs.existsSync(p)) {
         const doc = JSON.parse(fs.readFileSync(p, 'utf-8'));
-        if (doc && (doc.questions || []).length > 0) return doc;
+        const qs = doc.questions || doc.cards || [];
+        if (doc && qs.length > 0) {
+          return {
+            ...doc,
+            paper_id: doc.paper_id || paperId,
+            title: doc.title || doc.paper_title || paperId.replace(/_/g, ' '),
+            questions: qs,
+          };
+        }
       }
     } catch {}
   }
+  return null;
+}
 
-  // Branch donor fallback: if specific paperId.json not found, use branch donor in public/data/papers
+// Git-tracked static fallback: works on Vercel where scraped_dataset/ is absent.
+// Generated from donors: public/data/papers/<paperId>.json (18 PYQ papers, 65 Qs each).
+function loadBranchDonorPaper(paperId: string): any | null {
   const branchMatch = paperId.match(/(?:^|[_\W])(CS|DA|EE|EC|ME|CE)(?:[_\W]|$)/i);
   const branch = branchMatch ? branchMatch[1].toLowerCase() : 'cs';
   const donorYears = ['2024', '2023', '2022'];
@@ -71,21 +91,26 @@ export async function GET(
 ) {
   try {
     const { paperId } = await params;
-    // 1. Prefer static paper if available (contains resolved /data/papers/img assets and clean options)
+    // 1. Prefer authentic static paper from disk (public/data/papers or scraped_dataset)
     let paper = loadStaticPaper(paperId);
 
-    // 2. Fallback to Firestore if static paper not found
+    // 2. Fallback to Firestore / memory cache if local file not found
     if (!paper || !paper.questions || paper.questions.length === 0) {
       paper = await getPaperById(paperId);
     }
 
+    // 3. Fallback to branch donor paper ONLY if paper not found on disk AND not in Firestore
     if (!paper || !paper.questions || paper.questions.length === 0) {
-      return NextResponse.json({ success: false, error: 'Paper not found in Firestore' }, { status: 404 });
+      paper = loadBranchDonorPaper(paperId);
+    }
+
+    if (!paper || !paper.questions || paper.questions.length === 0) {
+      return NextResponse.json({ success: false, error: 'Paper not found' }, { status: 404 });
     }
 
     // Sanitize questions for learner DTO & resolve inline question/solution images
     const questions = (paper.questions || []).map((q: any, idx: number) => {
-      let qHtml = q.question_html || 'Question content';
+      let qHtml = q.question_html || q.html || q.text || 'Question content';
       const qImgs = q.question_images || [];
       let qImgIdx = 0;
       qHtml = qHtml.replace(/<img\s+[^>]*src=["']\[IMAGE\]["'][^>]*\/?>/gi, () => {
@@ -124,25 +149,43 @@ export async function GET(
         cleanedOpts = out;
       }
 
+      let posMarks = 1;
+      let negMarks = 0;
+      if (typeof q.marks === 'number') {
+        posMarks = q.marks;
+      } else if (typeof q.marks === 'string') {
+        posMarks = parseFloat(q.marks) || 1;
+      } else if (typeof q.marks === 'object' && q.marks !== null) {
+        posMarks = parseFloat(q.marks.positive || q.marks.num || '1') || 1;
+        if ('negative' in q.marks) {
+          negMarks = parseFloat(q.marks.negative) || 0;
+        }
+      }
+      if (typeof q.negative_marks === 'number') {
+        negMarks = q.negative_marks;
+      } else if (typeof q.negative_marks === 'string') {
+        negMarks = parseFloat(q.negative_marks) || 0;
+      }
+
       return {
-        question_id: q.question_id || `q_${idx + 1}`,
+        question_id: q.question_id || `${paper.paper_id || paperId}_q${idx + 1}`,
         question_number: q.question_number || (idx + 1),
-        type: q.type || q.qtype || 'MCQ',
+        type: (q.type || q.qtype || 'MCQ').toUpperCase(),
         section: q.section || 'General',
-        marks: q.marks || 1,
-        negative_marks: q.negative_marks || 0,
-        question_html: qHtml,
+        marks: posMarks,
+        negative_marks: negMarks,
+        question_html: fixImageUrls(qHtml),
         options: cleanedOpts,
         correct_answer: resolveQuestionCorrectAnswer(q),
-        solution_html: sHtml,
+        solution_html: fixImageUrls(sHtml),
       };
     });
 
     return NextResponse.json({
       success: true,
       paper: {
-        paper_id: paper.paper_id,
-        title: paper.title,
+        paper_id: paper.paper_id || paperId,
+        title: paper.title || paperId.replace(/_/g, ' '),
         branch: normalizeBranchCode(paper.branch || 'CS'),
         total_questions: questions.length,
         questions,

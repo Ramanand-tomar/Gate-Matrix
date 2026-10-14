@@ -539,7 +539,7 @@ export function derivePaperInstitute(paper: { institute?: string; provider?: str
   return 'GATE Matrix Core';
 }
 
-function findLocalPaperFile(paperId: string): string | null {
+export function findLocalPaperFile(paperId: string): string | null {
   try {
     const datasetDir = path.join(process.cwd(), 'scraped_dataset');
     if (!fs.existsSync(datasetDir)) return null;
@@ -550,7 +550,12 @@ function findLocalPaperFile(paperId: string): string | null {
       if (fs.statSync(branchPath).isDirectory()) {
         const files = fs.readdirSync(branchPath);
         for (const file of files) {
-          if (file === `${paperId}.json` || file.startsWith(paperId)) {
+          if (
+            file === `${paperId}.json` ||
+            file.replace('.json', '') === paperId ||
+            file.startsWith(paperId) ||
+            file.endsWith(`${paperId}.json`)
+          ) {
             return path.join(branchPath, file);
           }
         }
