@@ -409,7 +409,7 @@ export default function LibraryPage() {
                           onClick={() => setCheckoutBranch(branch.code)}
                           leftIcon={<Lock className="w-3.5 h-3.5" />}
                         >
-                          Unlock Pass
+                          Check Access
                         </Button>
                       )}
                     </div>

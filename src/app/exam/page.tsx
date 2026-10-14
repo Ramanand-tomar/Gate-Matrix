@@ -967,7 +967,7 @@ function ExamEngineContent() {
               </div>
               <h2 className="text-2xl font-black text-white">{lockInfo.paperTitle}</h2>
               <p className="text-slate-300 text-sm max-w-lg mx-auto leading-relaxed">
-                This test paper is part of the <strong className="text-amber-300 font-extrabold">{lockInfo.requiredBranch} Branch Test Series</strong>. To attempt this test paper, please unlock the {lockInfo.requiredBranch} Branch Pass.
+                You don&apos;t have access to do this. This test paper is part of the <strong className="text-amber-300 font-extrabold">{lockInfo.requiredBranch} Branch Test Series</strong> and requires an authorized pass or institutional access.
               </p>
             </div>
 
@@ -1000,7 +1000,7 @@ function ExamEngineContent() {
                 className="w-full sm:w-auto font-black shadow-lg shadow-emerald-950/40"
                 onClick={() => setCheckoutOpen(true)}
               >
-                Unlock {lockInfo.requiredBranch} Test Series (₹1,499)
+                View Access Requirements
               </Button>
             </div>
           </Card>

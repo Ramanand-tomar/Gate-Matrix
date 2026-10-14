@@ -193,7 +193,7 @@ function DashboardContent() {
                 <span className="text-[11px] font-mono text-teal-300 font-bold">123 Days Remaining</span>
               </div>
               <h1 className="text-2xl font-black tracking-tight">
-                Good evening, {user ? user.displayName || 'GATE Aspirant' : 'Ramanand'} 👋
+                Good evening, {user ? user.displayName || 'GATE Aspirant' : 'GATE Aspirant'} 👋
               </h1>
             </div>
           </div>

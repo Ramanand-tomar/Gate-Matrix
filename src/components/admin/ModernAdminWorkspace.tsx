@@ -1301,7 +1301,7 @@ export default function ModernAdminWorkspace() {
                   Financial Transactions & Order Ledger
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Comprehensive audit trail of all candidate test series purchases and Telegram order reconciliations.
+                  Comprehensive audit trail of all candidate test series access grants and order reconciliations.
                 </p>
               </div>
 
@@ -1544,19 +1544,6 @@ export default function ModernAdminWorkspace() {
                   <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
                     <span className="font-bold text-slate-700 dark:text-slate-300">REST API Authorization Header:</span>
                     <span className="font-mono text-emerald-500 font-bold">x-admin-secret: [VALIDATED]</span>
-                  </div>
-
-                  <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                    <span className="font-bold text-slate-700 dark:text-slate-300">Telegram Purchase Link:</span>
-                    <a
-                      href="https://t.me/+917746877268"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#229ED9] hover:underline font-bold flex items-center gap-1"
-                    >
-                      <span>https://t.me/+917746877268 (+91 77468 77268)</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
                   </div>
                 </div>
               </Card>

@@ -1,22 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  ShoppingBag,
-  CheckCircle2,
   X,
-  Sparkles,
-  Copy,
-  Check,
-  Send,
-  ExternalLink,
-  MessageCircle,
-  ShieldCheck,
+  Lock,
+  ShieldAlert,
   Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { OFFICIAL_PRODUCT_CATALOG, getUserPurchasedBranches } from '@/lib/commerce/entitlements';
+import { OFFICIAL_PRODUCT_CATALOG } from '@/lib/commerce/entitlements';
 import { User } from 'firebase/auth';
 
 interface CheckoutModalProps {
@@ -24,25 +17,16 @@ interface CheckoutModalProps {
   onClose: () => void;
   branchCode: string;
   user: User | null;
-  orders: any[];
-  onSuccess: (newOrder: any) => void;
+  orders?: any[];
+  onSuccess?: (newOrder: any) => void;
 }
-
-export const TELEGRAM_PHONE_NUMBER = '+917746877268';
-export const TELEGRAM_PHONE_DISPLAY = '+91 77468 77268';
-export const TELEGRAM_BUY_URL = `https://t.me/+917746877268`;
-export const TELEGRAM_WEB_URL = 'https://web.telegram.org/a/#1623488785';
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
   branchCode,
   user,
-  orders,
-  onSuccess,
 }) => {
-  const [copied, setCopied] = useState(false);
-
   if (!isOpen) return null;
 
   const upperBranch = (branchCode || 'CS').toUpperCase();
@@ -52,60 +36,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     priceINR: 500,
   };
 
-  const ownedBranches = getUserPurchasedBranches(orders);
-
-  // Message template for Telegram (without Firebase UID)
-  const messageTemplate = `Hi, I want to buy the GATE ${upperBranch} Test Papers on GATE Matrix.
-
-📋 Package: ${productInfo.title} (365-Day All-Access Pass)
-💰 Price: ₹${productInfo.priceINR}
-👤 Student Name: ${user?.displayName || 'GATE Aspirant'}
-📧 Registered Email: ${user?.email || '[My Email Address]'}
-
-Please share the payment UPI / QR code so I can complete payment and activate my test series access. Thank you!`;
-
-  const encodedMessage = encodeURIComponent(messageTemplate);
-  const telegramPrefilledUrl = `https://t.me/+917746877268?text=${encodedMessage}`;
-  const whatsappUrl = `https://wa.me/917746877268?text=${encodedMessage}`;
-
-  const handleCopyTemplate = async () => {
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(messageTemplate);
-      } else {
-        const textArea = document.createElement('textarea');
-        textArea.value = messageTemplate;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-      }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 4000);
-    } catch (err) {
-      console.error('Failed to copy template:', err);
-    }
-  };
-
-  const handleOpenTelegram = () => {
-    window.open(telegramPrefilledUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleCopyAndOpen = async () => {
-    await handleCopyTemplate();
-    window.open(telegramPrefilledUrl, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleOpenWhatsApp = async () => {
-    await handleCopyTemplate();
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-  };
-
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative overflow-hidden text-slate-100 max-h-[90vh] overflow-y-auto">
-        {/* Background glow */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#229ED9]/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative overflow-hidden text-slate-100 max-h-[90vh] overflow-y-auto">
+        {/* Ambient background glow */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
 
         <button
           onClick={onClose}
@@ -115,154 +50,69 @@ Please share the payment UPI / QR code so I can complete payment and activate my
           <X className="w-5 h-5" />
         </button>
 
-        <div className="space-y-5">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#229ED9]/20 border border-[#229ED9]/40 text-[#38bdf8] rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 fill-current text-[#229ED9]" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.37.75-.56 2.94-1.28 4.91-2.12 5.9-2.53 2.81-1.17 3.39-1.37 3.77-1.38.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .39z" />
-              </svg>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="cyan" className="font-mono text-xs">
-                  {upperBranch} BRANCH TEST SERIES
-                </Badge>
-                <Badge variant="emerald" className="text-xs">
-                  DIRECT ENROLLMENT
-                </Badge>
-              </div>
-              <h3 className="text-xl font-extrabold text-white mt-1">
-                {productInfo.title}
-              </h3>
-            </div>
+        <div className="space-y-5 text-center">
+          {/* Lock / Access Icon */}
+          <div className="w-16 h-16 bg-amber-500/15 border border-amber-500/30 text-amber-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+            <Lock className="w-8 h-8" />
           </div>
 
-          {/* Pricing & Inclusions Card */}
-          <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-3">
-            <div className="flex justify-between items-baseline">
-              <span className="text-xs text-slate-400 uppercase font-mono tracking-wider">
-                Full Year Test Package
-              </span>
-              <span className="text-2xl font-black text-emerald-400">
-                ₹{productInfo.priceINR} <span className="text-xs font-normal text-slate-400">/ 365-Day Access</span>
-              </span>
-            </div>
-
-            <ul className="text-xs space-y-2 text-slate-300 font-medium border-t border-slate-800 pt-3">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Full access to 1,000+ {upperBranch} GATE Test Papers & Mock Series</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Real CBT Exam Simulator replicating official TCS iON format</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Detailed step-by-step KaTeX solutions & diagnostic performance</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* User Account Info Notice */}
-          {!user && (
-            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-xs text-amber-200">
-              <Info className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
-              <div>
-                <strong>Tip:</strong> Log in with Google first so your account email is automatically filled in your Telegram message for instant pass activation.
-              </div>
-            </div>
-          )}
-
-          {/* Message Template Section */}
+          {/* Heading */}
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                <MessageCircle className="w-4 h-4 text-[#229ED9]" />
-                Message Template to Send on Telegram:
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyTemplate}
-                className="text-xs font-bold text-[#38bdf8] hover:text-white flex items-center gap-1 transition"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400">Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Template</span>
-                  </>
-                )}
-              </button>
+            <div className="flex items-center justify-center gap-2">
+              <Badge variant="amber" className="font-mono text-xs">
+                ACCESS RESTRICTED
+              </Badge>
+              <Badge variant="cyan" className="font-mono text-xs">
+                {upperBranch} BRANCH
+              </Badge>
             </div>
-
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 whitespace-pre-wrap leading-relaxed select-all relative group">
-              {messageTemplate}
-            </div>
-            <p className="text-[11px] text-slate-400">
-              Copy this message and send it to our Telegram chat to receive payment instructions & immediate pass activation.
+            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              You Don&apos;t Have Access
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm mx-auto">
+              You don&apos;t have any access to attempt this test series paper. This content requires an authorized <strong className="text-amber-300 font-bold">{upperBranch} Branch Pass</strong> or institutional enrollment.
             </p>
           </div>
 
-          {/* Action Buttons */}
+          {/* Access Status Summary Card */}
+          <div className="p-4 bg-slate-950/70 rounded-xl border border-slate-800/90 text-left space-y-2.5 text-xs">
+            <div className="flex justify-between items-center text-slate-300">
+              <span className="text-slate-400">Target Series:</span>
+              <span className="font-bold text-white">{productInfo.title}</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-300">
+              <span className="text-slate-400">Access Status:</span>
+              <span className="inline-flex items-center gap-1 font-bold text-amber-400">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                Locked / Not Granted
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-slate-300 pt-1 border-t border-slate-800/80">
+              <span className="text-slate-400">Current Account:</span>
+              <span className="font-mono text-[11px] text-slate-200 truncate max-w-[180px]">
+                {user?.email || 'Guest (Not Signed In)'}
+              </span>
+            </div>
+          </div>
+
+          {/* Institutional / Admin notice */}
+          <div className="p-3 bg-slate-800/50 border border-slate-700/60 rounded-xl text-left text-xs text-slate-300 flex items-start gap-2.5">
+            <Info className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+            <p className="leading-relaxed">
+              If your college or coaching institute has enrolled you, please sign in with your registered account or contact your administrator to grant access to this test paper.
+            </p>
+          </div>
+
+          {/* Actions */}
           <div className="pt-2 space-y-2">
             <Button
               variant="primary"
               size="lg"
-              className="w-full font-black text-sm bg-[#229ED9] hover:bg-[#1d8bc0] text-white shadow-lg shadow-sky-950/40 flex items-center justify-center gap-2"
-              onClick={handleCopyAndOpen}
+              className="w-full font-bold text-sm bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white shadow-lg shadow-teal-950/40"
+              onClick={onClose}
             >
-              <Send className="w-4 h-4" />
-              <span>Copy Template & Message on Telegram</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+              Understood
             </Button>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="secondary"
-                size="md"
-                className="w-full text-xs font-bold text-emerald-400 hover:text-emerald-300 border-emerald-500/30 hover:border-emerald-500/50 bg-emerald-950/20"
-                onClick={handleOpenWhatsApp}
-              >
-                <MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-400" />
-                Message on WhatsApp
-              </Button>
-              <Button
-                variant="secondary"
-                size="md"
-                className="w-full text-xs font-bold"
-                onClick={handleCopyTemplate}
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
-                {copied ? 'Template Copied!' : 'Copy Template Only'}
-              </Button>
-            </div>
-
-            {copied && (
-              <div className="p-2.5 bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs text-emerald-300 animate-fade-in">
-                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Message template copied to clipboard! If Telegram does not auto-insert in your browser, press Paste (Ctrl+V).</span>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 px-1">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Support: <strong>+91 77468 77268</strong></span>
-              </div>
-              <button
-                type="button"
-                onClick={() => window.open(TELEGRAM_WEB_URL, '_blank', 'noopener,noreferrer')}
-                className="text-slate-400 hover:text-white underline text-[10px]"
-              >
-                Open Telegram Web Directly
-              </button>
-            </div>
           </div>
         </div>
       </div>

@@ -286,7 +286,7 @@ export default function PracticePage() {
               onClick={() => setCheckoutBranch(selectedBranch)}
               leftIcon={<Lock className="w-4 h-4" />}
             >
-              Unlock {selectedBranch} Pass (₹1,499)
+              Check {selectedBranch} Access
             </Button>
           </div>
         )}
@@ -497,7 +497,7 @@ export default function PracticePage() {
                             onClick={() => setCheckoutBranch(paper.branch || selectedBranch)}
                             leftIcon={<Lock className="w-3.5 h-3.5" />}
                           >
-                            Unlock Pass
+                            Check Access
                           </Button>
                         </>
                       )}

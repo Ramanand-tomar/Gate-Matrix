@@ -125,11 +125,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } catch (e) {}
           }
 
+          const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'admin@gatematrix.com')
+            .split(',')
+            .map((e) => e.trim().toLowerCase());
+
           let userRole: UserRole = (existingData.role as UserRole) || 'LEARNER';
-          if (
-            currentUser.email &&
-            (currentUser.email === 'ramanandtomar1234@gmail.com' || currentUser.email === 'admin@gatematrix.com')
-          ) {
+          if (currentUser.email && adminEmails.includes(currentUser.email.toLowerCase())) {
             userRole = 'ADMIN';
           }
 
@@ -263,7 +264,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           email: u.email || existing.email || null,
           displayName: u.displayName || existing.displayName || (u.email ? u.email.split('@')[0] : 'Learner'),
           photoURL: u.photoURL || existing.photoURL || null,
-          role: existing.role || (u.email === 'ramanandtomar1234@gmail.com' ? 'ADMIN' : 'LEARNER'),
+          role:
+            existing.role ||
+            (u.email &&
+            (process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'admin@gatematrix.com')
+              .split(',')
+              .map((e) => e.trim().toLowerCase())
+              .includes(u.email.toLowerCase())
+              ? 'ADMIN'
+              : 'LEARNER'),
           activeSessionId: newSessionId,
           lastLoginAt: new Date().toISOString(),
           createdAt: existing.createdAt || new Date().toISOString(),

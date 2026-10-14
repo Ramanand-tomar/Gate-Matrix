@@ -62,7 +62,7 @@ Comprehensive question banks and full-length test series across **6 major GATE s
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/Ramanand-tomar/Gate-Matrix.git
+   git clone https://github.com/<your-username>/Gate-Matrix.git
    cd Gate-Matrix
    ```
 

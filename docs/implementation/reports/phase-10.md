@@ -5,7 +5,7 @@
 **UI & Typecheck**: `npm run typecheck && npm run test:unit`  
 
 ## Implemented Tasks
-- **P10-T01**: Built `src/app/admin/page.tsx` admin panel matching [ui-preview.html](file:///c:/Users/raman/OneDrive/Desktop/Gate-App/ui-preview.html).
+- **P10-T01**: Built `src/app/admin/page.tsx` admin panel matching `ui-preview.html`.
 - **P10-T06**: Implemented new series release preview modal calculating entitlement access impact (Included for active Branch Pass holders, priced bundle for non-members).
 
 ## Verification Gate Summary

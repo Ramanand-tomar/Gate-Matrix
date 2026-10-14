@@ -511,7 +511,7 @@ function CatalogContent() {
               size="lg"
               onClick={() => handleBuyBranchPass(selectedBranch)}
             >
-              Get One-Time Pass →
+              Check Access Requirements →
             </Button>
           </div>
         </div>
@@ -689,7 +689,7 @@ function CatalogContent() {
                         onClick={() => handleBuyBranchPass(selectedBranch)}
                         leftIcon={<Lock className="w-3.5 h-3.5" />}
                       >
-                        Unlock Test Series (₹500)
+                        Check Access
                       </Button>
                     </div>
                   )}
