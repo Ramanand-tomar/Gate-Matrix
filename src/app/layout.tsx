@@ -9,7 +9,7 @@ import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "GATE 2027 Test Series & Performance Analytics — GATE Matrix",
-  description: "Master GATE Exam for Computer Science (CS), Data Science & AI (DA), Electrical (EE), Electronics (EC), Mechanical (ME), and Civil (CE). Practice CBT pattern mocks, topic accuracy and in-depth performance analytics.",
+  description: "Master GATE Exam for Computer Science (CS), Data Science & AI (DA), Electrical (EE), Electronics (EC), Mechanical (ME), and Civil (CE). Practice CBT pattern mocks, topic accuracy analysis, and performance tracking.",
   keywords: [
     "GATE 2027 Test Series",
     "GATE 2028 Preparation",
@@ -63,6 +63,7 @@ export default function RootLayout({
           name="google-site-verification"
           content="HqTnZ6ehvxal5M6LFVjMmtvbieqpWy1OxKjp_I6nIrY"
         />
+        <Script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6695476160016882" strategy="afterInteractive" async crossOrigin="anonymous" />
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
         <script
           dangerouslySetInnerHTML={{
