@@ -181,17 +181,24 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({
-      success: true,
-      paper: {
-        paper_id: paper.paper_id || paperId,
-        title: paper.title || paperId.replace(/_/g, ' '),
-        branch: normalizeBranchCode(paper.branch || 'CS'),
-        total_questions: questions.length,
-        questions,
+    return NextResponse.json(
+      {
+        success: true,
+        paper: {
+          paper_id: paper.paper_id || paperId,
+          title: paper.title || paperId.replace(/_/g, ' '),
+          branch: normalizeBranchCode(paper.branch || 'CS'),
+          total_questions: questions.length,
+          questions,
+        },
+        source: 'firestore_db',
       },
-      source: 'firestore_db',
-    });
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

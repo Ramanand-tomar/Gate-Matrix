@@ -18,16 +18,23 @@ export async function GET(request: Request) {
     const pageSize = pageSizeParam ? parseInt(pageSizeParam, 10) : undefined;
 
     const result = await getPapers(branch, limit, page, pageSize, institute);
-    return NextResponse.json({
-      success: true,
-      total: result.total,
-      page: result.page,
-      pageSize: result.pageSize,
-      totalPages: result.totalPages,
-      count: result.papers.length,
-      papers: result.papers,
-      source: 'firestore_db',
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        total: result.total,
+        page: result.page,
+        pageSize: result.pageSize,
+        totalPages: result.totalPages,
+        count: result.papers.length,
+        papers: result.papers,
+        source: 'firestore_db',
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error fetching papers:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
