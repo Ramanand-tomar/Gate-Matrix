@@ -32,6 +32,7 @@ import {
 import { canUserAccessPaper, getUserPurchasedBranches, normalizeBranchCode } from '@/lib/commerce/entitlements';
 import { CheckoutModal } from '@/components/commerce/CheckoutModal';
 import AdBanner from '@/components/ads/AdBanner';
+import { RealExamTerminal } from '@/components/exam/RealExamTerminal';
 
 interface QuestionItem {
   qnum: number;
@@ -1025,231 +1026,26 @@ function ExamEngineContent() {
       )}
 
       {/* ----------------------------------------------------
-          3. ACTIVE CBT EXAMINATION UI (LIVE TEST)
+          3. AUTHENTIC TCS iON REAL EXAM HALL TERMINAL
          ---------------------------------------------------- */}
       {phase === 'EXAM' && (
-        <div className="space-y-6 animate-fadeIn">
-          {/* Top Exam Toolbar / Header */}
-          <div className="bg-[#14213d] text-white rounded-2xl px-6 py-4 flex flex-wrap justify-between items-center gap-4 shadow-lg border border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#0f766e] rounded-xl flex items-center justify-center font-black text-lg text-white">
-                G
-              </div>
-              <div>
-                <h1 className="font-extrabold text-lg leading-snug">{paperTitle}</h1>
-                <span className="text-xs text-gray-300">Candidate: <strong className="text-[#8be0ce]">{user?.displayName || user?.email || 'GATE Aspirant'}</strong></span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Scientific Calculator Popup Trigger */}
-              <button
-                onClick={() => setVirtualCalcOpen(!virtualCalcOpen)}
-                className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all border border-white/15"
-              >
-                <Calculator className="w-4 h-4 text-[#8be0ce]" />
-                <span>Scientific Calculator</span>
-              </button>
-
-              {/* Countdown Timer Display Box */}
-              <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-white/15 flex items-center gap-2 text-amber-400 font-mono font-black text-xl">
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span>{formatTimer(secondsLeft)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Main Question & Answer Selection Area */}
-            <div className="lg:col-span-8">
-              <Card padding="lg" className="h-full flex flex-col justify-between border-[#dce3ec] dark:border-slate-800 shadow-sm bg-white dark:bg-slate-900">
-                <div>
-                  {/* Question Header Status */}
-                  <div className="flex justify-between items-center pb-4 border-b border-[#dce3ec] dark:border-slate-800 mb-6">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="navy" className="text-xs px-3 py-1 font-extrabold">Question {currentIdx + 1}</Badge>
-                      <Badge variant="emerald" className="text-xs px-2.5 py-1">{currentQ.qtype}</Badge>
-                    </div>
-                    <span className="text-xs font-extrabold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                      Marks: <span className="text-emerald-700 dark:text-emerald-400">+{currentQ.marksPos}.00</span> | Penalty: <span className="text-rose-600 dark:text-rose-400">{currentQ.marksNeg}</span>
-                    </span>
-                  </div>
-
-                  {/* Question Content Body with KaTeX & Inline Image Support */}
-                  <div className="text-base text-[#14213d] dark:text-slate-100 mb-8 leading-relaxed font-normal bg-slate-50/70 dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200/60 dark:border-slate-800">
-                    <MathRenderer content={currentQ.bodyHtml} stripSolutions={true} />
-                  </div>
-
-                  {/* Answer Inputs (MCQ / MSQ / NAT) */}
-                  {currentQ.qtype === 'NAT' || !currentQ.options ? (
-                    <div className="mb-8 p-5 bg-emerald-50/30 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/40">
-                      <label className="block text-xs text-[#14213d] dark:text-slate-200 mb-2 font-bold uppercase tracking-wider">
-                        Enter Numerical Response (Use keyboard or on-screen calculator):
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={natAnswers[currentIdx] || ''}
-                        onChange={(e) => handleNatChange(e.target.value)}
-                        placeholder="e.g. 20.5"
-                        className="border border-[#dce3ec] dark:border-slate-700 rounded-xl px-4 py-3 text-lg font-bold w-64 focus:outline-none focus:border-[#0f766e] bg-white dark:bg-slate-800 text-[#14213d] dark:text-white shadow-2xs font-mono"
-                      />
-                    </div>
-                  ) : (
-                    <div className="space-y-3 mb-8">
-                      {currentQ.options.map((optHtml, optIdx) => {
-                        const isChecked =
-                          currentQ.qtype === 'MCQ'
-                            ? mcqAnswers[currentIdx] === optIdx
-                            : (msqAnswers[currentIdx] || []).includes(optIdx);
-
-                        return (
-                          <label
-                            key={optIdx}
-                            onClick={() =>
-                              currentQ.qtype === 'MCQ' ? handleMcqSelect(optIdx) : handleMsqToggle(optIdx)
-                            }
-                            className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                              isChecked
-                                ? 'border-[#0f766e] dark:border-[#2dd4bf] bg-[#e7f4f0] dark:bg-teal-950/40 shadow-xs ring-1 ring-[#0f766e] dark:ring-[#2dd4bf]'
-                                : 'border-[#dce3ec] dark:border-slate-800 bg-white dark:bg-slate-900/90 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
-                            }`}
-                          >
-                            <input
-                              type={currentQ.qtype === 'MCQ' ? 'radio' : 'checkbox'}
-                              checked={isChecked}
-                              onChange={() => {}}
-                              className="accent-[#0f766e] w-4 h-4 mt-1"
-                            />
-                            <div className="flex items-center gap-2 font-bold text-xs text-[#0f766e] dark:text-[#2dd4bf] uppercase tracking-wider min-w-[70px] mt-0.5">
-                              Option {String.fromCharCode(65 + optIdx)}:
-                            </div>
-                            <div className="text-sm text-[#14213d] dark:text-slate-200 flex-1">
-                              <MathRenderer content={cleanOptionContent(optHtml)} />
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Bottom Control Bar */}
-                <div className="pt-6 border-t border-[#dce3ec] dark:border-slate-800 flex flex-wrap justify-between items-center gap-3">
-                  <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" onClick={clearResponse}>
-                      Clear Response
-                    </Button>
-                    <Button
-                      variant={flagged[currentIdx] ? 'purple' : ('secondary' as any)}
-                      size="sm"
-                      onClick={toggleFlag}
-                      leftIcon={<Star className="w-3.5 h-3.5" />}
-                    >
-                      {flagged[currentIdx] ? 'Marked for Review' : 'Mark for Review'}
-                    </Button>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
-                      disabled={currentIdx === 0}
-                      leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}
-                    >
-                      Prev
-                    </Button>
-                    <Button
-                      variant="emerald"
-                      size="sm"
-                      onClick={() => setCurrentIdx((prev) => Math.min(questions.length - 1, prev + 1))}
-                      rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
-                    >
-                      {currentIdx === questions.length - 1 ? 'First Question' : 'Save & Next'}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            {/* Sidebar Question Palette */}
-            <div className="lg:col-span-4">
-              <Card padding="md" className="h-full flex flex-col justify-between border-[#dce3ec] dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
-                <div>
-                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#dce3ec] dark:border-slate-800">
-                    <span className="font-black text-sm text-[#14213d] dark:text-white">Question Palette</span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-bold">{questions.length} Total</span>
-                  </div>
-
-                  {/* Question Grid Buttons */}
-                  <div className="grid grid-cols-5 gap-2 mb-6 max-h-72 overflow-y-auto p-1">
-                    {questions.map((q, idx) => {
-                      const isCur = idx === currentIdx;
-                      const isAns = isAnswered(idx);
-                      const isFlg = flagged[idx];
-
-                      let btnBg = 'bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700';
-                      if (isFlg && isAns) btnBg = 'bg-purple-700 text-white border-purple-700 ring-2 ring-emerald-400';
-                      else if (isFlg) btnBg = 'bg-purple-600 text-white border-purple-600';
-                      else if (isAns) btnBg = 'bg-[#0f766e] dark:bg-[#0d9488] text-white border-[#0f766e] dark:border-[#0d9488]';
-                      else btnBg = 'bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700';
-
-                      return (
-                        <button
-                          key={idx}
-                          onClick={() => setCurrentIdx(idx)}
-                          className={`h-9 rounded-xl text-xs font-black border transition-all ${btnBg} ${
-                            isCur ? 'ring-2 ring-offset-2 ring-[#0f766e] dark:ring-[#2dd4bf] dark:ring-offset-slate-900 scale-105' : ''
-                          }`}
-                        >
-                          {idx + 1}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Palette Legends */}
-                  <div className="text-[11px] text-[#526079] dark:text-slate-400 space-y-2 mb-6 border-t border-slate-100 dark:border-slate-800 pt-4 font-medium">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded bg-[#0f766e]"></span>
-                        <span>Answered</span>
-                      </div>
-                      <span className="font-bold text-[#14213d] dark:text-white">{attemptedCountTotal}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded bg-purple-600"></span>
-                        <span>Marked for Review</span>
-                      </div>
-                      <span className="font-bold text-[#14213d] dark:text-white">{flaggedCountTotal}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded bg-amber-500"></span>
-                        <span>Not Answered</span>
-                      </div>
-                      <span className="font-bold text-[#14213d] dark:text-white">{questions.length - attemptedCountTotal}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    className="w-full font-black text-sm"
-                    onClick={() => setConfirmModalOpen(true)}
-                    rightIcon={<ArrowRight className="w-4 h-4" />}
-                  >
-                    Submit Exam & View Scorecard
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          </div>
-        </div>
+        <RealExamTerminal
+          paperTitle={paperTitle}
+          paperBranch={paperBranch}
+          questions={questions}
+          user={user}
+          secondsLeft={secondsLeft}
+          mcqAnswers={mcqAnswers}
+          msqAnswers={msqAnswers}
+          natAnswers={natAnswers}
+          flagged={flagged}
+          onSelectMcq={handleMcqSelect}
+          onToggleMsq={handleMsqToggle}
+          onChangeNat={handleNatChange}
+          onClearResponse={clearResponse}
+          onToggleFlag={toggleFlag}
+          onSubmitExam={executeSubmission}
+        />
       )}
 
       {/* ----------------------------------------------------
