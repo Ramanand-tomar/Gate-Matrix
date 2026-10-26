@@ -63,7 +63,13 @@ export default function RootLayout({
           name="google-site-verification"
           content="HqTnZ6ehvxal5M6LFVjMmtvbieqpWy1OxKjp_I6nIrY"
         />
-        <Script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6695476160016882" strategy="afterInteractive" async crossOrigin="anonymous" />
+        <meta name="google-adsense-account" content="ca-pub-6695476160016882" />
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6695476160016882"
+          strategy="afterInteractive"
+          async
+          crossOrigin="anonymous"
+        />
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
         <script
           dangerouslySetInnerHTML={{
