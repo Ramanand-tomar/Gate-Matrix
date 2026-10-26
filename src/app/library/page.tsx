@@ -23,10 +23,8 @@ import {
   Sparkles,
   Trash2,
   ArrowRight,
-  Lock,
 } from 'lucide-react';
-import { hasUserBranchAccess } from '@/lib/commerce/entitlements';
-import { CheckoutModal } from '@/components/commerce/CheckoutModal';
+import AdBanner from '@/components/ads/AdBanner';
 import { getSavedTestIds, isTestSaved, toggleSaveTest } from '@/lib/savedTests';
 import { fastFetchJson } from '@/lib/fastFetch';
 
@@ -68,7 +66,6 @@ export default function LibraryPage() {
   const [attempts, setAttempts] = useState<AttemptRecord[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [savedTestIds, setSavedTestIds] = useState<string[]>([]);
-  const [checkoutBranch, setCheckoutBranch] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
@@ -337,13 +334,13 @@ export default function LibraryPage() {
         )}
 
         {/* ----------------------------------------------------
-            TAB 2: PURCHASED & BRANCH TEST SERIES PASSES
+            TAB 2: UNLOCKED BRANCH TEST SERIES PASSES
            ---------------------------------------------------- */}
         {activeTab === 'PASSES' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <p className="text-xs text-[#526079] dark:text-slate-400">
-                Manage your GATE Branch Test Series Passes. Unlocking a pass grants 365-day access to all 1,000+ mock tests & practice questions for that branch.
+                All 6 GATE Branch Passes are 100% unlocked and free for every student. Enjoy unlimited 365-day access to 1,000+ mock tests & CBT practice questions.
               </p>
             </div>
 
@@ -355,68 +352,43 @@ export default function LibraryPage() {
                 { code: 'EC', name: 'Electronics & Communication' },
                 { code: 'ME', name: 'Mechanical Engineering' },
                 { code: 'CE', name: 'Civil Engineering' },
-              ].map((branch) => {
-                const isOwned = hasUserBranchAccess(effectiveOrders, branch.code, userProfile);
-                return (
-                  <Card
-                    key={branch.code}
-                    className={`flex flex-col justify-between p-6 transition-all ${
-                      isOwned
-                        ? 'bg-gradient-to-br from-[#14213d] to-[#0f172a] text-white border-emerald-500/40 shadow-lg'
-                        : 'bg-white dark:bg-slate-900 border-[#dce3ec] dark:border-slate-800 text-[#14213d] dark:text-slate-100'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <Badge variant={isOwned ? 'emerald' : 'cyan'} className="font-mono text-xs">
-                          GATE {branch.code}
-                        </Badge>
-                        {isOwned ? (
-                          <Badge variant="emerald" size="sm">
-                            <CheckCircle2 className="w-3 h-3 inline mr-1" />
-                            ACTIVE PASS
-                          </Badge>
-                        ) : (
-                          <Badge variant="amber" size="sm">
-                            <Lock className="w-3 h-3 inline mr-1" />
-                            LOCKED
-                          </Badge>
-                        )}
-                      </div>
-
-                      <h3 className="text-base font-black mb-1">{branch.name}</h3>
-                      <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-                        {isOwned
-                          ? 'Full 365-Day Access Unlocked for All Mock & Topic Tests.'
-                          : 'Unlock 1,000+ test papers, CBT simulator & KaTeX solutions.'}
-                      </p>
+              ].map((branch) => (
+                <Card
+                  key={branch.code}
+                  className="flex flex-col justify-between p-6 transition-all bg-gradient-to-br from-[#14213d] to-[#0f172a] text-white border-emerald-500/40 shadow-lg"
+                >
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <Badge variant="emerald" className="font-mono text-xs">
+                        GATE {branch.code}
+                      </Badge>
+                      <Badge variant="emerald" size="sm">
+                        <CheckCircle2 className="w-3 h-3 inline mr-1" />
+                        100% FREE PASS
+                      </Badge>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-700/50 flex justify-between items-center">
-                      <span className="text-sm font-black text-emerald-400">
-                        {isOwned ? 'ACTIVE' : '₹500'}
-                      </span>
-                      {isOwned ? (
-                        <Link href={`/catalog?branch=${branch.code}`}>
-                          <Button variant="emerald" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                            Browse Tests
-                          </Button>
-                        </Link>
-                      ) : (
-                        <Button
-                          variant="emerald"
-                          size="sm"
-                          onClick={() => setCheckoutBranch(branch.code)}
-                          leftIcon={<Lock className="w-3.5 h-3.5" />}
-                        >
-                          Check Access
-                        </Button>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
+                    <h3 className="text-base font-black mb-1">{branch.name}</h3>
+                    <p className="text-xs text-slate-300 mb-4 leading-relaxed">
+                      Full 365-Day Access Unlocked for All Mock & Topic Tests. 100% Free for all students.
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-700/50 flex justify-between items-center">
+                    <span className="text-sm font-black text-emerald-400">
+                      FREE
+                    </span>
+                    <Link href={`/catalog?branch=${branch.code}`}>
+                      <Button variant="emerald" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                        Browse Tests
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              ))}
             </div>
+
+            <AdBanner format="horizontal" slot="1001001004" className="mt-8" />
           </div>
         )}
 
@@ -543,20 +515,6 @@ export default function LibraryPage() {
           </div>
         )}
       </main>
-
-      {checkoutBranch && (
-        <CheckoutModal
-          isOpen={Boolean(checkoutBranch)}
-          onClose={() => setCheckoutBranch(null)}
-          branchCode={checkoutBranch}
-          user={user}
-          orders={effectiveOrders}
-          onSuccess={(newOrd) => {
-            setOrders((prev) => [...prev, newOrd]);
-            setCheckoutBranch(null);
-          }}
-        />
-      )}
 
       <Footer />
     </div>

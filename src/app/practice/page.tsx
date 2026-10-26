@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { isPaperFree, hasUserBranchAccess } from '@/lib/commerce/entitlements';
-import { CheckoutModal } from '@/components/commerce/CheckoutModal';
+import AdBanner from '@/components/ads/AdBanner';
 import {
   Sparkles,
   BookOpen,
@@ -87,7 +87,6 @@ export default function PracticePage() {
   const [papers, setPapers] = useState<PaperDoc[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [attempts, setAttempts] = useState<AttemptRecord[]>([]);
-  const [checkoutBranch, setCheckoutBranch] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -263,33 +262,8 @@ export default function PracticePage() {
           ))}
         </div>
 
-        {/* Branch Lock Alert Banner */}
-        {!userHasAccessToBranch && (
-          <div className="p-5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 text-amber-900 dark:text-amber-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-500/40 shrink-0">
-                <Lock className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                  GATE {selectedBranch} Practice Pass Required
-                </h3>
-                <p className="text-xs text-slate-700 dark:text-slate-300 mt-0.5">
-                  You are viewing practice papers for <strong className="text-amber-700 dark:text-amber-300">{selectedBranch}</strong>. Unlock the {selectedBranch} Branch Pass for ₹1,499 to access all questions & detailed solutions.
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="emerald"
-              size="md"
-              className="shrink-0 font-extrabold shadow-md shadow-emerald-950/30"
-              onClick={() => setCheckoutBranch(selectedBranch)}
-              leftIcon={<Lock className="w-4 h-4" />}
-            >
-              Check {selectedBranch} Access
-            </Button>
-          </div>
-        )}
+        {/* Google AdSense Responsive Leaderboard */}
+        <AdBanner format="horizontal" slot="1001001003" label="Practice Sponsor Banner" className="mb-6" />
 
         {/* Test Format Category Selector */}
         <div className="mb-8 bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-3 rounded-2xl flex flex-wrap gap-2 items-center shadow-xs">
@@ -415,8 +389,6 @@ export default function PracticePage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {paginatedPapers.map((paper, idx) => {
-                const free = isPaperFree(paper);
-                const canAttempt = free || userHasAccessToBranch;
                 const pastAttempt = attemptMap[paper.paper_id];
                 const paperCat = getPaperCategory(paper.title, idx);
                 const catLabel =
@@ -427,82 +399,60 @@ export default function PracticePage() {
                     : 'Topic & Subject Test';
 
                 return (
-                  <Card key={paper.id} hoverEffect className="flex flex-col justify-between border-[#dce3ec] dark:border-slate-800">
-                    <div>
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <Badge variant="emerald">{paper.branch || selectedBranch}</Badge>
-                          <Badge variant="navy" size="sm">{paper.institute || 'Coaching Test'}</Badge>
-                          <Badge variant="slate" size="sm">{catLabel}</Badge>
+                  <React.Fragment key={paper.id}>
+                    <Card hoverEffect className="flex flex-col justify-between border-[#dce3ec] dark:border-slate-800">
+                      <div>
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <Badge variant="emerald">{paper.branch || selectedBranch}</Badge>
+                            <Badge variant="navy" size="sm">{paper.institute || 'Coaching Test'}</Badge>
+                            <Badge variant="slate" size="sm">{catLabel}</Badge>
+                          </div>
+                          {pastAttempt ? (
+                            <Badge variant="purple" size="sm">
+                              <CheckCircle2 className="w-3 h-3 inline mr-1" />
+                              Completed ({pastAttempt.score} / {pastAttempt.max_score})
+                            </Badge>
+                          ) : (
+                            <Badge variant="cyan" size="sm">
+                              100% Free Practice
+                            </Badge>
+                          )}
                         </div>
-                        {pastAttempt ? (
-                          <Badge variant="purple" size="sm">
-                            <CheckCircle2 className="w-3 h-3 inline mr-1" />
-                            Completed ({pastAttempt.score} / {pastAttempt.max_score})
-                          </Badge>
-                        ) : free ? (
-                          <Badge variant="cyan" size="sm">
-                            Free Practice
-                          </Badge>
-                        ) : userHasAccessToBranch ? (
-                          <Badge variant="emerald" size="sm">
-                            Access Granted
-                          </Badge>
-                        ) : (
-                          <Badge variant="amber" size="sm">
-                            <Lock className="w-3 h-3 inline mr-1" />
-                            Pass Required
-                          </Badge>
-                        )}
+                        <h3 className="text-base font-bold text-[#14213d] dark:text-white mb-2 line-clamp-2" title={paper.title}>
+                          {paper.title}
+                        </h3>
+                        <div className="flex items-center gap-3 text-xs text-[#526079] dark:text-slate-400 mb-6 font-medium">
+                          <span className="font-bold text-[#0f766e] dark:text-[#2dd4bf]">{paper.total_questions} Questions</span>
+                          <span>•</span>
+                          <span>MCQ · MSQ · NAT</span>
+                        </div>
                       </div>
-                      <h3 className="text-base font-bold text-[#14213d] dark:text-white mb-2 line-clamp-2" title={paper.title}>
-                        {paper.title}
-                      </h3>
-                      <div className="flex items-center gap-3 text-xs text-[#526079] dark:text-slate-400 mb-6 font-medium">
-                        <span className="font-bold text-[#0f766e] dark:text-[#2dd4bf]">{paper.total_questions} Questions</span>
-                        <span>•</span>
-                        <span>MCQ · MSQ · NAT</span>
-                      </div>
-                    </div>
 
-                    <div className="pt-4 border-t border-[#dce3ec] dark:border-slate-800 flex justify-between items-center">
-                      {canAttempt ? (
-                        <>
-                          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                            <CheckCircle2 className="w-4 h-4" />
-                            {pastAttempt
-                              ? `Scored: ${pastAttempt.score} / ${pastAttempt.max_score}`
-                              : free
-                              ? 'Free Practice'
-                              : 'Unlocked with Pass'}
-                          </span>
-                          <Link href={`/exam?paperId=${paper.paper_id}`}>
-                            <Button
-                              variant={pastAttempt ? 'secondary' : 'emerald'}
-                              size="sm"
-                              rightIcon={pastAttempt ? <RotateCcw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                            >
-                              {pastAttempt ? 'Re-attempt' : 'Start Practice'}
-                            </Button>
-                          </Link>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-xs font-bold text-amber-500 flex items-center gap-1">
-                            <Lock className="w-3.5 h-3.5" /> Pass Required
-                          </span>
+                      <div className="pt-4 border-t border-[#dce3ec] dark:border-slate-800 flex justify-between items-center">
+                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-4 h-4" />
+                          {pastAttempt
+                            ? `Scored: ${pastAttempt.score} / ${pastAttempt.max_score}`
+                            : 'Free Practice'}
+                        </span>
+                        <Link href={`/exam?paperId=${paper.paper_id}`}>
                           <Button
-                            variant="primary"
+                            variant={pastAttempt ? 'secondary' : 'emerald'}
                             size="sm"
-                            onClick={() => setCheckoutBranch(paper.branch || selectedBranch)}
-                            leftIcon={<Lock className="w-3.5 h-3.5" />}
+                            rightIcon={pastAttempt ? <RotateCcw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                           >
-                            Check Access
+                            {pastAttempt ? 'Re-attempt' : 'Start Practice'}
                           </Button>
-                        </>
-                      )}
-                    </div>
-                  </Card>
+                        </Link>
+                      </div>
+                    </Card>
+
+                    {/* Google AdSense In-Feed Ad Unit every 6 cards */}
+                    {(idx + 1) % 6 === 0 && (
+                      <AdBanner format="in-feed" slot={`practice-feed-${idx}`} />
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -565,20 +515,6 @@ export default function PracticePage() {
           </>
         )}
       </main>
-
-      {checkoutBranch && (
-        <CheckoutModal
-          isOpen={Boolean(checkoutBranch)}
-          onClose={() => setCheckoutBranch(null)}
-          branchCode={checkoutBranch}
-          user={user}
-          orders={orders}
-          onSuccess={(newOrd) => {
-            setOrders((prev) => [...prev, newOrd]);
-            setCheckoutBranch(null);
-          }}
-        />
-      )}
 
       <Footer />
     </div>

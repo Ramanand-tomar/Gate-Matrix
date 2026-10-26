@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { MathRenderer } from '@/components/MathRenderer';
+import AdBanner from '@/components/ads/AdBanner';
 import {
   GraduationCap,
   BookOpen,
@@ -209,8 +210,8 @@ export default function Home() {
       a: 'GATE Matrix provides 100% authentic Computer Based Test (CBT) interface simulation matching official IIT standards (TCS iON pattern). It features real-time section timers, scientific NAT keypads, MSQ multi-select scoring rules, and deep diagnostic accuracy heatmaps.',
     },
     {
-      q: 'How does the GATE Branch Pass work?',
-      a: 'The Branch Pass grants 365-day unlimited access to all published and upcoming full-length mocks, subject tests, and topic drills for your chosen stream (CS, DA, EE, EC, ME, or CE).',
+      q: 'Are all 1,000+ test papers really 100% free?',
+      a: 'Yes! All full-length mocks, coaching institute series (GO Classes, GATE Wallah, Made Easy, Ace Academy), and subject drills are completely free for all students. Our platform is sustainably funded through Google AdSense advertisements.',
     },
     {
       q: 'Are detailed solutions provided for Numerical Answer Type (NAT) questions?',
@@ -770,6 +771,11 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Homepage Mid Ad Unit */}
+      <div className="max-w-5xl mx-auto px-4 my-8">
+        <AdBanner format="horizontal" slot="1001001010" />
+      </div>
+
       {/* 8. FREQUENTLY ASKED QUESTIONS */}
       <section className="py-20 px-4 sm:px-6 max-w-4xl mx-auto w-full space-y-8">
         <div className="text-center space-y-2">
@@ -814,18 +820,18 @@ export default function Home() {
       <section className="bg-gradient-to-r from-[#0a1128] via-[#14213d] to-[#0f766e] text-white py-16 px-4 sm:px-6 text-center relative overflow-hidden">
         <div className="max-w-3xl mx-auto space-y-6 relative z-10">
           <Badge variant="emerald" className="uppercase tracking-widest font-extrabold text-[10px]">
-            GATE 2027 Preparation Pass
+            100% Free Practice Engine
           </Badge>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
             Ready to Elevate Your All India GATE Rank?
           </h2>
           <p className="text-gray-200 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
-            Join thousands of engineering aspirants practicing on official IIT CBT mock papers with step-by-step KaTeX mathematical solutions.
+            Join thousands of engineering aspirants practicing on 1,000+ official IIT CBT mock papers with step-by-step KaTeX mathematical solutions. 100% Free for everyone.
           </p>
           <div className="flex flex-wrap justify-center gap-4 pt-2">
             <Link href="/catalog">
               <Button variant="emerald" size="lg" className="shadow-xl font-black" rightIcon={<ArrowRight className="w-5 h-5" />}>
-                Get Started with Branch Pass
+                Explore All 1,000+ Free Tests →
               </Button>
             </Link>
           </div>

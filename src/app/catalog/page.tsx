@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { isPaperFree, hasUserBranchAccess } from '@/lib/commerce/entitlements';
-import { CheckoutModal } from '@/components/commerce/CheckoutModal';
+import AdBanner from '@/components/ads/AdBanner';
 import {
   BookOpen,
   Search,
@@ -109,15 +109,6 @@ function CatalogContent() {
     return () => window.removeEventListener('gate_saved_tests_changed', handleSavedChange);
   }, []);
 
-  const [checkoutModal, setCheckoutModal] = useState<{
-    open: boolean;
-    title: string;
-    price: number;
-    branch: string;
-  } | null>(null);
-  const [purchasing, setPurchasing] = useState(false);
-  const [purchaseSuccess, setPurchaseSuccess] = useState<any>(null);
-
   const branches = ['CS', 'DA', 'EE', 'EC', 'ME', 'CE'];
 
   useEffect(() => {
@@ -178,166 +169,6 @@ function CatalogContent() {
     attemptMap[att.paper_id] = att;
   });
 
-  const loadRazorpayScript = (): Promise<boolean> => {
-    return new Promise((resolve) => {
-      if (typeof window === 'undefined') return resolve(false);
-      if ((window as any).Razorpay) return resolve(true);
-
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const handleBuyBranchPass = (passBranch: string) => {
-    setCheckoutModal({
-      open: true,
-      title: `${passBranch} All-Access Branch Pass`,
-      price: 500,
-      branch: passBranch,
-    });
-    setPurchaseSuccess(null);
-  };
-
-  const executeCheckoutOrder = async () => {
-    if (!checkoutModal) return;
-    setPurchasing(true);
-    try {
-      const uid = user ? user.uid : 'aspirant_learner_101';
-      const productId = `${checkoutModal.branch.toLowerCase()}_pass`;
-
-      const createRes = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid,
-          product_id: productId,
-          product_title: checkoutModal.title,
-        }),
-      });
-
-      const createData = await createRes.json();
-      if (!createData.success || !createData.order) {
-        alert('Order creation error: ' + (createData.error || 'Failed to create order'));
-        setPurchasing(false);
-        return;
-      }
-
-      const pendingOrder = createData.order;
-      const razorpayKeyId = createData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
-
-      const isScriptLoaded = await loadRazorpayScript();
-
-      if (isScriptLoaded && typeof window !== 'undefined' && (window as any).Razorpay) {
-        const options: any = {
-          key: razorpayKeyId,
-          amount: pendingOrder.amount * 100,
-          currency: pendingOrder.currency || 'INR',
-          name: 'GATE Matrix',
-          description: checkoutModal.title,
-          order_id: pendingOrder.razorpay_order_id.startsWith('order_') ? pendingOrder.razorpay_order_id : undefined,
-          handler: async function (response: any) {
-            try {
-              const verifyRes = await fetch('/api/orders', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  order_id: pendingOrder.order_id,
-                  razorpay_order_id: response.razorpay_order_id || pendingOrder.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id || `pay_${Math.random().toString(36).substring(7)}`,
-                  razorpay_signature: response.razorpay_signature || '',
-                  status: 'GRANTED',
-                }),
-              });
-
-              const verifyData = await verifyRes.json();
-              if (verifyData.success) {
-                const grantedOrd: OrderRecord = {
-                  order_id: pendingOrder.order_id,
-                  product_id: productId,
-                  product_title: checkoutModal.title,
-                  status: 'GRANTED',
-                };
-                setOrders((prev) => [...prev, grantedOrd]);
-                try {
-                  const saved = localStorage.getItem('gate_user_orders');
-                  const existing = saved ? JSON.parse(saved) : [];
-                  localStorage.setItem('gate_user_orders', JSON.stringify([...existing, grantedOrd]));
-                } catch (e) {}
-                setPurchaseSuccess({ ...pendingOrder, status: 'GRANTED' });
-              } else {
-                alert('Payment verification issue: ' + (verifyData.error || 'Verification failed'));
-              }
-            } catch (err) {
-              alert('Payment verification request failed.');
-            } finally {
-              setPurchasing(false);
-            }
-          },
-          prefill: {
-            name: user?.displayName || 'GATE Aspirant',
-            email: user?.email || 'aspirant@gateprep.studio',
-            contact: '9999999999',
-          },
-          theme: {
-            color: '#0f766e',
-          },
-          modal: {
-            ondismiss: function () {
-              setPurchasing(false);
-            },
-          },
-        };
-
-        const rzp = new (window as any).Razorpay(options);
-        rzp.on('payment.failed', function (response: any) {
-          alert('Payment Failed: ' + (response.error?.description || 'Transaction cancelled'));
-          setPurchasing(false);
-        });
-
-        rzp.open();
-        return;
-      }
-
-      const verifyRes = await fetch('/api/orders', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_id: pendingOrder.order_id,
-          razorpay_order_id: pendingOrder.razorpay_order_id,
-          razorpay_payment_id: `pay_${Math.random().toString(36).substring(7)}`,
-          status: 'GRANTED',
-        }),
-      });
-
-      const verifyData = await verifyRes.json();
-      if (verifyData.success) {
-        const grantedOrd: OrderRecord = {
-          order_id: pendingOrder.order_id,
-          product_id: productId,
-          product_title: checkoutModal.title,
-          status: 'GRANTED',
-        };
-        setOrders((prev) => [...prev, grantedOrd]);
-        try {
-          const saved = localStorage.getItem('gate_user_orders');
-          const existing = saved ? JSON.parse(saved) : [];
-          localStorage.setItem('gate_user_orders', JSON.stringify([...existing, grantedOrd]));
-        } catch (e) {}
-        setPurchaseSuccess({ ...pendingOrder, status: 'GRANTED' });
-      } else {
-        alert('Payment verification issue: ' + verifyData.error);
-      }
-    } catch (err) {
-      console.error('Checkout error:', err);
-      alert('Checkout process encountered a connection issue.');
-    } finally {
-      setPurchasing(false);
-    }
-  };
-
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
 
@@ -379,12 +210,15 @@ function CatalogContent() {
           <span>GATE Test Series & Subject Practice</span>
         </div>
         <h1 className="text-3xl font-black text-[#14213d] dark:text-white tracking-tight">
-          Explore Test Series & Subject Wise Practice
+          Explore 1,079+ Free GATE Test Series & Practice Papers
         </h1>
-        <p className="text-xs text-[#526079] dark:text-slate-300 mt-1 max-w-2xl">
-          Get unlimited 365-day access to all test series in your stream with a single one-time Branch Pass. Free sample tests available for all candidates.
+        <p className="text-xs text-[#526079] dark:text-slate-300 mt-1 max-w-2xl leading-relaxed">
+          100% Free Open-Access GATE CBT mock tests, coaching test series & previous year papers across all major branches. Zero paywalls, fully sponsored by Google Ads.
         </p>
       </div>
+
+      {/* Top Responsive AdBanner */}
+      <AdBanner format="horizontal" slot="1001001002" label="Sponsored Banner" className="mb-6" />
 
       {/* Branch Selector Tabs & Search Bar */}
       <div className="bg-white dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 p-4 rounded-2xl mb-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
@@ -487,68 +321,39 @@ function CatalogContent() {
         </div>
       </div>
 
-      {/* ONE-TIME BRANCH PASS BANNER (Hides Payment UI if User Already Purchased) */}
-      {!userHasAccessToBranch ? (
-        <div className="bg-gradient-to-r from-[#14213d] via-[#14213d] to-[#0f172a] text-white p-8 rounded-3xl mb-10 flex flex-wrap justify-between items-center gap-6 shadow-xl border border-white/10">
-          <div>
-            <Badge variant="emerald" className="mb-3">
-              One-Time Payment · All-Access Pass
-            </Badge>
-            <h2 className="text-2xl font-black">
-              GATE {selectedBranch} Full Branch Pass
-            </h2>
-            <p className="text-xs text-gray-300 mt-2 max-w-xl leading-relaxed">
-              Pay once and get 365-day unlimited access to all full-length mocks, subject-wise tests, and future series updates for GATE {selectedBranch}. Zero per-test charges.
-            </p>
-          </div>
+      {/* 100% FREE ACCESS BANNER */}
+      <div className="relative overflow-hidden rounded-3xl mb-10 p-6 sm:p-7 border border-emerald-500/40 bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#0f172a] text-white shadow-2xl">
+        {/* Ambient background glow */}
+        <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <span className="text-3xl font-black text-white">₹500</span>
-              <span className="text-[10px] text-gray-300 block">365 Days Full Access</span>
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/30 border border-emerald-400/50 flex items-center justify-center shrink-0 shadow-inner">
+              <CheckCircle2 className="w-7 h-7 text-emerald-300" />
             </div>
-            <Button
-              variant="emerald"
-              size="lg"
-              onClick={() => handleBuyBranchPass(selectedBranch)}
-            >
-              Check Access Requirements →
-            </Button>
+            <div>
+              <div className="flex items-center gap-2.5 mb-1">
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm">
+                  GATE {selectedBranch} 100% Free Access 🎉
+                </h2>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-emerald-400/25 text-emerald-200 border border-emerald-400/40">
+                  All Tests Free
+                </span>
+              </div>
+              <p className="text-sm text-emerald-100 font-medium leading-relaxed max-w-2xl">
+                Full unrestricted access to every full-length mock, coaching institute series (GO Classes, GATE Wallah, Made Easy, Ace), and subject test in <span className="font-bold text-white underline decoration-emerald-400 underline-offset-2">GATE {selectedBranch}</span>. Zero subscription required!
+              </p>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="relative overflow-hidden rounded-3xl mb-10 p-6 sm:p-7 border border-emerald-500/40 bg-gradient-to-r from-[#064e3b] via-[#065f46] to-[#0f172a] text-white shadow-2xl">
-          {/* Ambient background glow */}
-          <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="relative z-10 flex flex-wrap items-center justify-between gap-5">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/30 border border-emerald-400/50 flex items-center justify-center shrink-0 shadow-inner">
-                <CheckCircle2 className="w-7 h-7 text-emerald-300" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2.5 mb-1">
-                  <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm">
-                    GATE {selectedBranch} Branch Pass Active 🎉
-                  </h2>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-emerald-400/25 text-emerald-200 border border-emerald-400/40">
-                    Active Pass
-                  </span>
-                </div>
-                <p className="text-sm text-emerald-100 font-medium leading-relaxed max-w-2xl">
-                  Congratulations! You have full 365-day all-access to every full-length mock, coaching institute series, and subject test in <span className="font-bold text-white underline decoration-emerald-400 underline-offset-2">GATE {selectedBranch}</span>. Zero further payments required.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="px-4 py-2.5 rounded-2xl bg-emerald-950/70 border border-emerald-400/60 text-emerald-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-2.5 shadow-lg">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-                Full Access Unlocked
-              </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="px-4 py-2.5 rounded-2xl bg-emerald-950/70 border border-emerald-400/60 text-emerald-300 font-extrabold text-xs uppercase tracking-wider flex items-center gap-2.5 shadow-lg">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+              100% Free For All
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Test Series Cards Grid */}
       {loading ? (
@@ -565,8 +370,6 @@ function CatalogContent() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {paginatedPapers.map((p, idx) => {
-              const free = isPaperFree(p);
-              const canAttempt = free || userHasAccessToBranch;
               const pastAttempt = attemptMap[p.paper_id];
               const paperCat = getPaperCategory(p.title, idx);
               const catLabel =
@@ -579,8 +382,8 @@ function CatalogContent() {
               const isSaved = savedTestIds.includes(p.paper_id);
 
               return (
-                <Card key={p.id} hoverEffect className="flex flex-col justify-between relative overflow-hidden group">
-                  <div className={!canAttempt ? 'filter blur-[2px] opacity-60 pointer-events-none select-none transition-all' : ''}>
+                <React.Fragment key={p.id}>
+                  <Card hoverEffect className="flex flex-col justify-between relative overflow-hidden group">
                     <div>
                       <div className="flex justify-between items-center mb-3">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -604,18 +407,9 @@ function CatalogContent() {
                             <CheckCircle2 className="w-3 h-3 inline mr-1" />
                             Completed ({pastAttempt.score} / {pastAttempt.max_score})
                           </Badge>
-                        ) : free ? (
-                          <Badge variant="cyan" size="sm">
-                            Free Test
-                          </Badge>
-                        ) : userHasAccessToBranch ? (
-                          <Badge variant="emerald" size="sm">
-                            Access Granted
-                          </Badge>
                         ) : (
-                          <Badge variant="amber" size="sm">
-                            <Lock className="w-3 h-3 inline mr-1" />
-                            Pass Required
+                          <Badge variant="cyan" size="sm">
+                            100% Free
                           </Badge>
                         )}
                       </div>
@@ -633,67 +427,29 @@ function CatalogContent() {
                     </div>
 
                     <div className="pt-4 border-t border-[#dce3ec] dark:border-slate-800 flex justify-between items-center gap-2">
-                      {canAttempt ? (
-                        <>
-                          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                            <CheckCircle2 className="w-4 h-4" />
-                            {pastAttempt
-                              ? `Scored: ${pastAttempt.score} / ${pastAttempt.max_score}`
-                              : free
-                              ? 'Free Starter Test'
-                              : 'Unlocked with Pass'}
-                          </span>
-                          <Link href={`/exam?paperId=${p.paper_id}`}>
-                            <Button
-                              variant={pastAttempt ? 'secondary' : 'emerald'}
-                              size="sm"
-                              rightIcon={pastAttempt ? <RotateCcw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                            >
-                              {pastAttempt ? 'Re-attempt' : 'Attempt Test'}
-                            </Button>
-                          </Link>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-xs font-bold text-slate-500 font-mono">LOCKED CARD</span>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => handleBuyBranchPass(selectedBranch)}
-                            leftIcon={<Lock className="w-3.5 h-3.5" />}
-                          >
-                            Unlock Pass
-                          </Button>
-                        </>
-                      )}
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 className="w-4 h-4" />
+                        {pastAttempt
+                          ? `Scored: ${pastAttempt.score} / ${pastAttempt.max_score}`
+                          : 'Free Open Test'}
+                      </span>
+                      <Link href={`/exam?paperId=${p.paper_id}`}>
+                        <Button
+                          variant={pastAttempt ? 'secondary' : 'emerald'}
+                          size="sm"
+                          rightIcon={pastAttempt ? <RotateCcw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                        >
+                          {pastAttempt ? 'Re-attempt' : 'Attempt Test'}
+                        </Button>
+                      </Link>
                     </div>
-                  </div>
+                  </Card>
 
-                  {!canAttempt && (
-                    <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center z-10 space-y-3 animate-fade-in">
-                      <div className="w-11 h-11 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center shadow-lg">
-                        <Lock className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-extrabold block">
-                          GATE {selectedBranch} PASS REQUIRED
-                        </span>
-                        <h4 className="text-xs font-bold text-white mt-1 max-w-[220px] line-clamp-1">
-                          {p.title}
-                        </h4>
-                      </div>
-                      <Button
-                        variant="emerald"
-                        size="sm"
-                        className="font-extrabold text-xs shadow-lg shadow-emerald-950/60"
-                        onClick={() => handleBuyBranchPass(selectedBranch)}
-                        leftIcon={<Lock className="w-3.5 h-3.5" />}
-                      >
-                        Check Access
-                      </Button>
-                    </div>
+                  {/* High-CPM In-Feed Google AdSense Unit every 6 cards */}
+                  {(idx + 1) % 6 === 0 && (
+                    <AdBanner format="in-feed" slot={`catalog-feed-${idx}`} />
                   )}
-                </Card>
+                </React.Fragment>
               );
             })}
           </div>
@@ -754,21 +510,6 @@ function CatalogContent() {
             </div>
           )}
         </>
-      )}
-
-      {/* Secure Razorpay Payment Checkout Modal */}
-      {checkoutModal && (
-        <CheckoutModal
-          isOpen={Boolean(checkoutModal)}
-          onClose={() => setCheckoutModal(null)}
-          branchCode={checkoutModal.branch}
-          user={user}
-          orders={orders}
-          onSuccess={(grantedOrd) => {
-            setOrders((prev) => [...prev, grantedOrd]);
-            setCheckoutModal(null);
-          }}
-        />
       )}
     </main>
   );

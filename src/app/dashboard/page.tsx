@@ -27,6 +27,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
+import AdBanner from '@/components/ads/AdBanner';
 
 interface PaperDoc {
   id: string;
@@ -328,6 +329,9 @@ function DashboardContent() {
                 </div>
               </Card>
 
+              {/* In-Dashboard Ad Unit */}
+              <AdBanner format="horizontal" slot="1001001009" className="my-2" />
+
               {/* 4. SUBJECT PERFORMANCE ACCURACY BREAKDOWN */}
               <Card className="border-[#dce3ec] dark:border-slate-800">
                 <h3 className="text-base font-black text-[#14213d] dark:text-white mb-4">Subject Wise Mastery Breakdown</h3>
@@ -480,11 +484,11 @@ function DashboardContent() {
                 <div className="p-8 text-center text-xs text-slate-400">Loading payment records...</div>
               ) : orders.length === 0 ? (
                 <div className="bg-slate-50 dark:bg-slate-900 border border-[#dce3ec] dark:border-slate-800 rounded-2xl p-8 text-center text-slate-500 text-xs">
-                  No active paid orders found.
+                  All test papers and branch series are 100% Free! You have full access to all mock tests with zero subscription fees.
                   <div className="mt-3">
                     <Link href="/catalog">
                       <Button variant="emerald" size="sm">
-                        Enroll in GATE Branch Pass →
+                        Explore 1,000+ Free Test Papers →
                       </Button>
                     </Link>
                   </div>

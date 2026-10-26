@@ -22,6 +22,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { fastFetchJson } from '@/lib/fastFetch';
+import AdBanner from '@/components/ads/AdBanner';
 
 interface AttemptRecord {
   id?: string;
@@ -219,6 +220,9 @@ export default function PerformancePage() {
             icon={<Clock className="w-5 h-5" />}
           />
         </div>
+
+        {/* Diagnostic Scorecard AdBanner */}
+        <AdBanner format="horizontal" slot="1001001005" className="mb-8" />
 
         {/* Main Content Area */}
         {loading ? (

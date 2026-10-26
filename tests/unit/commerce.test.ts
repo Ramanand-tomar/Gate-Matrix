@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { verifyRazorpaySignature, checkUserEntitlement, Grant } from '@/lib/commerce/entitlements';
+import {
+  verifyRazorpaySignature,
+  checkUserEntitlement,
+  isPaperFree,
+  hasUserBranchAccess,
+  Grant,
+} from '@/lib/commerce/entitlements';
 import crypto from 'crypto';
 
 describe('Phase 08 — Commerce, Signature & Entitlements Tests', () => {
@@ -36,5 +42,13 @@ describe('Phase 08 — Commerce, Signature & Entitlements Tests', () => {
 
     const eeResult = checkUserEntitlement([activeCsGrant], 'EE', 'ee_circuits_quiz');
     expect(eeResult.hasAccess).toBe(false);
+  });
+
+  it('P08-V05: Open Access Policy: All test papers and branches are free for students', () => {
+    expect(isPaperFree({ title: 'MADE EASY Advance Level Test', institute: 'MADE EASY' })).toBe(true);
+    expect(isPaperFree({ title: 'GO Classes Subject Test', institute: 'GO Classes' })).toBe(true);
+    expect(isPaperFree({ title: 'GATE Wallah Full Mock', institute: 'GATE Wallah' })).toBe(true);
+    expect(hasUserBranchAccess([], 'CS')).toBe(true);
+    expect(hasUserBranchAccess([], 'EE')).toBe(true);
   });
 });

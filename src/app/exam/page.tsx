@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { canUserAccessPaper, getUserPurchasedBranches, normalizeBranchCode } from '@/lib/commerce/entitlements';
 import { CheckoutModal } from '@/components/commerce/CheckoutModal';
+import AdBanner from '@/components/ads/AdBanner';
 
 interface QuestionItem {
   qnum: number;
@@ -943,6 +944,7 @@ function ExamEngineContent() {
               </div>
             </div>
           </Card>
+          <AdBanner format="horizontal" slot="1001001007" className="mt-6" />
         </div>
       )}
 
@@ -1326,6 +1328,9 @@ function ExamEngineContent() {
               <span>💡 Step-by-Step Solutions & Answer Key ({evaluation.totalQuestions})</span>
             </button>
           </div>
+
+          {/* Post-Submission Scorecard Ad Unit */}
+          <AdBanner format="horizontal" slot="1001001008" className="my-2" />
 
           {/* TAB 1: RESULT & SCORECARD ONLY */}
           {submittedTab === 'RESULT' && (

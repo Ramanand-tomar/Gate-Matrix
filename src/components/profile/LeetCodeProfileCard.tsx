@@ -157,16 +157,9 @@ export const LeetCodeProfileCard: React.FC<LeetCodeProfileCardProps> = ({
               <h2 className="text-xl font-black text-white">
                 {user?.displayName || user?.email?.split('@')[0] || 'GATE Aspirant'}
               </h2>
-              {hasAccess ? (
-                <Badge variant="emerald" className="font-mono text-[10px]">
-                  {activeBranch} ACCESS ACTIVE
-                </Badge>
-              ) : (
-                <Badge variant="amber" className="font-mono text-[10px]">
-                  <Lock className="w-3 h-3 inline mr-1" />
-                  PASS NEEDED
-                </Badge>
-              )}
+              <Badge variant="emerald" className="font-mono text-[10px]">
+                {activeBranch} · 100% FREE UNLOCKED
+              </Badge>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
               GATE Preparation Track · LeetCode Mastery Analytics

@@ -27,16 +27,29 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-bold text-[#14213d] mb-2">3. Data Security & Storage</h2>
+            <h2 className="text-sm font-bold text-[#14213d] mb-2">3. Advertising & Google AdSense</h2>
+            <p className="mb-2">
+              We use Google AdSense to serve advertisements across our platform. All test series, mock exams, and practice questions are provided completely free to students supported by advertisement revenue.
+            </p>
+            <p className="mb-2">
+              Third-party vendors, including Google, use cookies to serve ads based on a user&apos;s prior visits to our website or other websites on the Internet. Google&apos;s use of advertising cookies (such as DoubleClick DART cookies) enables it and its partners to serve ads to our users based on their visits to our site and/or other sites on the Internet.
+            </p>
             <p>
-              All learner attempt history and authentication profiles are secured using Cloud Firestore security rules, HTTPS encryption in transit, and server-side HMAC signature verification for payment verification.
+              Users may opt out of personalized advertising by visiting <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer" className="text-[#0f766e] underline font-bold">Google Ads Settings</a> or by visiting <a href="https://www.aboutads.info/choices/" target="_blank" rel="noopener noreferrer" className="text-[#0f766e] underline font-bold">aboutads.info</a>.
             </p>
           </section>
 
           <section>
-            <h2 className="text-sm font-bold text-[#14213d] mb-2">4. Your Rights</h2>
+            <h2 className="text-sm font-bold text-[#14213d] mb-2">4. Data Security & Storage</h2>
             <p>
-              You have the right to inspect your stored attempt records, request profile updates, or request complete account deletion by contacting support at support@gateprep.studio.
+              All learner attempt history, bookmarks, and authentication profiles are secured using Cloud Firestore security rules, HTTPS encryption in transit, and server-side authorization.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-bold text-[#14213d] mb-2">5. Your Rights & Contact</h2>
+            <p>
+              You have the right to inspect your stored attempt records, export your performance analytics, or request complete account deletion at any time.
             </p>
           </section>
         </div>

@@ -208,14 +208,6 @@ export default function Navbar() {
                         <span>My Library</span>
                       </Link>
                       <Link
-                        href="/dashboard?tab=PAYMENTS"
-                        onClick={() => setDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-[#14213d] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <CreditCard className="w-4 h-4 text-[#0f766e] dark:text-[#2dd4bf]" />
-                        <span>Payments & Invoices</span>
-                      </Link>
-                      <Link
                         href="/dashboard?tab=SETTINGS"
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-[#14213d] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"

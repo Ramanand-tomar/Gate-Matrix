@@ -27,9 +27,9 @@ export default function TermsOfServicePage() {
           </section>
 
           <section>
-            <h2 className="text-sm font-bold text-[#14213d] mb-2">3. Subscription Grants & Access</h2>
+            <h2 className="text-sm font-bold text-[#14213d] mb-2">3. Free Access & Ad-Supported Model</h2>
             <p>
-              Purchasing a Branch Pass (365 days) or Subject Series Bundle grants non-transferable, personal access to the designated test series during the active validity period.
+              GATEPrep Studio provides all test series, mock exams, past year papers, and practice questions completely free of charge to registered students. The platform is monetized and sustained through digital advertisements (including Google AdSense). Users agree not to maliciously interfere with or artificially click ad units.
             </p>
           </section>
 
