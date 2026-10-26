@@ -314,23 +314,28 @@ function ExamEngineContent() {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  const handleMcqSelect = (optIdx: number) => {
+  const handleMcqSelect = (qIdx: number, optIdx: number) => {
     if (phase !== 'EXAM') return;
-    setMcqAnswers((prev) => ({ ...prev, [currentIdx]: optIdx }));
+    setCurrentIdx(qIdx);
+    setMcqAnswers((prev) => ({ ...prev, [qIdx]: optIdx }));
   };
 
-  const handleMsqToggle = (optIdx: number) => {
+  const handleMsqToggle = (qIdx: number, optIdx: number) => {
     if (phase !== 'EXAM') return;
-    const current = msqAnswers[currentIdx] || [];
-    const updated = current.includes(optIdx)
-      ? current.filter((x) => x !== optIdx)
-      : [...current, optIdx];
-    setMsqAnswers((prev) => ({ ...prev, [currentIdx]: updated }));
+    setCurrentIdx(qIdx);
+    setMsqAnswers((prev) => {
+      const current = prev[qIdx] || [];
+      const updated = current.includes(optIdx)
+        ? current.filter((x) => x !== optIdx)
+        : [...current, optIdx];
+      return { ...prev, [qIdx]: updated };
+    });
   };
 
-  const handleNatChange = (val: string) => {
+  const handleNatChange = (qIdx: number, val: string) => {
     if (phase !== 'EXAM') return;
-    setNatAnswers((prev) => ({ ...prev, [currentIdx]: val }));
+    setCurrentIdx(qIdx);
+    setNatAnswers((prev) => ({ ...prev, [qIdx]: val }));
   };
 
   const isAnswered = (idx: number) => {
@@ -342,26 +347,36 @@ function ExamEngineContent() {
     return false;
   };
 
-  const clearResponse = () => {
+  const clearResponse = (qIdx?: number) => {
     if (phase !== 'EXAM') return;
-    if (currentQ.qtype === 'MCQ') {
-      const copy = { ...mcqAnswers };
-      delete copy[currentIdx];
-      setMcqAnswers(copy);
-    } else if (currentQ.qtype === 'MSQ') {
-      const copy = { ...msqAnswers };
-      delete copy[currentIdx];
-      setMsqAnswers(copy);
+    const targetIdx = qIdx !== undefined ? qIdx : currentIdx;
+    const targetQ = questions[targetIdx];
+    if (!targetQ) return;
+    if (targetQ.qtype === 'MCQ') {
+      setMcqAnswers((prev) => {
+        const copy = { ...prev };
+        delete copy[targetIdx];
+        return copy;
+      });
+    } else if (targetQ.qtype === 'MSQ') {
+      setMsqAnswers((prev) => {
+        const copy = { ...prev };
+        delete copy[targetIdx];
+        return copy;
+      });
     } else {
-      const copy = { ...natAnswers };
-      delete copy[currentIdx];
-      setNatAnswers(copy);
+      setNatAnswers((prev) => {
+        const copy = { ...prev };
+        delete copy[targetIdx];
+        return copy;
+      });
     }
   };
 
-  const toggleFlag = () => {
+  const toggleFlag = (qIdx?: number) => {
     if (phase !== 'EXAM') return;
-    setFlagged((prev) => ({ ...prev, [currentIdx]: !prev[currentIdx] }));
+    const targetIdx = qIdx !== undefined ? qIdx : currentIdx;
+    setFlagged((prev) => ({ ...prev, [targetIdx]: !prev[targetIdx] }));
   };
 
   function formatCorrectAnswer(q: QuestionItem): string {
@@ -1035,6 +1050,8 @@ function ExamEngineContent() {
           questions={questions}
           user={user}
           secondsLeft={secondsLeft}
+          currentIdx={currentIdx}
+          onNavigateQuestion={(idx) => setCurrentIdx(idx)}
           mcqAnswers={mcqAnswers}
           msqAnswers={msqAnswers}
           natAnswers={natAnswers}

@@ -45,15 +45,17 @@ interface RealExamTerminalProps {
   questions: QuestionData[];
   user: any;
   secondsLeft: number;
+  currentIdx?: number;
+  onNavigateQuestion?: (idx: number) => void;
   mcqAnswers: Record<number, number>;
   msqAnswers: Record<number, number[]>;
   natAnswers: Record<number, string>;
   flagged: Record<number, boolean>;
-  onSelectMcq: (optIdx: number) => void;
-  onToggleMsq: (optIdx: number) => void;
-  onChangeNat: (val: string) => void;
-  onClearResponse: () => void;
-  onToggleFlag: () => void;
+  onSelectMcq: (qIdx: number, optIdx: number) => void;
+  onToggleMsq: (qIdx: number, optIdx: number) => void;
+  onChangeNat: (qIdx: number, val: string) => void;
+  onClearResponse: (qIdx: number) => void;
+  onToggleFlag: (qIdx: number) => void;
   onSubmitExam: () => void;
 }
 
@@ -63,6 +65,8 @@ export const RealExamTerminal: React.FC<RealExamTerminalProps> = ({
   questions,
   user,
   secondsLeft,
+  currentIdx: parentIdx,
+  onNavigateQuestion,
   mcqAnswers,
   msqAnswers,
   natAnswers,
@@ -74,7 +78,15 @@ export const RealExamTerminal: React.FC<RealExamTerminalProps> = ({
   onToggleFlag,
   onSubmitExam,
 }) => {
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const [internalIdx, setInternalIdx] = useState(0);
+  const currentIdx = parentIdx !== undefined ? parentIdx : internalIdx;
+
+  const setCurrentIdx = (newVal: number | ((prev: number) => number)) => {
+    const nextIdx = typeof newVal === 'function' ? newVal(currentIdx) : newVal;
+    setInternalIdx(nextIdx);
+    onNavigateQuestion?.(nextIdx);
+  };
+
   const [visited, setVisited] = useState<Record<number, boolean>>({ 0: true });
   const [activeSection, setActiveSection] = useState<'ALL' | 'GA' | 'CORE'>('ALL');
 
@@ -194,15 +206,15 @@ export const RealExamTerminal: React.FC<RealExamTerminalProps> = ({
   const handleVirtualKey = (key: string) => {
     const current = natAnswers[currentIdx] || '';
     if (key === 'BACKSPACE') {
-      onChangeNat(current.slice(0, -1));
+      onChangeNat(currentIdx, current.slice(0, -1));
     } else if (key === 'CLEAR') {
-      onChangeNat('');
+      onChangeNat(currentIdx, '');
     } else if (key === '-' && current.includes('-')) {
       // Don't duplicate minus
     } else if (key === '.' && current.includes('.')) {
       // Don't duplicate dot
     } else {
-      onChangeNat(current + key);
+      onChangeNat(currentIdx, current + key);
     }
   };
 
@@ -213,7 +225,7 @@ export const RealExamTerminal: React.FC<RealExamTerminalProps> = ({
   };
 
   const handleMarkForReviewAndNext = () => {
-    onToggleFlag();
+    onToggleFlag(currentIdx);
     if (currentIdx < questions.length - 1) {
       setCurrentIdx((prev) => prev + 1);
     }
@@ -406,12 +418,12 @@ export const RealExamTerminal: React.FC<RealExamTerminalProps> = ({
                   <input
                     type="text"
                     value={natAnswers[currentIdx] || ''}
-                    onChange={(e) => onChangeNat(e.target.value)}
+                    onChange={(e) => onChangeNat(currentIdx, e.target.value)}
                     placeholder="Enter number..."
                     className="w-48 px-4 py-2.5 text-xl font-bold font-mono rounded-lg border-2 border-[#1e3a5f] dark:border-[#38bdf8] bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none text-center shadow-inner"
                   />
                   <button
-                    onClick={() => onChangeNat('')}
+                    onClick={() => onChangeNat(currentIdx, '')}
                     className="px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg border border-rose-300 transition-colors cursor-pointer"
                   >
                     Clear Value
@@ -484,37 +496,77 @@ export const RealExamTerminal: React.FC<RealExamTerminalProps> = ({
                   {currentQ.qtype === 'MSQ' ? 'Select all correct option(s):' : 'Select one option:'}
                 </span>
 
-                {currentQ.options.map((optHtml, optIdx) => {
+                {(currentQ.options || []).map((optHtml, optIdx) => {
                   const isChecked =
                     currentQ.qtype === 'MCQ'
                       ? mcqAnswers[currentIdx] === optIdx
                       : (msqAnswers[currentIdx] || []).includes(optIdx);
 
                   return (
-                    <label
+                    <div
                       key={optIdx}
-                      onClick={() =>
-                        currentQ.qtype === 'MCQ' ? onSelectMcq(optIdx) : onToggleMsq(optIdx)
-                      }
-                      className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      role={currentQ.qtype === 'MCQ' ? 'radio' : 'checkbox'}
+                      aria-checked={isChecked}
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (currentQ.qtype === 'MCQ') {
+                          onSelectMcq(currentIdx, optIdx);
+                        } else {
+                          onToggleMsq(currentIdx, optIdx);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === ' ' || e.key === 'Enter') {
+                          e.preventDefault();
+                          if (currentQ.qtype === 'MCQ') {
+                            onSelectMcq(currentIdx, optIdx);
+                          } else {
+                            onToggleMsq(currentIdx, optIdx);
+                          }
+                        }
+                      }}
+                      className={`w-full text-left flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all select-none ${
                         isChecked
-                          ? 'border-[#0f766e] bg-[#e7f4f0] dark:bg-teal-950/40 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
+                          ? 'border-[#0f766e] bg-[#e7f4f0] dark:bg-teal-950/40 shadow-xs ring-2 ring-[#0f766e]/30'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
                       }`}
                     >
-                      <input
-                        type={currentQ.qtype === 'MCQ' ? 'radio' : 'checkbox'}
-                        checked={isChecked}
-                        onChange={() => {}}
-                        className="accent-[#0f766e] w-4 h-4 mt-1 shrink-0"
-                      />
-                      <div className="flex items-center gap-1 font-bold text-xs text-[#0f766e] dark:text-[#2dd4bf] uppercase tracking-wider shrink-0 mt-0.5">
+                      {/* Styled Visual Radio / Checkbox Indicator */}
+                      <div
+                        className={`w-5 h-5 rounded-${
+                          currentQ.qtype === 'MCQ' ? 'full' : 'md'
+                        } border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all pointer-events-none ${
+                          isChecked
+                            ? 'border-[#0f766e] bg-[#0f766e] text-white shadow-xs scale-105'
+                            : 'border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800'
+                        }`}
+                      >
+                        {isChecked &&
+                          (currentQ.qtype === 'MCQ' ? (
+                            <div className="w-2 h-2 rounded-full bg-white shadow-xs" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5 stroke-[3] text-white" />
+                          ))}
+                      </div>
+
+                      {/* Option Alphabet Badge (A), (B), (C), (D) */}
+                      <div
+                        className={`flex items-center gap-1 font-black text-xs uppercase tracking-wider shrink-0 mt-0.5 pointer-events-none transition-colors ${
+                          isChecked
+                            ? 'text-[#0f766e] dark:text-[#2dd4bf]'
+                            : 'text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
                         ({String.fromCharCode(65 + optIdx)})
                       </div>
-                      <div className="text-sm text-slate-800 dark:text-slate-200 flex-1 leading-relaxed">
+
+                      {/* Mathematical Content Renderer */}
+                      <div className="text-sm text-slate-800 dark:text-slate-200 flex-1 leading-relaxed pointer-events-none">
                         <MathRenderer content={cleanOptionContent(optHtml)} />
                       </div>
-                    </label>
+                    </div>
                   );
                 })}
               </div>
@@ -536,7 +588,7 @@ export const RealExamTerminal: React.FC<RealExamTerminalProps> = ({
 
               <button
                 type="button"
-                onClick={onClearResponse}
+                onClick={() => onClearResponse(currentIdx)}
                 className="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-bold text-xs shadow-2xs transition-all cursor-pointer"
               >
                 Clear Response
